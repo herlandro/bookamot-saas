@@ -1,0 +1,247 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?
+  password      String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  vehicles   Vehicle[]
+  bookings   Booking[]
+  garage     Garage?
+  reviews    Review[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Garage {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String
+  address     String
+  city        String
+  postcode    String
+  latitude    Float?
+  longitude   Float?
+  description String?
+  website     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // MOT Testing Authorization
+  motLicenseNumber String  @unique
+  dvlaApproved     Boolean @default(false)
+
+  // Business Hours
+  openingHours Json? // Store as JSON: {"monday": {"open": "09:00", "close": "17:00"}, ...}
+
+  // Pricing
+  motPrice     Float   @default(54.85) // Maximum MOT price in UK
+  retestPrice  Float   @default(27.43) // Partial retest price
+
+  // Relations
+  ownerId      String  @unique
+  owner        User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+  reviews      Review[]
+  availability GarageAvailability[]
+}
+
+model GarageAvailability {
+  id        String   @id @default(cuid())
+  garageId  String
+  date      DateTime
+  timeSlot  String   // e.g., "09:00", "10:00", etc.
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+
+  @@unique([garageId, date, timeSlot])
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  registration String   @unique
+  make         String
+  model        String
+  year         Int
+  color        String?
+  fuelType     FuelType
+  engineSize   String?
+  mileage      Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  ownerId  String
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+  motHistory MotHistory[]
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  bookingRef  String        @unique @default(cuid())
+  date        DateTime
+  timeSlot    String
+  status      BookingStatus @default(PENDING)
+  totalPrice  Float
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  customerId String
+  customer   User    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  garageId   String
+  garage     Garage  @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  vehicleId  String
+  vehicle    Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  // Payment
+  paymentStatus PaymentStatus @default(PENDING)
+  stripePaymentIntentId String?
+  paidAt        DateTime?
+
+  // MOT Result
+  motResult MotResult?
+  review    Review?
+}
+
+model MotResult {
+  id               String     @id @default(cuid())
+  bookingId        String     @unique
+  result           MotOutcome
+  certificateNumber String?   @unique
+  expiryDate       DateTime?
+  mileage          Int?
+  advisories       String?    // JSON string of advisory items
+  minorDefects     String?    // JSON string of minor defects
+  majorDefects     String?    // JSON string of major defects
+  dangerousDefects String?    // JSON string of dangerous defects
+  testDate         DateTime   @default(now())
+  createdAt        DateTime   @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model MotHistory {
+  id                String     @id @default(cuid())
+  vehicleId         String
+  testDate          DateTime
+  result            MotOutcome
+  certificateNumber String?
+  expiryDate        DateTime?
+  mileage           Int?
+  testLocation      String?
+  createdAt         DateTime   @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  customerId String
+  customer   User    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  garageId   String
+  garage     Garage  @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  bookingId  String  @unique
+  booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+// Enums
+enum UserRole {
+  CUSTOMER
+  GARAGE_OWNER
+  ADMIN
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  ELECTRIC
+  HYBRID
+  LPG
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum MotOutcome {
+  PASS
+  FAIL
+  REFUSED
+}
