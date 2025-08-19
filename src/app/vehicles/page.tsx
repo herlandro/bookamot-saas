@@ -24,14 +24,14 @@ interface Vehicle {
 }
 
 export default function VehiclesPage() {
-  const { user, loading } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push('/auth/signin')
       return
     }
@@ -39,7 +39,7 @@ export default function VehiclesPage() {
     if (user) {
       fetchVehicles()
     }
-  }, [user, loading, router])
+  }, [user, authLoading, router])
 
   const fetchVehicles = async () => {
     try {
@@ -59,7 +59,7 @@ export default function VehiclesPage() {
 
   const getMotStatus = (vehicle: Vehicle) => {
     if (!vehicle.motExpiryDate) {
-      return { status: 'unknown', label: 'Unknown', color: 'bg-gray-500' }
+      return { status: 'unknown', label: 'Unknown', color: 'bg-slate-500' }
     }
 
     const expiryDate = new Date(vehicle.motExpiryDate)
@@ -88,13 +88,13 @@ export default function VehiclesPage() {
     }
   }
 
-  if (loading || isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading vehicles...</p>
+            <p className="text-slate-600">Loading vehicles...</p>
           </div>
         </div>
       </div>
@@ -169,13 +169,13 @@ export default function VehiclesPage() {
                     {vehicle.motExpiryDate && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">MOT Expires:</span>
-                        <span className="font-medium">{formatDate(vehicle.motExpiryDate)}</span>
+                        <span className="font-medium">{formatDate(new Date(vehicle.motExpiryDate))}</span>
                       </div>
                     )}
                     {vehicle.lastMotDate && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Last MOT:</span>
-                        <span className="font-medium">{formatDate(vehicle.lastMotDate)}</span>
+                        <span className="font-medium">{formatDate(new Date(vehicle.lastMotDate))}</span>
                       </div>
                     )}
                   </div>

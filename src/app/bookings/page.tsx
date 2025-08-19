@@ -94,7 +94,7 @@ export default function BookingsPage() {
       case 'cancelled':
         return <Badge className="bg-red-500 text-white">Cancelled</Badge>
       default:
-        return <Badge className="bg-gray-500 text-white">{status}</Badge>
+        return <Badge className="bg-slate-500 text-white">{status}</Badge>
     }
   }
 

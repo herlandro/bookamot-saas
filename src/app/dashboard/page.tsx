@@ -157,7 +157,7 @@ export default function Dashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
@@ -170,27 +170,27 @@ export default function Dashboard() {
   const isGarageOwner = session.user?.role === 'GARAGE_OWNER'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <Shield className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">BookaMOT</h1>
+              <h1 className="text-2xl font-bold text-slate-900">BookaMOT</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <button className="p-2 text-slate-400 hover:text-slate-600">
                 <Bell className="h-6 w-6" />
               </button>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <User className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">{session.user?.name}</span>
+                <span className="text-sm font-medium text-slate-700">{session.user?.name}</span>
                 <button
                   onClick={() => signOut()}
-                  className="p-2 text-gray-400 hover:text-gray-600"
+                  className="p-2 text-slate-400 hover:text-slate-600"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>

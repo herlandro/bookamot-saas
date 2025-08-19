@@ -120,18 +120,18 @@ export default function GarageAdminPage() {
       case 'CANCELLED':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-100 text-slate-800';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Garage Admin Panel</h1>
-              <p className="text-gray-600">Manage your bookings and schedule</p>
+              <h1 className="text-3xl font-bold text-slate-900">Garage Admin Panel</h1>
+              <p className="text-slate-600">Manage your bookings and schedule</p>
             </div>
             <div className="flex gap-3">
               <Button
@@ -248,7 +248,7 @@ export default function GarageAdminPage() {
                         <h3 className="font-semibold text-lg">
                           {booking.vehicle.make} {booking.vehicle.model}
                         </h3>
-                        <p className="text-gray-600">{booking.vehicle.registration}</p>
+                        <p className="text-slate-600">{booking.vehicle.registration}</p>
                       </div>
                       <Badge className={getStatusColor(booking.status)}>
                         {booking.status}
@@ -257,18 +257,18 @@ export default function GarageAdminPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <div className="flex items-center gap-2 text-gray-600 mb-2">
+                        <div className="flex items-center gap-2 text-slate-600 mb-2">
                           <Clock className="h-4 w-4" />
                           {booking.timeSlot}
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-slate-600">
                           <Users className="h-4 w-4" />
                           {booking.user.name}
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Reference: {booking.reference}</p>
-                        <p className="text-sm text-gray-600">Email: {booking.user.email}</p>
+                        <p className="text-sm text-slate-600">Reference: {booking.reference}</p>
+                        <p className="text-sm text-slate-600">Email: {booking.user.email}</p>
                       </div>
                     </div>
 
