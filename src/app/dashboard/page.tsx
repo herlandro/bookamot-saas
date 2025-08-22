@@ -80,12 +80,12 @@ export default function Dashboard() {
         fetch('/api/vehicles')
       ])
 
-      if (!bookingsResponse.ok || !vehiclesResponse.ok) {
-        throw new Error('Failed to fetch dashboard data')
-      }
-
       const bookingsData = await bookingsResponse.json()
       const vehiclesData = await vehiclesResponse.json()
+
+      if (!bookingsData || !vehiclesData) {
+        throw new Error('Failed to fetch dashboard data')
+      }
 
       setBookings(bookingsData.bookings || [])
       setVehicles(vehiclesData.vehicles || [])
