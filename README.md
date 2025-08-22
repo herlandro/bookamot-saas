@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BookaMOT - MOT Booking System
+
+BookaMOT is a modern web application that simplifies the process of booking MOT tests for vehicles in the UK. It connects vehicle owners with approved MOT testing stations and manages the entire booking process.
+
+## Features
+
+- User authentication and authorization
+- Vehicle management
+- MOT booking system
+- Dashboard with booking statistics
+- Garage management for MOT testing stations
+- Real-time booking status updates
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+- Node.js (v18 or higher)
+- npm or yarn package manager
+- Git
 
 ## Getting Started
 
-First, run the development server:
+Follow these steps to set up the project for local development:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. **Clone the repository**
+   ```bash
+   git clone [repository-url]
+   cd bookamot-saas
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. **Environment Setup**
+   - Create a `.env` file in the root directory
+   - Add the following required environment variables:
+     ```env
+     DATABASE_URL="file:./prisma/dev.db"
+     ```
+
+4. **Database Setup**
+   ```bash
+   # Run Prisma migrations to create/update the local database
+   npx prisma migrate dev
+
+   # Generate Prisma Client
+   npx prisma generate
+   ```
+
+5. **Start the Development Server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+The application should now be running at `http://localhost:3000`
+
+## Database Management
+
+- The project uses SQLite for local development
+- Prisma Studio can be used to manage the database:
+  ```bash
+  npx prisma studio
+  ```
+- Access Prisma Studio at `http://localhost:5555`
+
+## Project Structure
+
+```
+bookamot-saas/
+├── prisma/              # Database schema and migrations
+├── public/              # Static assets
+├── src/
+│   ├── app/            # Next.js app router pages
+│   ├── components/     # Reusable React components
+│   ├── lib/           # Utility functions and configurations
+│   └── types/         # TypeScript type definitions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development Guidelines
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Follow the existing code style and conventions
+- Write meaningful commit messages
+- Update migrations when making database schema changes
+- Test your changes thoroughly before committing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Available Scripts
 
-## Learn More
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm start`: Start production server
+- `npm run lint`: Run ESLint
+- `npx prisma studio`: Open database management UI
 
-To learn more about Next.js, take a look at the following resources:
+## Important Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Never commit the `dev.db` file or any other database files
+- Always keep your `.env` file secure and never commit it
+- Run migrations after pulling changes that include database schema updates
+- Use Prisma Studio for database management during development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security Best Practices
 
-## Deploy on Vercel
+- Always use environment variables for sensitive data (API keys, database credentials, etc.)
+- Keep the Node.js version updated to receive security patches
+- Regularly update project dependencies using `npm audit` and fix vulnerabilities
+- Use strong password hashing with bcrypt (already configured)
+- Implement rate limiting for API routes to prevent abuse
+- Enable CORS only for trusted domains
+- Never log sensitive information or stack traces in production
+- Keep the `.env.example` file updated but never include real credentials
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Performance Optimization
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Enable caching for static assets
+- Use Image component for optimized image loading
+- Implement lazy loading for components when possible
+- Keep bundle size minimal by:
+  - Using dynamic imports for large components
+  - Removing unused dependencies
+  - Implementing code splitting
+- Monitor API endpoint performance
+- Use connection pooling for database queries
+- Implement proper error boundaries to prevent app crashes
+- Use production builds for deployment with:
+  ```bash
+  npm run build
+  npm start
+  ```
