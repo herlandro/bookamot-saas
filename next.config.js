@@ -1,0 +1,14 @@
+/** @type {import('next').NextConfig} */
+
+const nextConfig = {
+  output: 'standalone',
+  poweredByHeader: false,
+  reactStrictMode: true,
+  swcMinify: true,
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    DATABASE_URL: process.env.DATABASE_URL,
+  },
+};
+
+export default nextConfig;
