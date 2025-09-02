@@ -1,0 +1,1 @@
+**ALWAYS** create and edit documentations, comments and rules in English, even if the user communicates in another language.
