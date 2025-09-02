@@ -17,6 +17,8 @@ Before you begin, ensure you have the following installed:
 - Node.js (v18 or higher)
 - npm or yarn package manager
 - Git
+- PostgreSQL (v14 or higher) - Recommended
+  - Or SQLite for quick development (no additional installation required)
 
 ## Getting Started
 
@@ -39,10 +41,28 @@ Follow these steps to set up the project for local development:
    - Create a `.env` file in the root directory
    - Add the following required environment variables:
      ```env
-     DATABASE_URL="file:./prisma/dev.db"
+     # For PostgreSQL (recommended)
+     DATABASE_URL="postgresql://username:password@localhost:5432/bookamot"
+     
+     # Or for SQLite (alternative)
+     # DATABASE_URL="file:./prisma/dev.db"
      ```
 
 4. **Database Setup**
+   
+   For PostgreSQL:
+   ```bash
+   # Create PostgreSQL database
+   createdb bookamot
+   
+   # Run Prisma migrations to create/update the local database
+   npx prisma migrate dev
+
+   # Generate Prisma Client
+   npx prisma generate
+   ```
+   
+   For SQLite (alternative):
    ```bash
    # Run Prisma migrations to create/update the local database
    npx prisma migrate dev
@@ -62,12 +82,17 @@ The application should now be running at `http://localhost:3000`
 
 ## Database Management
 
-- The project uses SQLite for local development
+- The project uses PostgreSQL for local development and production
+- SQLite is also supported as an alternative for quick development
 - Prisma Studio can be used to manage the database:
   ```bash
   npx prisma studio
   ```
 - Access Prisma Studio at `http://localhost:5555`
+- To access PostgreSQL directly:
+  ```bash
+  psql -d bookamot
+  ```
 
 ## Project Structure
 
@@ -103,6 +128,8 @@ bookamot-saas/
 - Always keep your `.env` file secure and never commit it
 - Run migrations after pulling changes that include database schema updates
 - Use Prisma Studio for database management during development
+- For detailed setup instructions on a new machine, refer to `README-DEV-SETUP.md`
+- For deployment instructions, refer to `README-DEPLOY.md`
 
 ## Security Best Practices
 
