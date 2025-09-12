@@ -1,0 +1,136 @@
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { 
+  Menu, 
+  X, 
+  Home, 
+  Search, 
+  Calendar, 
+  Settings, 
+  User,
+  Plus,
+  MessageSquare
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface SidebarProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ isOpen, onToggle }: SidebarProps) {
+  const [activeItem, setActiveItem] = useState('home');
+
+  const menuItems = [
+    { id: 'home', label: 'Home', icon: Home, href: '/' },
+    { id: 'search', label: 'Search Results', icon: Search, href: '/search-results' },
+    { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
+    { id: 'dashboard', label: 'Dashboard', icon: MessageSquare, href: '/dashboard' },
+  ];
+
+  const bottomItems = [
+    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
+  ];
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={cn(
+        "fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 z-50 transition-all duration-300 ease-in-out flex flex-col",
+        isOpen ? "w-64" : "w-0 lg:w-16"
+      )}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+          {isOpen && (
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">B</span>
+              </div>
+              <span className="text-white font-semibold">BookaMOT</span>
+            </div>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggle}
+            className="text-gray-400 hover:text-white hover:bg-gray-800 p-2"
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        {/* New Chat Button */}
+        {isOpen && (
+          <div className="p-4">
+            <Button className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-700">
+              <Plus className="h-4 w-4 mr-2" />
+              New Search
+            </Button>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setActiveItem(item.id)}
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  activeItem === item.id
+                    ? "bg-gray-800 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800",
+                  !isOpen && "justify-center"
+                )}
+                title={!isOpen ? item.label : undefined}
+              >
+                <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
+                {isOpen && <span>{item.label}</span>}
+              </a>
+            );
+          })}
+        </nav>
+
+        {/* Bottom Navigation */}
+        <div className="border-t border-gray-800 p-2">
+          {bottomItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setActiveItem(item.id)}
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  activeItem === item.id
+                    ? "bg-gray-800 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800",
+                  !isOpen && "justify-center"
+                )}
+                title={!isOpen ? item.label : undefined}
+              >
+                <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
+                {isOpen && <span>{item.label}</span>}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}

@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users, Settings, BarChart3, Plus } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { GarageCalendar } from '@/components/garage/garage-calendar';
+import { BookingModal } from '@/components/garage/booking-modal';
 
 interface Booking {
   id: string;
   date: string;
   timeSlot: string;
-  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'PENDING';
   reference: string;
   vehicle: {
     registration: string;
@@ -40,6 +42,8 @@ export default function GarageAdminPage() {
   const [stats, setStats] = useState<GarageStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -84,23 +88,34 @@ export default function GarageAdminPage() {
     }
   };
 
-  const updateBookingStatus = async (bookingId: string, status: string) => {
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/garage-admin/bookings/${bookingId}`, {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (response.ok) {
+        // Refresh bookings and stats
         fetchBookings();
         fetchStats();
       }
     } catch (error) {
       console.error('Error updating booking:', error);
     }
+  };
+
+  const handleBookingClick = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsModalOpen(true);
+  };
+
+  const handleSlotClick = (date: string, timeSlot: string) => {
+    // Handle empty slot click - could open booking creation modal
+    console.log('Empty slot clicked:', date, timeSlot);
   };
 
   if (status === 'loading' || loading) {
@@ -204,99 +219,23 @@ export default function GarageAdminPage() {
           </div>
         )}
 
-        {/* Date Filter */}
-        <div className="mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter by Date</CardTitle>
-              <CardDescription>Select a date to view bookings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Interactive Calendar */}
+        <GarageCalendar
+          bookings={bookings}
+          onBookingClick={handleBookingClick}
+          onSlotClick={handleSlotClick}
+        />
 
-        {/* Bookings List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Bookings for {formatDate(new Date(selectedDate))}</CardTitle>
-            <CardDescription>
-              {bookings.length} booking(s) scheduled
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {bookings.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No bookings for this date</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {booking.vehicle.make} {booking.vehicle.model}
-                        </h3>
-                        <p className="text-slate-600">{booking.vehicle.registration}</p>
-                      </div>
-                      <Badge className={getStatusColor(booking.status)}>
-                        {booking.status}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <div className="flex items-center gap-2 text-slate-600 mb-2">
-                          <Clock className="h-4 w-4" />
-                          {booking.timeSlot}
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <Users className="h-4 w-4" />
-                          {booking.user.name}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600">Reference: {booking.reference}</p>
-                        <p className="text-sm text-slate-600">Email: {booking.user.email}</p>
-                      </div>
-                    </div>
-
-                    {booking.status === 'CONFIRMED' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => updateBookingStatus(booking.id, 'COMPLETED')}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          Mark Complete
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateBookingStatus(booking.id, 'CANCELLED')}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Booking Modal */}
+        <BookingModal
+          booking={selectedBooking}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedBooking(null);
+          }}
+          onStatusUpdate={updateBookingStatus}
+        />
       </div>
     </div>
   );

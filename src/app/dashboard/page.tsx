@@ -70,6 +70,12 @@ export default function Dashboard() {
       return
     }
 
+    // Redirect garage owners to their admin dashboard
+    if (session.user?.role === 'GARAGE_OWNER') {
+      router.push('/garage-admin')
+      return
+    }
+
     fetchDashboardData()
   }, [session, status, router])
 
