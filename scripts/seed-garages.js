@@ -222,8 +222,10 @@ async function seedGarages() {
       // Create a user account for the garage owner
       const hashedPassword = await bcrypt.hash('password123', 12);
       
-      const owner = await prisma.user.create({
-        data: {
+      const owner = await prisma.user.upsert({
+        where: { email: garageData.email },
+        update: {},
+        create: {
           name: `${garageData.name} Owner`,
           email: garageData.email,
           password: hashedPassword,
@@ -233,8 +235,10 @@ async function seedGarages() {
       });
 
       // Create the garage
-      const garage = await prisma.garage.create({
-        data: {
+      const garage = await prisma.garage.upsert({
+        where: { email: garageData.email },
+        update: { ownerId: owner.id },
+        create: {
           ...garageData,
           ownerId: owner.id
         }
@@ -253,8 +257,13 @@ async function seedGarages() {
           continue;
         }
 
-        // Create time slots from 9 AM to 5 PM (every hour)
-        const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+        // Create time slots matching frontend expectations
+        const timeSlots = [
+          '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+          '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+          '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+          '17:00', '17:30'
+        ];
         
         for (const timeSlot of timeSlots) {
           await prisma.garageAvailability.create({

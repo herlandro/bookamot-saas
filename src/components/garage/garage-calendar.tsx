@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Clock, User, Car } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Booking {
@@ -24,17 +24,26 @@ interface Booking {
   }
 }
 
+interface TimeSlot {
+  id: string
+  date: string
+  timeSlot: string
+  isBooked: boolean
+  isBlocked: boolean
+}
+
 interface GarageCalendarProps {
   bookings: Booking[]
   onBookingClick?: (booking: Booking) => void
   onSlotClick?: (date: string, timeSlot: string) => void
+  onDateChange?: (date: Date) => void
+  isEditMode?: boolean
+  pendingChanges?: {[key: string]: boolean}
 }
 
 const timeSlots = [
-  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-  '17:00', '17:30'
+  '09:00', '10:00', '11:00', '12:00', '13:00',
+  '14:00', '15:00', '16:00', '17:00'
 ]
 
 const statusColors = {
@@ -48,16 +57,43 @@ const statusLabels = {
   CONFIRMED: 'Confirmado',
   COMPLETED: 'Concluído',
   CANCELLED: 'Cancelado',
-  PENDING: 'Pendente'
+  PENDING: 'Pendente',
+  BLOCKED: 'Bloqueado'
 }
 
-export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: GarageCalendarProps) {
+export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateChange, isEditMode = false, pendingChanges = {} }: GarageCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedWeek, setSelectedWeek] = useState<Date[]>([])
+  const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([])
 
   useEffect(() => {
     generateWeekDays(currentDate)
   }, [currentDate])
+
+  useEffect(() => {
+    if (selectedWeek.length > 0) {
+      fetchAvailabilitySlots()
+    }
+  }, [selectedWeek])
+
+  const fetchAvailabilitySlots = async () => {
+    if (selectedWeek.length === 0) return
+    
+    try {
+      const startDate = selectedWeek[0].toISOString().split('T')[0]
+      const endDate = selectedWeek[6].toISOString().split('T')[0]
+      
+      const response = await fetch(`/api/garage-admin/schedule?startDate=${startDate}&endDate=${endDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        // Flatten the schedule array to get all slots
+        const allSlots = data.schedule?.flatMap((day: any) => day.slots) || []
+        setAvailabilitySlots(allSlots)
+      }
+    } catch (error) {
+      console.error('Error fetching availability slots:', error)
+    }
+  }
 
   const generateWeekDays = (date: Date) => {
     const startOfWeek = new Date(date)
@@ -78,6 +114,10 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
     const newDate = new Date(currentDate)
     newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7))
     setCurrentDate(newDate)
+    // Notify parent component about date change
+    if (onDateChange) {
+      onDateChange(newDate)
+    }
   }
 
   const formatDate = (date: Date) => {
@@ -91,6 +131,13 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
     )
   }
 
+  const getSlotInfo = (date: Date, timeSlot: string) => {
+    const dateStr = formatDate(date)
+    return availabilitySlots.find(slot => 
+      slot.date === dateStr && slot.timeSlot === timeSlot
+    )
+  }
+
   const isToday = (date: Date) => {
     const today = new Date()
     return date.toDateString() === today.toDateString()
@@ -101,6 +148,9 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
     const slotDateTime = new Date(date)
     const [hours, minutes] = timeSlot.split(':').map(Number)
     slotDateTime.setHours(hours, minutes, 0, 0)
+    
+    // Only consider a slot as past if it's actually in the past (including time)
+    // This allows editing of future slots and current day slots that haven't passed yet
     return slotDateTime < now
   }
 
@@ -111,6 +161,12 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Calendário de Agendamentos
+            {isEditMode && (
+              <Badge variant="secondary" className="ml-2">
+                <Edit className="h-3 w-3 mr-1" />
+                Modo de Edição
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -137,12 +193,26 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
         
         {/* Legend */}
         <div className="flex flex-wrap gap-2 text-xs">
-          {Object.entries(statusLabels).map(([status, label]) => (
-            <div key={status} className="flex items-center gap-1">
-              <div className={cn('w-3 h-3 rounded', statusColors[status as keyof typeof statusColors])} />
-              <span>{label}</span>
-            </div>
-          ))}
+          {Object.entries(statusLabels).map(([status, label]) => {
+            if (status === 'BLOCKED') {
+              return (
+                <div key={status} className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded bg-gray-500" />
+                  <span>{label}</span>
+                </div>
+              )
+            }
+            return (
+              <div key={status} className="flex items-center gap-1">
+                <div className={cn('w-3 h-3 rounded', statusColors[status as keyof typeof statusColors])} />
+                <span>{label}</span>
+              </div>
+            )
+          })}
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-green-100 border border-green-300" />
+            <span>Disponível</span>
+          </div>
         </div>
       </CardHeader>
       
@@ -172,21 +242,35 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
                   </div>
                   {selectedWeek.map((date, dayIndex) => {
                     const slotBookings = getBookingsForSlot(date, timeSlot)
+                    const slotInfo = getSlotInfo(date, timeSlot)
                     const isPast = isPastSlot(date, timeSlot)
+                    const slotKey = `${formatDate(date)}-${timeSlot}`
+                    const hasPendingChange = pendingChanges[slotKey] !== undefined
+                    const originallyBlocked = slotInfo?.isBlocked || false
+                    const isBlocked = hasPendingChange ? pendingChanges[slotKey] : originallyBlocked
                     
                     return (
                       <div
                         key={`${dayIndex}-${timeSlot}`}
                         className={cn(
-                          "p-1 min-h-[60px] border rounded cursor-pointer transition-colors",
-                          isPast ? "bg-gray-100" : "bg-white hover:bg-gray-50",
-                          slotBookings.length > 0 ? "border-blue-300" : "border-gray-200"
+                          "p-1 min-h-[60px] border rounded transition-colors",
+                          isPast ? "bg-gray-100" : 
+                          isBlocked ? "bg-gray-200 border-gray-400" :
+                          slotBookings.length > 0 ? "bg-white border-blue-300" : "bg-green-50 border-green-300",
+                          isEditMode && !isPast && slotBookings.length === 0 ? "cursor-pointer hover:bg-blue-50 hover:border-blue-400" : 
+                          !isEditMode && slotBookings.length === 0 && !isPast && !isBlocked ? "cursor-pointer hover:bg-green-100" :
+                          slotBookings.length > 0 ? "cursor-pointer" : "cursor-default",
+                          hasPendingChange ? "ring-2 ring-blue-500 ring-opacity-50" : ""
                         )}
                         onClick={() => {
-                          if (slotBookings.length > 0 && onBookingClick) {
-                            onBookingClick(slotBookings[0])
-                          } else if (slotBookings.length === 0 && !isPast && onSlotClick) {
+                          if (isEditMode && slotBookings.length === 0 && !isPast && onSlotClick) {
                             onSlotClick(formatDate(date), timeSlot)
+                          } else if (!isEditMode) {
+                            if (slotBookings.length > 0 && onBookingClick) {
+                              onBookingClick(slotBookings[0])
+                            } else if (slotBookings.length === 0 && !isPast && !isBlocked && onSlotClick) {
+                              onSlotClick(formatDate(date), timeSlot)
+                            }
                           }
                         }}
                       >
@@ -213,9 +297,25 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick }: Garage
                           </div>
                         ))}
                         
-                        {slotBookings.length === 0 && !isPast && (
-                          <div className="text-xs text-gray-400 text-center pt-4">
-                            Disponível
+                        {slotBookings.length === 0 && isBlocked && (
+                          <div className="text-xs text-gray-600 text-center pt-4 flex items-center justify-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            <span>Bloqueado</span>
+                            {hasPendingChange && (
+                              <span className="text-blue-600 font-semibold">(Alterando)</span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {slotBookings.length === 0 && !isPast && !isBlocked && (
+                          <div className="text-xs text-green-600 text-center pt-4">
+                            <span>Disponível</span>
+                            {hasPendingChange && (
+                              <div className="text-blue-600 font-semibold">(Bloqueando)</div>
+                            )}
+                            {isEditMode && !hasPendingChange && (
+                              <div className="text-blue-500 text-xs mt-1">Clique para bloquear</div>
+                            )}
                           </div>
                         )}
                       </div>

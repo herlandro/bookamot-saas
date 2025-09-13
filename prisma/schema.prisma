@@ -106,6 +106,7 @@ model GarageAvailability {
   date      DateTime
   timeSlot  String   // e.g., "09:00", "10:00", etc.
   isBooked  Boolean  @default(false)
+  isBlocked Boolean  @default(false)
   createdAt DateTime @default(now())
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)

@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
         date: dateKey,
         timeSlot: slot.timeSlot,
         isBooked: !!booking,
+        isBlocked: slot.isBlocked || false,
         bookingId: booking?.id,
         customerName: booking?.customer.name,
       });
@@ -193,10 +194,94 @@ export async function POST(request: NextRequest) {
         date: newSlot.date.toISOString().split('T')[0],
         timeSlot: newSlot.timeSlot,
         isBooked: false,
+        isBlocked: false,
       },
     });
   } catch (error) {
     console.error('Error adding time slot:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || session.user.role !== 'GARAGE_OWNER') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { slotId, isBlocked } = body;
+
+    if (!slotId || typeof isBlocked !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Slot ID and isBlocked status are required' },
+        { status: 400 }
+      );
+    }
+
+    // Get garage ID for the current user
+    const garage = await prisma.garage.findFirst({
+      where: {
+        ownerId: session.user.id,
+      },
+    });
+
+    if (!garage) {
+      return NextResponse.json(
+        { error: 'Garage not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if the slot exists and belongs to this garage
+    const slot = await prisma.garageAvailability.findFirst({
+      where: {
+        id: slotId,
+        garageId: garage.id,
+      },
+    });
+
+    if (!slot) {
+      return NextResponse.json(
+        { error: 'Time slot not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if the slot is booked
+    if (slot.isBooked && isBlocked) {
+      return NextResponse.json(
+        { error: 'Cannot block a slot that is already booked' },
+        { status: 400 }
+      );
+    }
+
+    // Update the slot's blocked status
+    const updatedSlot = await prisma.garageAvailability.update({
+      where: { id: slotId },
+      data: { isBlocked },
+    });
+
+    return NextResponse.json({
+      message: `Time slot ${isBlocked ? 'blocked' : 'unblocked'} successfully`,
+      slot: {
+        id: updatedSlot.id,
+        date: updatedSlot.date.toISOString().split('T')[0],
+        timeSlot: updatedSlot.timeSlot,
+        isBooked: updatedSlot.isBooked,
+        isBlocked: updatedSlot.isBlocked,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating time slot:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

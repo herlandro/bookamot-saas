@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Calendar, Clock, Plus, Trash2, ArrowLeft, Lock, Unlock } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface TimeSlot {
@@ -14,6 +15,7 @@ interface TimeSlot {
   date: string;
   timeSlot: string;
   isBooked: boolean;
+  isBlocked: boolean;
   bookingId?: string;
   customerName?: string;
 }
@@ -115,6 +117,31 @@ export default function SchedulePage() {
     }
   };
 
+  const toggleSlotBlock = async (slotId: string, currentBlockedStatus: boolean) => {
+    try {
+      const response = await fetch('/api/garage-admin/schedule', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          slotId, 
+          isBlocked: !currentBlockedStatus 
+        }),
+      });
+
+      if (response.ok) {
+        fetchSchedule();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Erro ao alterar status do slot');
+      }
+    } catch (error) {
+      console.error('Error toggling slot block:', error);
+      alert('Erro ao alterar status do slot');
+    }
+  };
+
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newWeek = new Date(selectedWeek);
     newWeek.setDate(selectedWeek.getDate() + (direction === 'next' ? 7 : -7));
@@ -143,7 +170,8 @@ export default function SchedulePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -204,29 +232,99 @@ export default function SchedulePage() {
                       <div
                         key={slot.id}
                         className={`flex items-center justify-between p-2 rounded border ${
-                          slot.isBooked
+                          slot.isBlocked
+                            ? 'bg-red-800 border-red-700 text-white'
+                            : slot.isBooked
                             ? 'bg-red-50 border-red-200'
                             : 'bg-green-50 border-green-200'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span className="text-sm font-medium">{slot.timeSlot}</span>
+                          {slot.isBlocked ? (
+                            <Lock className="h-4 w-4 text-red-300" />
+                          ) : (
+                            <Clock className="h-4 w-4" />
+                          )}
+                          <span className={`text-sm font-medium ${
+                            slot.isBlocked ? 'text-white' : ''
+                          }`}>{slot.timeSlot}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {slot.isBooked ? (
-                            <Badge variant="destructive">Booked</Badge>
+                          {slot.isBlocked ? (
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="destructive" className="bg-red-600 text-white border-red-500">Bloqueado</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Este horário foi bloqueado e não está disponível para reservas</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => toggleSlotBlock(slot.id, slot.isBlocked)}
+                                    className="h-6 w-6 p-0 text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                                  >
+                                    <Unlock className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Clique para desbloquear este horário e torná-lo disponível para reservas</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </>
+                          ) : slot.isBooked ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="destructive">Reservado</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Este horário já foi reservado por um cliente{slot.customerName ? `: ${slot.customerName}` : ''}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           ) : (
                             <>
-                              <Badge variant="default">Available</Badge>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => removeTimeSlot(slot.id)}
-                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="default">Disponível</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Este horário está disponível para reservas de clientes</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => toggleSlotBlock(slot.id, slot.isBlocked)}
+                                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700 mr-1"
+                                  >
+                                    <Lock className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Clique para bloquear este horário temporariamente</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => removeTimeSlot(slot.id)}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Clique para remover este horário permanentemente</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </>
                           )}
                         </div>
@@ -276,21 +374,27 @@ export default function SchedulePage() {
         <div className="mt-8">
           <Card>
             <CardHeader>
-              <CardTitle>Legend</CardTitle>
+              <CardTitle>Legenda</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-                  <span className="text-sm">Available slot</span>
+                  <span className="text-sm">Horário disponível</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-100 border border-red-200 rounded"></div>
-                  <span className="text-sm">Booked slot</span>
+                  <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
+                  <span className="text-sm">Horário reservado</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-100 border border-red-300 rounded flex items-center justify-center">
+                    <Lock className="h-2 w-2 text-red-600" />
+                  </div>
+                  <span className="text-sm">Horário bloqueado</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-blue-500 rounded"></div>
-                  <span className="text-sm">Today</span>
+                  <span className="text-sm">Hoje</span>
                 </div>
               </div>
             </CardContent>
@@ -298,5 +402,6 @@ export default function SchedulePage() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
