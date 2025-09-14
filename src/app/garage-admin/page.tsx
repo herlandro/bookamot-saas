@@ -41,7 +41,7 @@ export default function GarageAdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<GarageStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState('2025-09-15'); // Data com agendamentos existentes
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -437,6 +437,7 @@ export default function GarageAdminPage() {
           onDateChange={handleCalendarDateChange}
           isEditMode={isEditMode}
           pendingChanges={pendingChanges}
+          initialDate={selectedDate}
         />
 
         {/* Booking Modal */}

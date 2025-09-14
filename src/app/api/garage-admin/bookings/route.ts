@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     // Transform the data to match the expected format
     const transformedBookings = bookings.map((booking) => ({
       id: booking.id,
-      date: booking.date.toISOString(),
+      date: booking.date.toISOString().split('T')[0],
       timeSlot: booking.timeSlot,
       status: booking.status,
       reference: booking.bookingRef,

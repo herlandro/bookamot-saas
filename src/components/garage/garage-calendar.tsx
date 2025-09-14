@@ -39,6 +39,7 @@ interface GarageCalendarProps {
   onDateChange?: (date: Date) => void
   isEditMode?: boolean
   pendingChanges?: {[key: string]: boolean}
+  initialDate?: string // Nova prop para data inicial
 }
 
 const timeSlots = [
@@ -61,8 +62,8 @@ const statusLabels = {
   BLOCKED: 'Bloqueado'
 }
 
-export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateChange, isEditMode = false, pendingChanges = {} }: GarageCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateChange, isEditMode = false, pendingChanges = {}, initialDate }: GarageCalendarProps) {
+  const [currentDate, setCurrentDate] = useState(initialDate ? new Date(initialDate) : new Date())
   const [selectedWeek, setSelectedWeek] = useState<Date[]>([])
   const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([])
 
@@ -75,6 +76,13 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
       fetchAvailabilitySlots()
     }
   }, [selectedWeek])
+
+  // Atualizar currentDate quando initialDate mudar
+  useEffect(() => {
+    if (initialDate) {
+      setCurrentDate(new Date(initialDate))
+    }
+  }, [initialDate])
 
   const fetchAvailabilitySlots = async () => {
     if (selectedWeek.length === 0) return

@@ -97,22 +97,13 @@ model Garage {
   owner        User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   bookings     Booking[]
   reviews      Review[]
-  availability GarageAvailability[]
+  schedules    GarageSchedule[]
+  scheduleExceptions GarageScheduleException[]
+  timeSlotBlocks GarageTimeSlotBlock[]
 }
 
-model GarageAvailability {
-  id        String   @id @default(cuid())
-  garageId  String
-  date      DateTime
-  timeSlot  String   // e.g., "09:00", "10:00", etc.
-  isBooked  Boolean  @default(false)
-  isBlocked Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
-
-  @@unique([garageId, date, timeSlot])
-}
+// GarageAvailability model removed - replaced by optimized system
+// using GarageSchedule, GarageScheduleException, and GarageTimeSlotBlock
 
 model Vehicle {
   id           String   @id @default(cuid())
@@ -245,4 +236,52 @@ enum MotOutcome {
   PASS
   FAIL
   REFUSED
+}
+
+// Novo modelo otimizado para horários de funcionamento das garagens
+model GarageSchedule {
+  id        String   @id @default(cuid())
+  garageId  String
+  dayOfWeek Int      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  isOpen    Boolean  @default(true)
+  openTime  String   // e.g., "09:00"
+  closeTime String   // e.g., "17:00"
+  slotDuration Int   @default(60) // Duration in minutes (60 = 1 hour slots)
+  maxBookingsPerSlot Int @default(1) // Allow multiple bookings per slot if needed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+
+  @@unique([garageId, dayOfWeek])
+}
+
+// Modelo para exceções de horário (feriados, dias especiais)
+model GarageScheduleException {
+  id        String   @id @default(cuid())
+  garageId  String
+  date      DateTime // Data específica da exceção
+  isClosed  Boolean  @default(true) // Se true, garagem fechada neste dia
+  openTime  String?  // Horário especial de abertura (se não fechado)
+  closeTime String?  // Horário especial de fechamento (se não fechado)
+  reason    String?  // Motivo da exceção (feriado, manutenção, etc.)
+  createdAt DateTime @default(now())
+
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+
+  @@unique([garageId, date])
+}
+
+// Modelo simplificado para bloqueios específicos de horários
+model GarageTimeSlotBlock {
+  id        String   @id @default(cuid())
+  garageId  String
+  date      DateTime
+  timeSlot  String   // e.g., "09:00"
+  reason    String?  // Motivo do bloqueio
+  createdAt DateTime @default(now())
+
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+
+  @@unique([garageId, date, timeSlot])
 }

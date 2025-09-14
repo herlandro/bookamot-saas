@@ -337,16 +337,56 @@ export async function cancelBooking(id: string, reason?: string) {
   return updatedBooking
 }
 
-// Get available time slots for a garage on a specific date
+// Get available time slots for a garage on a specific date (OPTIMIZED VERSION)
 export async function getAvailableTimeSlots(garageId: string, date: Date) {
+  const dayOfWeek = date.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  
+  // Get garage schedule for the day of week
+  const schedule = await prisma.garageSchedule.findUnique({
+    where: {
+      garageId_dayOfWeek: {
+        garageId,
+        dayOfWeek
+      }
+    }
+  })
+  
+  // If no schedule defined or garage closed, return empty array
+  if (!schedule || !schedule.isOpen) {
+    return []
+  }
+  
+  // Check for schedule exceptions on this specific date
   const startOfDay = new Date(date)
   startOfDay.setHours(0, 0, 0, 0)
   
   const endOfDay = new Date(date)
   endOfDay.setHours(23, 59, 59, 999)
-
-  // Get all booked slots for the date
-  const bookedSlots = await prisma.booking.findMany({
+  
+  const exception = await prisma.garageScheduleException.findUnique({
+    where: {
+      garageId_date: {
+        garageId,
+        date: startOfDay
+      }
+    }
+  })
+  
+  // If exception exists and garage is closed, return empty array
+  if (exception && exception.isClosed) {
+    return []
+  }
+  
+  // Use exception times if available, otherwise use standard schedule
+  const openTime = exception?.openTime || schedule.openTime
+  const closeTime = exception?.closeTime || schedule.closeTime
+  const slotDuration = schedule.slotDuration
+  
+  // Generate time slots based on working hours
+  const timeSlots = generateTimeSlots(openTime, closeTime, slotDuration)
+  
+  // Get existing bookings for the date
+  const existingBookings = await prisma.booking.findMany({
     where: {
       garageId,
       date: {
@@ -361,17 +401,49 @@ export async function getAvailableTimeSlots(garageId: string, date: Date) {
       timeSlot: true
     }
   })
-
-  // Standard working hours (can be customized per garage)
-  const standardSlots = [
-    '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00'
-  ]
-
-  const bookedTimeSlots = bookedSlots.map(slot => slot.timeSlot)
-  const availableSlots = standardSlots.filter(slot => !bookedTimeSlots.includes(slot))
-
+  
+  // Get blocked time slots
+  const blockedSlots = await prisma.garageTimeSlotBlock.findMany({
+    where: {
+      garageId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    },
+    select: {
+      timeSlot: true
+    }
+  })
+  
+  const bookedTimeSlots = existingBookings.map(booking => booking.timeSlot)
+  const blockedTimeSlots = blockedSlots.map((block: { timeSlot: string }) => block.timeSlot);
+  const unavailableSlots = [...bookedTimeSlots, ...blockedTimeSlots]
+  
+  // Filter available slots
+  const availableSlots = timeSlots.filter(slot => !unavailableSlots.includes(slot))
+  
   return availableSlots
+}
+
+// Helper function to generate time slots
+function generateTimeSlots(openTime: string, closeTime: string, durationMinutes: number): string[] {
+  const slots: string[] = []
+  
+  const [openHour, openMinute] = openTime.split(':').map(Number)
+  const [closeHour, closeMinute] = closeTime.split(':').map(Number)
+  
+  const openTimeInMinutes = openHour * 60 + openMinute
+  const closeTimeInMinutes = closeHour * 60 + closeMinute
+  
+  for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += durationMinutes) {
+    const hours = Math.floor(time / 60)
+    const minutes = time % 60
+    const timeSlot = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    slots.push(timeSlot)
+  }
+  
+  return slots
 }
 
 // Get upcoming bookings for a customer
