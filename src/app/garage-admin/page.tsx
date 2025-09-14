@@ -131,6 +131,19 @@ export default function GarageAdminPage() {
 
   const handleSlotClick = (date: string, timeSlot: string) => {
     if (isEditMode) {
+      // Verificar se a data é passada
+      const slotDate = new Date(date);
+      const now = new Date();
+      const [hours, minutes] = timeSlot.split(':').map(Number);
+      const slotDateTime = new Date(slotDate);
+      slotDateTime.setHours(hours, minutes, 0, 0);
+      
+      // Impedir bloqueio/desbloqueio de slots passados
+      if (slotDateTime < now) {
+        alert('Não é possível bloquear/desbloquear slots que já passaram.');
+        return;
+      }
+      
       // Handle slot blocking/unblocking in edit mode
       const slotKey = `${date}-${timeSlot}`;
       setPendingChanges(prev => ({

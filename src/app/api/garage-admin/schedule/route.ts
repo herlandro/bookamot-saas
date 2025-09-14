@@ -264,6 +264,20 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Verificar se o slot é passado
+    const now = new Date();
+    const slotDate = new Date(slot.date);
+    const [hours, minutes] = slot.timeSlot.split(':').map(Number);
+    const slotDateTime = new Date(slotDate);
+    slotDateTime.setHours(hours, minutes, 0, 0);
+    
+    if (slotDateTime < now) {
+      return NextResponse.json(
+        { error: 'Não é possível bloquear/desbloquear slots que já passaram' },
+        { status: 400 }
+      );
+    }
+
     // Update the slot's blocked status
     const updatedSlot = await prisma.garageAvailability.update({
       where: { id: slotId },

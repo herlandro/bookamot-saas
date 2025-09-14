@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -47,6 +49,11 @@ export async function GET(request: NextRequest) {
       where.date = {
         gte: startOfDay,
         lt: endOfDay,
+      };
+    } else if (startDate && endDate) {
+      where.date = {
+        gte: new Date(startDate),
+        lte: new Date(endDate + 'T23:59:59.999Z'),
       };
     }
 

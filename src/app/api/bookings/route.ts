@@ -22,12 +22,12 @@ export async function POST(request: NextRequest) {
     const validationResult = createBookingSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Invalid data', details: validationResult.error.errors },
+        { error: 'Invalid data', details: validationResult.error.issues },
         { status: 400 }
       )
     }
 
-    const { garageId, vehicleId, date, timeSlot, motPrice } = validationResult.data
+    const { garageId, vehicleId, date, timeSlot, notes } = validationResult.data
 
     // Verify garage exists and is approved
     const garage = await prisma.garage.findUnique({
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     do {
       reference = generateBookingReference()
       const existingRef = await prisma.booking.findUnique({
-        where: { reference }
+        where: { bookingRef: reference }
       })
       isUnique = !existingRef
       attempts++
@@ -128,14 +128,15 @@ export async function POST(request: NextRequest) {
     // Create booking
     const booking = await prisma.booking.create({
       data: {
-        reference,
+        bookingRef: reference,
         customerId: session.user.id,
         garageId,
         vehicleId,
         date: bookingDate,
         timeSlot,
         status: 'PENDING',
-        motPrice: motPrice || garage.motPrice,
+        totalPrice: garage.motPrice,
+        notes,
         paymentStatus: 'PENDING'
       },
       include: {
@@ -173,11 +174,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       booking: {
         id: booking.id,
-        reference: booking.reference,
+        reference: booking.bookingRef,
         date: booking.date,
         timeSlot: booking.timeSlot,
         status: booking.status,
-        motPrice: booking.motPrice,
+        totalPrice: booking.totalPrice,
         garage: booking.garage,
         vehicle: booking.vehicle
       },

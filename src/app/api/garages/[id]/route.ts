@@ -3,13 +3,14 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const garage = await prisma.garage.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
-        user: {
+        owner: {
           select: {
             name: true,
             email: true
@@ -50,7 +51,7 @@ export async function GET(
       rating: Math.round(rating * 10) / 10,
       reviewCount,
       totalBookings: garage._count.bookings,
-      owner: garage.user
+      owner: garage.owner
     })
 
   } catch (error) {
