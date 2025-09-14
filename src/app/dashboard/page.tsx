@@ -6,9 +6,8 @@ import { useSession, signOut } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Car, Clock, MapPin, Plus, AlertTriangle, CheckCircle, Shield, Bell, User, LogOut, Settings } from 'lucide-react'
+import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Shield, User, LogOut } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-import Link from 'next/link'
 
 interface Booking {
   id: string
@@ -177,7 +176,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
+      {/* Simplified Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -185,22 +184,15 @@ export default function Dashboard() {
               <Shield className="h-8 w-8 text-blue-600 mr-3" />
               <h1 className="text-2xl font-bold text-slate-900">BookaMOT</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-slate-400 hover:text-slate-600">
-                <Bell className="h-6 w-6" />
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-700">{session.user?.name}</span>
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-1 px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
               </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-medium text-slate-700">{session.user?.name}</span>
-                <button
-                  onClick={() => signOut()}
-                  className="p-2 text-slate-400 hover:text-slate-600"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -208,8 +200,8 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-          <p className="text-gray-600 mt-2">Welcome back, {session.user?.name || session.user?.email}</p>
+          <h2 className="text-3xl font-bold text-gray-900">Meu Dashboard</h2>
+          <p className="text-gray-600 mt-2">Bem-vindo(a), {session.user?.name || session.user?.email}</p>
         </div>
 
         {error && (
@@ -218,122 +210,102 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalBookings}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Bookings</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.upcomingBookings}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Vehicles</CardTitle>
-              <Car className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalVehicles}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Need MOT Soon</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.vehiclesNeedingMot}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Upcoming Bookings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Bookings</CardTitle>
-              <CardDescription>Your confirmed MOT appointments</CardDescription>
+          {/* Container de Bookings */}
+          <Card className="shadow-lg border-t-4 border-t-blue-500">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-xl font-bold">Minhas Reservas</CardTitle>
+                  <CardDescription>Gerencie suas reservas de MOT</CardDescription>
+                </div>
+                <Button onClick={() => router.push('/search')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4" />
+                  Adicionar Booking
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              {bookings.filter(isBookingUpcoming).length === 0 ? (
-                <div className="text-center py-6">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">No upcoming bookings</p>
-                  <Button onClick={() => router.push('/search')} size="sm">
-                    Book MOT Test
+              {bookings.length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="h-16 w-16 text-blue-200 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-4">Nenhuma reserva encontrada</p>
+                  <Button onClick={() => router.push('/search')} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    Agendar MOT
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {bookings
-                    .filter(isBookingUpcoming)
-                    .slice(0, 3)
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                     .map((booking) => (
-                      <div key={booking.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium">{booking.vehicle.registration}</p>
-                            <p className="text-sm text-gray-600">
-                              {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
-                            </p>
-                          </div>
-                          {getBookingStatusBadge(booking.status)}
+                    <div key={booking.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium">{booking.vehicle.registration}</p>
+                          <p className="text-sm text-gray-600">
+                            {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
+                          </p>
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            {formatDate(new Date(booking.date))} at {booking.timeSlot}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            {booking.garage.name}, {booking.garage.city}
-                          </div>
+                        {getBookingStatusBadge(booking.status)}
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {formatDate(new Date(booking.date))} às {booking.timeSlot}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          {booking.garage.name}, {booking.garage.city}
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Vehicles Needing Attention */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Vehicles Needing Attention</CardTitle>
-              <CardDescription>MOT expiring soon or expired</CardDescription>
+          {/* Container de Vehicles */}
+          <Card className="shadow-lg border-t-4 border-t-green-500">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-xl font-bold">Meus Veículos</CardTitle>
+                  <CardDescription>Gerencie seus veículos e datas de MOT</CardDescription>
+                </div>
+                <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4" />
+                  Adicionar Veículo
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              {vehicles.filter(vehicle => getVehicleMotStatus(vehicle).urgent).length === 0 ? (
-                <div className="text-center py-6">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">All vehicles have valid MOTs</p>
-                  <Button onClick={() => router.push('/vehicles')} size="sm" variant="outline">
-                    View Vehicles
+              {vehicles.length === 0 ? (
+                <div className="text-center py-8">
+                  <Car className="h-16 w-16 text-green-200 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-4">Nenhum veículo encontrado</p>
+                  <Button onClick={() => router.push('/vehicles/add')} size="sm" className="bg-green-600 hover:bg-green-700">
+                    Adicionar Veículo
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {vehicles
-                    .filter(vehicle => getVehicleMotStatus(vehicle).urgent)
-                    .slice(0, 3)
-                    .map((vehicle) => {
-                      const motStatus = getVehicleMotStatus(vehicle)
+                    .sort((a, b) => {
+                      // Ordenar por data de expiração do MOT (os mais próximos primeiro)
+                      if (!a.motExpiryDate) return -1;
+                      if (!b.motExpiryDate) return 1;
+                      return new Date(a.motExpiryDate).getTime() - new Date(b.motExpiryDate).getTime();
+                    })
+                    .map((vehicle, index) => {
+                      const motStatus = getVehicleMotStatus(vehicle);
+                      const isFirstVehicle = index === 0;
                       return (
-                        <div key={vehicle.id} className="border rounded-lg p-4">
+                        <div 
+                          key={vehicle.id} 
+                          className={`border rounded-lg p-4 hover:bg-slate-50 transition-colors ${isFirstVehicle && motStatus.urgent ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`}
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <p className="font-medium">{vehicle.registration}</p>
@@ -341,50 +313,34 @@ export default function Dashboard() {
                                 {vehicle.year} {vehicle.make} {vehicle.model}
                               </p>
                             </div>
-                            <Badge className="bg-red-500 text-white flex items-center gap-1">
-                              <AlertTriangle className="h-3 w-3" />
+                            <Badge className={`${motStatus.urgent ? 'bg-red-500' : 'bg-green-500'} text-white flex items-center gap-1`}>
+                              {motStatus.urgent ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                               {motStatus.message}
                             </Badge>
                           </div>
-                          <Button 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
-                          >
-                            Book MOT Test
-                          </Button>
+                          <div className="text-sm text-gray-600 mt-2">
+                            <div className="flex justify-between items-center">
+                              <span>Próximo MOT:</span>
+                              <span className="font-medium">{vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'Não disponível'}</span>
+                            </div>
+                          </div>
+                          {isFirstVehicle && motStatus.urgent && (
+                            <Button 
+                              size="sm" 
+                              className="w-full mt-3 bg-red-600 hover:bg-red-700"
+                              onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
+                            >
+                              Agendar MOT
+                            </Button>
+                          )}
                         </div>
-                      )
+                      );
                     })}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Quick Actions */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks you might want to do</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button onClick={() => router.push('/search')} className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Book MOT Test
-              </Button>
-              <Button onClick={() => router.push('/vehicles/add')} variant="outline" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Vehicle
-              </Button>
-              <Button onClick={() => router.push('/vehicles')} variant="outline" className="flex items-center gap-2">
-                <Car className="h-4 w-4" />
-                View Vehicles
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
