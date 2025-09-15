@@ -7,7 +7,8 @@ import { User, Mail, Phone, Calendar, Shield, Building } from 'lucide-react'
 import { getUserById } from '@/lib/db/users'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui'
+import { MainLayout } from '@/components/layout/main-layout'
 
 interface UserProfile {
   id: string
@@ -46,7 +47,13 @@ export default function ProfilePage() {
   const fetchUserProfile = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/users/${session?.user?.id}`)
+      const response = await fetch(`/api/users/${session?.user?.id}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
       
       if (!response.ok) {
         throw new Error('Failed to fetch user profile')
@@ -73,7 +80,8 @@ export default function ProfilePage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="container max-w-4xl mx-auto py-8 px-4">
+      <MainLayout>
+        <div className="container max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
         <Card>
           <CardHeader>
@@ -96,12 +104,14 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+      </MainLayout>
     )
   }
 
   if (error) {
     return (
-      <div className="container max-w-4xl mx-auto py-8 px-4">
+      <MainLayout>
+        <div className="container max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
         <Card>
           <CardContent className="py-8">
@@ -112,11 +122,13 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
+    <MainLayout>
+      <div className="container max-w-4xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
       
       <Card className="mb-8">
@@ -133,7 +145,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-1">Nome</p>
-              <p className="text-lg font-medium">{session?.user?.name || 'N/A'}</p>
+              <p className="text-lg font-medium">{userProfile?.name || session?.user?.name || 'N/A'}</p>
             </div>
             
             <div>
@@ -173,8 +185,11 @@ export default function ProfilePage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button variant="outline" onClick={() => router.push('/profile/edit')} className="ml-auto">
+        <CardFooter className="flex justify-between">
+          <Button onClick={fetchUserProfile} variant="outline">
+            Atualizar Dados
+          </Button>
+          <Button onClick={() => router.push('/profile/edit')}>
             Editar Perfil
           </Button>
         </CardFooter>
@@ -236,5 +251,6 @@ export default function ProfilePage() {
         </Card>
       )}
     </div>
+    </MainLayout>
   )
 }

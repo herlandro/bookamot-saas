@@ -10,7 +10,6 @@ import {
   Calendar, 
   Settings, 
   User,
-  Plus,
   MessageSquare,
   LogOut
 } from 'lucide-react';
@@ -29,7 +28,6 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'search', label: 'Search Results', icon: Search, href: '/search-results' },
     { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
-    { id: 'dashboard', label: 'Dashboard', icon: MessageSquare, href: '/dashboard' },
   ];
 
   const bottomItems = [
@@ -74,15 +72,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </Button>
         </div>
 
-        {/* New Chat Button */}
-        {isOpen && (
-          <div className="p-4">
-            <Button className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-700">
-              <Plus className="h-4 w-4 mr-2" />
-              New Search
-            </Button>
-          </div>
-        )}
+
 
         {/* Navigation */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">

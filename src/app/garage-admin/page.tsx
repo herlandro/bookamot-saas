@@ -11,6 +11,7 @@ import { Calendar, Clock, Users, Settings, BarChart3, Plus, Edit, Save, X } from
 import { formatDate } from '@/lib/utils';
 import { GarageCalendar } from '@/components/garage/garage-calendar';
 import { BookingModal } from '@/components/garage/booking-modal';
+import { MainLayout } from '@/components/layout/main-layout';
 
 interface Booking {
   id: string;
@@ -314,7 +315,8 @@ export default function GarageAdminPage() {
   // The StatusBadge component is used to display booking status with appropriate colors
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <MainLayout>
+      <div className="min-h-screen bg-slate-50">
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -443,5 +445,6 @@ export default function GarageAdminPage() {
         />
       </div>
     </div>
+    </MainLayout>
   );
 }
