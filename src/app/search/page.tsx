@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Star, Clock, Car } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Clock, Car, ArrowLeft } from 'lucide-react'
 import { formatCurrency, calculateDistance } from '@/lib/utils'
+import { MainLayout } from '@/components/layout/main-layout'
 
 interface Garage {
   id: string
@@ -46,7 +47,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin')
+      router.push('/signin')
     }
   }, [status, router])
 
@@ -137,13 +138,20 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Find MOT Test Centers</h1>
-          <p className="text-muted-foreground">
-            Search for approved MOT test centers near you and book your test online.
-          </p>
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Find MOT Test Centers</h1>
+            <p className="text-muted-foreground">
+              Search for approved MOT test centers near you and book your test online.
+            </p>
+          </div>
         </div>
 
         {/* Vehicle Selection */}
@@ -321,6 +329,7 @@ export default function SearchPage() {
           </Card>
         )}
       </div>
-    </div>
+      </div>
+    </MainLayout>
   )
 }

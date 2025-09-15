@@ -64,13 +64,13 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="flex justify-end p-6">
         <Button 
           variant="outline" 
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          onClick={() => router.push('/auth')}
+          className="border-border text-foreground hover:bg-muted"
+          onClick={() => router.push('/signin')}
         >
           Sign in
         </Button>
@@ -80,10 +80,10 @@ export default function HomePage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         {/* Welcome Section */}
         <div className="text-center mb-12 max-w-4xl">
-          <h1 className="text-6xl font-normal text-gray-900 mb-6 tracking-tight">
+          <h1 className="text-6xl font-normal text-foreground mb-6 tracking-tight">
             Find Your Perfect MOT Test
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-muted-foreground mb-8">
             Book your MOT test quickly and easily with trusted garages in your area
           </p>
         </div>
@@ -91,7 +91,7 @@ export default function HomePage() {
         {/* Search Container */}
         <div className="w-full max-w-4xl">
           {/* Search Form */}
-          <div className="bg-white border border-gray-200 rounded-full shadow-lg p-2 mb-8">
+          <div className="bg-card border border-border rounded-full shadow-lg p-2 mb-8">
             <div className="flex items-center">
               {/* Vehicle Registration Input */}
               <div className="flex-1 px-4 py-3">
@@ -99,22 +99,22 @@ export default function HomePage() {
                   placeholder="vehicle registration"
                   value={postcode}
                   onChange={(e) => setPostcode(e.target.value)}
-                  className="border-0 focus:ring-0 text-base bg-transparent placeholder-gray-500 text-gray-900 font-medium"
+                  className="border-0 focus:ring-0 text-base bg-transparent placeholder-muted-foreground text-foreground font-medium"
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
               
-              <div className="w-px h-8 bg-gray-200 mx-2"></div>
+              <div className="w-px h-8 bg-border mx-2"></div>
               
               {/* Post Code Input */}
               <div className="flex-1 px-4 py-3">
                 <Input
                   placeholder="post code"
-                  className="border-0 focus:ring-0 text-base bg-transparent placeholder-gray-500 text-gray-900"
+                  className="border-0 focus:ring-0 text-base bg-transparent placeholder-muted-foreground text-foreground"
                 />
               </div>
               
-              <div className="w-px h-8 bg-gray-200 mx-2"></div>
+              <div className="w-px h-8 bg-border mx-2"></div>
               
               {/* Date Picker */}
               <div className="flex-1 px-4 py-3">
@@ -122,13 +122,13 @@ export default function HomePage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-left font-normal border-0 p-0 h-auto text-base text-gray-500 hover:bg-transparent"
+                      className="w-full justify-start text-left font-normal border-0 p-0 h-auto text-base text-muted-foreground hover:bg-transparent"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {date ? format(date, 'PPP') : 'date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white border-gray-200" align="end">
+                  <PopoverContent className="w-auto p-0 bg-popover border-border" align="end">
                     <Calendar
                       mode="single"
                       selected={date}
@@ -139,7 +139,7 @@ export default function HomePage() {
                 </Popover>
               </div>
               
-              <div className="w-px h-8 bg-gray-200 mx-2"></div>
+              <div className="w-px h-8 bg-border mx-2"></div>
               
               {/* Time Picker */}
               <div className="flex-1 px-4 py-3">
@@ -147,20 +147,20 @@ export default function HomePage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-left font-normal border-0 p-0 h-auto text-base text-gray-500 hover:bg-transparent"
+                      className="w-full justify-start text-left font-normal border-0 p-0 h-auto text-base text-muted-foreground hover:bg-transparent"
                     >
                       <Clock className="mr-2 h-4 w-4" />
                       {time || 'time'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-4 bg-white border-gray-200" align="end">
+                  <PopoverContent className="w-auto p-4 bg-popover border-border" align="end">
                     <div className="space-y-3">
-                      <label className="text-sm font-medium text-gray-700">Select time</label>
+                      <label className="text-sm font-medium text-foreground">Select time</label>
                       <Input
                         type="time"
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
-                        className="w-full bg-gray-50 border-gray-200 text-gray-900"
+                        className="w-full bg-muted border-border text-foreground"
                       />
                     </div>
                   </PopoverContent>
@@ -170,7 +170,7 @@ export default function HomePage() {
               {/* Search Button */}
               <Button
                 onClick={handleSearch}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 py-3 ml-2 text-base font-medium"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-3 ml-2 text-base font-medium"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Search
@@ -180,7 +180,7 @@ export default function HomePage() {
         </div>
         
         {/* Footer Text */}
-        <div className="text-center text-sm text-gray-500 mt-8">
+        <div className="text-center text-sm text-muted-foreground mt-8">
           Using BookaMOT means you agree to the <a href="#" className="underline">Terms of Use</a>. See our <a href="#" className="underline">Privacy Statement</a>.
         </div>
       </div>

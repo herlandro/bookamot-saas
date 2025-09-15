@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Shield, User, LogOut } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { MainLayout } from '@/components/layout/main-layout'
 
 interface Booking {
   id: string
   reference: string
   date: string
   timeSlot: string
-  status: 'confirmed' | 'completed' | 'cancelled'
+  status: 'confirmed' | 'completed' | 'cancelled' | 'pending'
   garage: {
     id: string
     name: string
@@ -65,7 +66,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (status === 'loading') return
     if (!session) {
-      router.push('/auth/signin')
+      router.push('/signin')
       return
     }
 
@@ -175,33 +176,11 @@ export default function Dashboard() {
   const isGarageOwner = session.user?.role === 'GARAGE_OWNER'
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Simplified Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Shield className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-slate-900">BookaMOT</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-slate-700">{session.user?.name}</span>
-              <button
-                onClick={() => signOut()}
-                className="flex items-center gap-1 px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Sair
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Meu Dashboard</h2>
-          <p className="text-gray-600 mt-2">Bem-vindo(a), {session.user?.name || session.user?.email}</p>
+          <h2 className="text-3xl font-bold text-gray-900">My Dashboard</h2>
+          <p className="text-gray-600 mt-2">Welcome, {session.user?.name || session.user?.email}</p>
         </div>
 
         {error && (
@@ -239,7 +218,23 @@ export default function Dashboard() {
                   {bookings
                     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                     .map((booking) => (
-                    <div key={booking.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                    <div 
+                      key={booking.id} 
+                      className="border rounded-lg p-4 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer" 
+                      onClick={() => {
+                        // Verificar se a reserva pode ser editada
+                        const bookingDate = new Date(booking.date);
+                        const isPastBooking = bookingDate < new Date();
+                        const canEdit = !isPastBooking && (booking.status === 'confirmed' || booking.status === 'pending');
+                        
+                        if (canEdit) {
+                          router.push(`/bookings/edit/${booking.id}`);
+                        } else {
+                          // Se não puder editar, redirecionar para a página de detalhes
+                          router.push(`/bookings/${booking.id}`);
+                        }
+                      }}
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-medium">{booking.vehicle.registration}</p>
@@ -304,7 +299,8 @@ export default function Dashboard() {
                       return (
                         <div 
                           key={vehicle.id} 
-                          className={`border rounded-lg p-4 hover:bg-slate-50 transition-colors ${isFirstVehicle && motStatus.urgent ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`}
+                          className={`border rounded-lg p-4 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer ${isFirstVehicle && motStatus.urgent ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`}
+                          onClick={() => router.push(`/vehicles/${vehicle.id}`)}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div>
@@ -342,6 +338,6 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-    </div>
+    </MainLayout>
   )
 }

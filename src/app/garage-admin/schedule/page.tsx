@@ -39,7 +39,7 @@ export default function SchedulePage() {
     if (status === 'loading') return;
     
     if (!session) {
-      router.push('/auth/signin');
+      router.push('/signin');
       return;
     }
 

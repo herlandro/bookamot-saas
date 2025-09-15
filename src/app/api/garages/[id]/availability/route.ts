@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateTimeSlots } from '@/lib/utils'
 
@@ -7,8 +9,18 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const dateParam = searchParams.get('date')
+    const bookingIdToExclude = searchParams.get('bookingId')
     
     if (!dateParam) {
       return NextResponse.json(
@@ -56,7 +68,8 @@ export async function GET(
         },
         status: {
           in: ['PENDING', 'CONFIRMED']
-        }
+        },
+        ...(bookingIdToExclude ? { id: { not: bookingIdToExclude } } : {})
       },
       select: {
         timeSlot: true

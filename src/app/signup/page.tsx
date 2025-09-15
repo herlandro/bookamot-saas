@@ -65,7 +65,7 @@ export default function SignUp() {
       const data = await response.json()
 
       if (response.ok) {
-        router.push('/auth/signin?message=Account created successfully')
+        router.push('/signin?message=Account created successfully')
       } else {
         setError(data.error || 'An error occurred during registration')
       }
@@ -77,26 +77,26 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
             <div className="flex items-center">
-              <Shield className="h-12 w-12 text-blue-600 mr-3" />
-              <h1 className="text-3xl font-bold text-slate-900">BookaMOT</h1>
+              <Shield className="h-12 w-12 text-primary mr-3" />
+              <h1 className="text-3xl font-bold text-foreground">BookaMOT</h1>
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             Or{' '}
-            <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href="/signin" className="font-medium text-primary hover:text-primary/90">
               sign in to your existing account
             </Link>
           </p>
         </div>
-        <div className="bg-white py-8 px-6 shadow-xl rounded-lg border border-slate-200">
+        <div className="bg-card py-8 px-6 shadow-xl rounded-lg border border-border">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">

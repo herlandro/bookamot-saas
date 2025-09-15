@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Car, Calendar, AlertTriangle, CheckCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { MainLayout } from '@/components/layout/main-layout'
 
 interface Vehicle {
   id: string
@@ -32,7 +33,7 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/signin')
+      router.push('/signin')
       return
     }
 
@@ -90,19 +91,22 @@ export default function VehiclesPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading vehicles...</p>
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-slate-600">Loading vehicles...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">My Vehicles</h1>
@@ -180,13 +184,20 @@ export default function VehiclesPage() {
                     )}
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t">
+                  <div className="mt-4 pt-4 border-t flex flex-col gap-2">
                     <Button 
                       onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
                       className="w-full"
                       variant="outline"
                     >
                       Book MOT Test
+                    </Button>
+                    <Button 
+                      onClick={() => router.push(`/vehicles/edit/${vehicle.id}`)}
+                      className="w-full"
+                      variant="secondary"
+                    >
+                      Edit Vehicle
                     </Button>
                   </div>
                 </CardContent>
@@ -196,5 +207,6 @@ export default function VehiclesPage() {
         </div>
       )}
     </div>
+    </MainLayout>
   )
 }

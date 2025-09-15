@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Clock, User, Car, Phone, Mail, Calendar, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -31,11 +32,12 @@ interface BookingModalProps {
   onStatusUpdate: (bookingId: string, newStatus: string) => void
 }
 
+// Usando as variáveis CSS para cores de status
 const statusColors = {
-  CONFIRMED: 'bg-blue-500 text-white',
-  COMPLETED: 'bg-green-500 text-white',
-  CANCELLED: 'bg-red-500 text-white',
-  PENDING: 'bg-yellow-500 text-black'
+  CONFIRMED: 'bg-info text-info-foreground',
+  COMPLETED: 'bg-success text-success-foreground',
+  CANCELLED: 'bg-destructive text-destructive-foreground',
+  PENDING: 'bg-warning text-warning-foreground'
 }
 
 const statusLabels = {
@@ -100,7 +102,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
       />
       
       {/* Modal Content */}
-      <Card className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <Card className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto border border-border">
         <CardContent className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -126,9 +128,15 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
         <div className="space-y-6">
             {/* Status Badge */}
             <div className="flex justify-center">
-              <Badge className={cn('px-4 py-2 text-sm font-medium', statusColors[booking.status])}>
+              <StatusBadge 
+                variant={booking.status === 'CONFIRMED' ? 'info' : 
+                         booking.status === 'COMPLETED' ? 'success' : 
+                         booking.status === 'CANCELLED' ? 'destructive' : 
+                         booking.status === 'PENDING' ? 'warning' : 'default'}
+                className="px-4 py-2 text-sm font-medium"
+              >
                 {statusLabels[booking.status]}
-              </Badge>
+              </StatusBadge>
             </div>
 
             {/* Booking Details */}

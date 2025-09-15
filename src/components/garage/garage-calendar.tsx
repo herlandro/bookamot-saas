@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -47,11 +48,12 @@ const timeSlots = [
   '14:00', '15:00', '16:00', '17:00'
 ]
 
+// Usando as variáveis CSS para cores de status
 const statusColors = {
-  CONFIRMED: 'bg-blue-500 text-white',
-  COMPLETED: 'bg-green-500 text-white',
-  CANCELLED: 'bg-red-500 text-white',
-  PENDING: 'bg-yellow-500 text-black'
+  CONFIRMED: 'bg-info text-info-foreground',
+  COMPLETED: 'bg-success text-success-foreground',
+  CANCELLED: 'bg-destructive text-destructive-foreground',
+  PENDING: 'bg-warning text-warning-foreground'
 }
 
 const statusLabels = {
@@ -205,21 +207,34 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
             if (status === 'BLOCKED') {
               return (
                 <div key={status} className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded bg-gray-500" />
-                  <span>{label}</span>
+                  <StatusBadge variant="outline" className="w-auto h-auto py-0.5 px-2">
+                    {label}
+                  </StatusBadge>
                 </div>
               )
             }
+            
+            // Mapear o status para a variante do StatusBadge
+            let variant: 'success' | 'warning' | 'destructive' | 'info' | 'default' = 'default';
+            switch(status) {
+              case 'CONFIRMED': variant = 'info'; break;
+              case 'COMPLETED': variant = 'success'; break;
+              case 'CANCELLED': variant = 'destructive'; break;
+              case 'PENDING': variant = 'warning'; break;
+            }
+            
             return (
               <div key={status} className="flex items-center gap-1">
-                <div className={cn('w-3 h-3 rounded', statusColors[status as keyof typeof statusColors])} />
-                <span>{label}</span>
+                <StatusBadge variant={variant} className="w-auto h-auto py-0.5 px-2">
+                  {label}
+                </StatusBadge>
               </div>
             )
           })}
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-green-100 border border-green-300" />
-            <span>Disponível</span>
+            <Badge variant="outline" className="bg-green-50 border-green-300 text-green-800">
+              Disponível
+            </Badge>
           </div>
         </div>
       </CardHeader>

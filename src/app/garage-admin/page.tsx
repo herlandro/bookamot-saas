@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Calendar, Clock, Users, Settings, BarChart3, Plus, Edit, Save, X } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { GarageCalendar } from '@/components/garage/garage-calendar';
@@ -52,7 +53,7 @@ export default function GarageAdminPage() {
     if (status === 'loading') return;
     
     if (!session) {
-      router.push('/auth/signin');
+      router.push('/signin');
       return;
     }
 
@@ -309,18 +310,8 @@ export default function GarageAdminPage() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-slate-100 text-slate-800';
-    }
-  };
+  // Status color handling now moved to StatusBadge component
+  // The StatusBadge component is used to display booking status with appropriate colors
 
   return (
     <div className="min-h-screen bg-slate-50">

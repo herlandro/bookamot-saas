@@ -1,47 +1,130 @@
 @import "tailwindcss";
 
+/* Tema escuro (padrão) */
 :root {
-  --background: #ffffff;
-  --foreground: #1f2937;
-  --muted: #f9fafb;
-  --muted-foreground: #9ca3af;
-  --border: #e5e7eb;
-  --input: #ffffff;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --accent: #f1f5f9;
-  --accent-foreground: #374151;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --ring: #2563eb;
-  --card: #ffffff;
-  --card-foreground: #374151;
-  --popover: #ffffff;
-  --popover-foreground: #374151;
+  /* Cores de fundo e texto */
+  --background: #111827; /* bg-gray-900 */
+  --foreground: #f9fafb; /* text-white */
+  --muted: #1f2937; /* bg-gray-800 */
+  --muted-foreground: #9ca3af; /* text-gray-400 */
+  
+  /* Bordas e inputs */
+  --border: #374151; /* border-gray-700 */
+  --input: #1f2937; /* bg-gray-800 */
+  
+  /* Cores primárias - azul */
+  --primary: #3b82f6; /* bg-blue-500 */
+  --primary-foreground: #ffffff; /* text-white */
+  
+  /* Cores secundárias */
+  --secondary: #1f2937; /* bg-gray-800 */
+  --secondary-foreground: #f9fafb; /* text-white */
+  
+  /* Cores de destaque */
+  --accent: #1f2937; /* bg-gray-800 */
+  --accent-foreground: #f9fafb; /* text-white */
+  
+  /* Cores de status */
+  --success: #22c55e; /* bg-green-500 */
+  --success-foreground: #ffffff; /* text-white */
+  --warning: #eab308; /* bg-yellow-500 */
+  --warning-foreground: #1f2937; /* text-gray-900 */
+  --destructive: #ef4444; /* bg-red-500 */
+  --destructive-foreground: #ffffff; /* text-white */
+  --info: #3b82f6; /* bg-blue-500 */
+  --info-foreground: #ffffff; /* text-white */
+  
+  /* Outros elementos */
+  --ring: #3b82f6; /* bg-blue-500 */
+  --card: #1f2937; /* bg-gray-800 */
+  --card-foreground: #f9fafb; /* text-white */
+  --popover: #1f2937; /* bg-gray-800 */
+  --popover-foreground: #f9fafb; /* text-white */
+}
+
+/* Tema claro */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Cores de fundo e texto */
+    --background: #ffffff; /* bg-white */
+    --foreground: #1f2937; /* text-gray-800 */
+    --muted: #f9fafb; /* bg-gray-50 */
+    --muted-foreground: #6b7280; /* text-gray-500 */
+    
+    /* Bordas e inputs */
+    --border: #e5e7eb; /* border-gray-200 */
+    --input: #ffffff; /* bg-white */
+    
+    /* Cores primárias - azul */
+    --primary: #2563eb; /* bg-blue-600 */
+    --primary-foreground: #ffffff; /* text-white */
+    
+    /* Cores secundárias */
+    --secondary: #f1f5f9; /* bg-slate-100 */
+    --secondary-foreground: #0f172a; /* text-slate-900 */
+    
+    /* Cores de destaque */
+    --accent: #f1f5f9; /* bg-slate-100 */
+    --accent-foreground: #0f172a; /* text-slate-900 */
+    
+    /* Cores de status */
+    --success: #16a34a; /* bg-green-600 */
+    --success-foreground: #ffffff; /* text-white */
+    --warning: #ca8a04; /* bg-yellow-600 */
+    --warning-foreground: #ffffff; /* text-white */
+    --destructive: #dc2626; /* bg-red-600 */
+    --destructive-foreground: #ffffff; /* text-white */
+    --info: #2563eb; /* bg-blue-600 */
+    --info-foreground: #ffffff; /* text-white */
+    
+    /* Outros elementos */
+    --ring: #2563eb; /* bg-blue-600 */
+    --card: #ffffff; /* bg-white */
+    --card-foreground: #1f2937; /* text-gray-800 */
+    --popover: #ffffff; /* bg-white */
+    --popover-foreground: #1f2937; /* text-gray-800 */
+  }
 }
 
 @theme inline {
+  /* Cores de fundo e texto */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  
+  /* Bordas e inputs */
   --color-border: var(--border);
   --color-input: var(--input);
+  
+  /* Cores primárias e secundárias */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  
+  /* Cores de destaque */
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  
+  /* Cores de status */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  
+  /* Outros elementos */
   --color-ring: var(--ring);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  
+  /* Fontes */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

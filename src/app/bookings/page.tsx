@@ -6,8 +6,10 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { Calendar, Car, MapPin, Clock, Plus, Filter } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { MainLayout } from '@/components/layout/main-layout'
 
 interface Booking {
   id: string
@@ -44,8 +46,8 @@ export default function BookingsPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session) {
-      router.push('/auth/signin')
+    if (!session?.user?.id) {
+      router.push('/signin')
       return
     }
 
@@ -58,7 +60,9 @@ export default function BookingsPage() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch('/api/bookings')
+      const response = await fetch('/api/bookings', {
+        credentials: 'include'
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch bookings')
       }
@@ -88,13 +92,15 @@ export default function BookingsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge className="bg-blue-500 text-white">Confirmed</Badge>
+        return <StatusBadge variant="info">Confirmed</StatusBadge>
       case 'completed':
-        return <Badge className="bg-green-500 text-white">Completed</Badge>
+        return <StatusBadge variant="success">Completed</StatusBadge>
       case 'cancelled':
-        return <Badge className="bg-red-500 text-white">Cancelled</Badge>
+        return <StatusBadge variant="destructive">Cancelled</StatusBadge>
+      case 'pending':
+        return <StatusBadge variant="warning">Pending</StatusBadge>
       default:
-        return <Badge className="bg-slate-500 text-white">{status}</Badge>
+        return <StatusBadge variant="default">{status}</StatusBadge>
     }
   }
 
@@ -112,14 +118,16 @@ export default function BookingsPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading bookings...</p>
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading bookings...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
@@ -128,7 +136,8 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
@@ -254,10 +263,27 @@ export default function BookingsPage() {
                             </div>
                           </div>
                           
-                          <div className="pt-3 border-t">
+                          <div className="pt-3 border-t flex justify-between items-center">
                             <p className="text-xs text-gray-500">
                               Booked on {formatDate(new Date(booking.createdAt))}
                             </p>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => router.push(`/bookings/${booking.id}`)}
+                              >
+                                View Details
+                              </Button>
+                              {(booking.status === 'confirmed') && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => router.push(`/bookings/edit/${booking.id}`)}
+                                >
+                                  Edit
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -330,5 +356,6 @@ export default function BookingsPage() {
         </div>
       )}
     </div>
+    </MainLayout>
   )
 }

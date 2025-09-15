@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Car, Plus } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Car, Plus, Loader2 } from 'lucide-react'
 import { createVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
+import { MainLayout } from '@/components/layout/main-layout'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
 
 type VehicleFormData = z.infer<typeof createVehicleSchema>
 
@@ -28,6 +30,14 @@ export default function AddVehiclePage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [validatingReg, setValidatingReg] = useState(false)
+  const [lookupError, setLookupError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/signin')
+    }
+  }, [status, router])
 
   if (status === 'loading') {
     return (
@@ -38,7 +48,6 @@ export default function AddVehiclePage() {
   }
 
   if (status === 'unauthenticated') {
-    router.push('/auth/signin')
     return null
   }
 
@@ -47,6 +56,60 @@ export default function AddVehiclePage() {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+    
+    // Limpar mensagem de erro de lookup quando o usuário edita o campo de registro
+    if (field === 'registration' && lookupError) {
+      setLookupError(null)
+    }
+  }
+  
+  // Função para validar o número de registro do veículo
+  const validateRegistration = async (registration: string) => {
+    if (!registration || registration.trim() === '') return
+    
+    setValidatingReg(true)
+    setLookupError(null)
+    
+    try {
+      const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration)}`)
+      
+      if (response.ok) {
+        const vehicleData = await response.json()
+        
+        // Preencher os campos do formulário com os dados retornados
+        setFormData(prev => ({
+          ...prev,
+          make: vehicleData.make || prev.make,
+          model: vehicleData.model || prev.model,
+          year: vehicleData.year || prev.year,
+          fuelType: vehicleData.fuelType || prev.fuelType,
+          color: vehicleData.color || prev.color,
+          engineSize: vehicleData.engineSize || prev.engineSize
+        }))
+      } else {
+        const error = await response.json()
+        setLookupError(error.error || 'Não foi possível encontrar informações para este veículo')
+      }
+    } catch (error) {
+      console.error('Erro ao validar registro:', error)
+      setLookupError('Erro ao validar o número de registro. Tente novamente.')
+    } finally {
+      setValidatingReg(false)
+    }
+  }
+  
+  // Manipulador para quando o campo de registro perde o foco ou o usuário avança para o próximo campo
+  const handleRegistrationBlur = () => {
+    if (formData.registration) {
+      validateRegistration(formData.registration)
+    }
+  }
+  
+  // Manipulador para quando o usuário clica em outro campo (captura eventos que o onBlur pode não capturar)
+  const handleRegistrationValidation = () => {
+    if (formData.registration && !validatingReg) {
+      validateRegistration(formData.registration)
     }
   }
 
@@ -114,24 +177,25 @@ export default function AddVehiclePage() {
   const years = Array.from({ length: 30 }, (_, i) => currentYear - i)
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Car className="h-6 w-6" />
-              Add Vehicle
-            </h1>
-            <p className="text-muted-foreground">
-              Add your vehicle details to book MOT tests
-            </p>
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="outline" size="sm" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Car className="h-6 w-6" />
+                Add Vehicle
+              </h1>
+              <p className="text-muted-foreground">
+                Add your vehicle details to book MOT tests
+              </p>
+            </div>
           </div>
-        </div>
 
         <Card>
           <CardHeader>
@@ -145,17 +209,41 @@ export default function AddVehiclePage() {
               {/* Registration */}
               <div className="space-y-2">
                 <Label htmlFor="registration">Registration Number *</Label>
-                <Input
-                  id="registration"
-                  placeholder="e.g., AB12 CDE"
-                  value={formData.registration || ''}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                    handleInputChange('registration', e.target.value.toUpperCase())
-                  }
-                  className={errors.registration ? 'border-red-500' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    id="registration"
+                    placeholder="e.g., AB12 CDE"
+                    value={formData.registration || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                      handleInputChange('registration', e.target.value.toUpperCase())
+                    }
+                    onBlur={handleRegistrationBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Tab' && formData.registration) {
+                        e.preventDefault()
+                        validateRegistration(formData.registration)
+                        // Focar no próximo campo após a validação
+                        setTimeout(() => {
+                          document.getElementById('make')?.focus()
+                        }, 100)
+                      }
+                    }}
+                    className={`${errors.registration ? 'border-red-500' : ''} ${validatingReg ? 'pr-10' : ''}`}
+                  />
+                  {validatingReg && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
                 {errors.registration && (
                   <p className="text-sm text-red-500">{errors.registration}</p>
+                )}
+                {lookupError && (
+                  <Alert variant="destructive" className="mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{lookupError}</AlertDescription>
+                  </Alert>
                 )}
               </div>
 
@@ -170,6 +258,7 @@ export default function AddVehiclePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                       handleInputChange('make', e.target.value)
                     }
+                    onFocus={handleRegistrationValidation}
                     className={errors.make ? 'border-red-500' : ''}
                   />
                   {errors.make && (
@@ -186,6 +275,7 @@ export default function AddVehiclePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                       handleInputChange('model', e.target.value)
                     }
+                    onFocus={handleRegistrationValidation}
                     className={errors.model ? 'border-red-500' : ''}
                   />
                   {errors.model && (
@@ -200,7 +290,8 @@ export default function AddVehiclePage() {
                   <Label htmlFor="year">Year *</Label>
                   <Select 
                     value={formData.year?.toString() || ''} 
-                    onValueChange={(value) => handleInputChange('year', parseInt(value))}
+                    onValueChange={(value: string) => handleInputChange('year', parseInt(value))}
+                    onOpenChange={() => handleRegistrationValidation()}
                   >
                     <SelectTrigger className={errors.year ? 'border-red-500' : ''}>
                       <SelectValue placeholder="Select year" />
@@ -222,7 +313,8 @@ export default function AddVehiclePage() {
                   <Label htmlFor="fuelType">Fuel Type *</Label>
                   <Select 
                     value={formData.fuelType || ''} 
-                    onValueChange={(value) => handleInputChange('fuelType', value)}
+                    onValueChange={(value: string) => handleInputChange('fuelType', value)}
+                    onOpenChange={() => handleRegistrationValidation()}
                   >
                     <SelectTrigger className={errors.fuelType ? 'border-red-500' : ''}>
                       <SelectValue placeholder="Select fuel type" />
@@ -299,7 +391,8 @@ export default function AddVehiclePage() {
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   )
 }

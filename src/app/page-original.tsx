@@ -19,8 +19,8 @@ export default function Home() {
               <Link href="/contact" className="text-gray-500 hover:text-gray-900">Contact</Link>
             </nav>
             <div className="flex space-x-4">
-              <Link href="/auth/signin" className="text-gray-500 hover:text-gray-900">Sign In</Link>
-              <Link href="/auth/signup" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Sign Up</Link>
+              <Link href="/signin" className="text-gray-500 hover:text-gray-900">Sign In</Link>
+              <Link href="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Sign Up</Link>
             </div>
           </div>
         </div>

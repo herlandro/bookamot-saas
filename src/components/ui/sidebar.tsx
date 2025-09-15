@@ -11,9 +11,11 @@ import {
   Settings, 
   User,
   Plus,
-  MessageSquare
+  MessageSquare,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { signOut } from 'next-auth/react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -33,6 +35,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const bottomItems = [
     { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
+    { id: 'logout', label: 'Logout', icon: LogOut, action: () => signOut({ callbackUrl: '/signin' }) },
   ];
 
   return (
@@ -47,11 +50,11 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 z-50 transition-all duration-300 ease-in-out flex flex-col",
+        "fixed top-0 left-0 h-full bg-gray-900 border-r border-border z-50 transition-all duration-300 ease-in-out flex flex-col",
         isOpen ? "w-64" : "w-0 lg:w-16"
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           {isOpen && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -111,22 +114,40 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           {bottomItems.map((item) => {
             const Icon = item.icon;
             return (
-              <a
-                key={item.id}
-                href={item.href}
-                onClick={() => setActiveItem(item.id)}
-                className={cn(
-                  "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeItem === item.id
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-800",
-                  !isOpen && "justify-center"
-                )}
-                title={!isOpen ? item.label : undefined}
-              >
-                <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
-                {isOpen && <span>{item.label}</span>}
-              </a>
+              item.action ? (
+                <button
+                  key={item.id}
+                  onClick={item.action}
+                  className={cn(
+                    "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left",
+                    activeItem === item.id
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800",
+                    !isOpen && "justify-center"
+                  )}
+                  title={!isOpen ? item.label : undefined}
+                >
+                  <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
+                  {isOpen && <span>{item.label}</span>}
+                </button>
+              ) : (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setActiveItem(item.id)}
+                  className={cn(
+                    "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeItem === item.id
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800",
+                    !isOpen && "justify-center"
+                  )}
+                  title={!isOpen ? item.label : undefined}
+                >
+                  <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
+                  {isOpen && <span>{item.label}</span>}
+                </a>
+              )
             );
           })}
         </div>

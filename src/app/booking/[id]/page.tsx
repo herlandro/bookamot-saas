@@ -48,7 +48,7 @@ export default function BookingPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin')
+      router.push('/signin')
       return
     }
 
