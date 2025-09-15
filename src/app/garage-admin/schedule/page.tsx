@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar, Clock, Plus, Trash2, ArrowLeft, Lock, Unlock } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { GarageLayout } from '@/components/layout/garage-layout';
 
 interface TimeSlot {
   id: string;
@@ -103,9 +104,9 @@ export default function SchedulePage() {
     }
   };
 
-  const removeTimeSlot = async (slotId: string) => {
+  const removeTimeSlot = async (id: string) => {
     try {
-      const response = await fetch(`/api/garage-admin/schedule/${slotId}`, {
+      const response = await fetch(`/api/garage-admin/schedule/${id}`, {
         method: 'DELETE',
       });
 
@@ -117,35 +118,34 @@ export default function SchedulePage() {
     }
   };
 
-  const toggleSlotBlock = async (slotId: string, currentBlockedStatus: boolean) => {
+  const toggleBlockTimeSlot = async (id: string, isBlocked: boolean) => {
     try {
-      const response = await fetch('/api/garage-admin/schedule', {
+      const response = await fetch(`/api/garage-admin/schedule/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          slotId, 
-          isBlocked: !currentBlockedStatus 
-        }),
+        body: JSON.stringify({ isBlocked: !isBlocked }),
       });
 
       if (response.ok) {
         fetchSchedule();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'Erro ao alterar status do slot');
       }
     } catch (error) {
-      console.error('Error toggling slot block:', error);
-      alert('Erro ao alterar status do slot');
+      console.error('Error toggling time slot block status:', error);
     }
   };
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeek = new Date(selectedWeek);
-    newWeek.setDate(selectedWeek.getDate() + (direction === 'next' ? 7 : -7));
-    setSelectedWeek(newWeek);
+  const navigateWeek = (direction: 'prev' | 'next' | 'current') => {
+    const newDate = new Date(selectedWeek);
+    if (direction === 'prev') {
+      newDate.setDate(newDate.getDate() - 7);
+    } else if (direction === 'next') {
+      newDate.setDate(newDate.getDate() + 7);
+    } else {
+      newDate.setDate(new Date().getDate());
+    }
+    setSelectedWeek(newDate);
   };
 
   const isSlotAvailable = (date: string, timeSlot: string) => {
@@ -170,30 +170,25 @@ export default function SchedulePage() {
   });
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={() => router.push('/garage-admin')}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Schedule Management</h1>
-                <p className="text-gray-600">Manage your available time slots</p>
-              </div>
+    <GarageLayout>
+      <TooltipProvider>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Gerenciamento de Agenda</h1>
+              <p className="text-muted-foreground">Gerencie seus horários disponíveis</p>
             </div>
+            <Button
+              onClick={() => router.push('/garage-admin')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao Painel
+            </Button>
           </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
         {/* Week Navigation */}
         <div className="flex justify-between items-center mb-6">
           <Button onClick={() => navigateWeek('prev')} variant="outline">
@@ -202,206 +197,151 @@ export default function SchedulePage() {
           <h2 className="text-xl font-semibold">
             {formatDate(weekStart)} - {formatDate(getWeekEnd(selectedWeek))}
           </h2>
-          <Button onClick={() => navigateWeek('next')} variant="outline">
-            Next Week
-          </Button>
+          <div className="space-x-2">
+            <Button onClick={() => navigateWeek('current')} variant="outline">
+              Current Week
+            </Button>
+            <Button onClick={() => navigateWeek('next')} variant="outline">
+              Next Week
+            </Button>
+          </div>
         </div>
 
         {/* Schedule Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-4">
           {weekDays.map((day, dayIndex) => {
             const dateStr = day.toISOString().split('T')[0];
             const daySchedule = schedule.find(d => d.date === dateStr);
-            const isToday = day.toDateString() === new Date().toDateString();
-            const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
-
+            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+            
             return (
-              <Card key={dayIndex} className={isToday ? 'ring-2 ring-blue-500' : ''}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">
-                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                  </CardTitle>
-                  <CardDescription>
-                    {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {/* Existing slots */}
-                    {daySchedule?.slots.map((slot) => (
-                      <div
-                        key={slot.id}
-                        className={`flex items-center justify-between p-2 rounded border ${
-                          slot.isBlocked
-                            ? 'bg-red-800 border-red-700 text-white'
-                            : slot.isBooked
-                            ? 'bg-red-50 border-red-200'
-                            : 'bg-green-50 border-green-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {slot.isBlocked ? (
-                            <Lock className="h-4 w-4 text-red-300" />
-                          ) : (
-                            <Clock className="h-4 w-4" />
-                          )}
-                          <span className={`text-sm font-medium ${
-                            slot.isBlocked ? 'text-white' : ''
-                          }`}>{slot.timeSlot}</span>
+              <div key={dayIndex} className={`border rounded-lg p-4 ${isToday ? 'border-blue-500' : 'border-border'}`}>
+                <div className="font-semibold mb-2">
+                  {day.toLocaleDateString('pt-BR', { weekday: 'short' })}, {day.getDate()}
+                </div>
+                
+                <div className="space-y-2">
+                  {availableHours.map((hour, hourIndex) => {
+                    const slot = daySchedule?.slots.find(s => s.timeSlot === hour);
+                    
+                    if (slot) {
+                      return (
+                        <div key={hourIndex} className="relative">
+                          <div className={`p-2 rounded-md text-sm flex justify-between items-center ${slot.isBlocked ? 'bg-gray-200 text-gray-500' : (slot.isBooked ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800')}`}>
+                            <span>{hour}</span>
+                            <div className="flex space-x-1">
+                              {slot.isBooked ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="text-xs">
+                                      {slot.customerName || 'Reservado'}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Reservado por {slot.customerName || 'Cliente'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <div className="flex space-x-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6"
+                                        onClick={() => toggleBlockTimeSlot(slot.id, slot.isBlocked)}
+                                      >
+                                        {slot.isBlocked ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{slot.isBlocked ? 'Desbloquear' : 'Bloquear'} horário</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 text-red-500 hover:text-red-700"
+                                        onClick={() => removeTimeSlot(slot.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Remover horário</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {slot.isBlocked ? (
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="destructive" className="bg-red-600 text-white border-red-500">Bloqueado</Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Este horário foi bloqueado e não está disponível para reservas</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => toggleSlotBlock(slot.id, slot.isBlocked)}
-                                    className="h-6 w-6 p-0 text-green-400 hover:text-green-300 hover:bg-green-900/20"
-                                  >
-                                    <Unlock className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Clique para desbloquear este horário e torná-lo disponível para reservas</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </>
-                          ) : slot.isBooked ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="destructive">Reservado</Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Este horário já foi reservado por um cliente{slot.customerName ? `: ${slot.customerName}` : ''}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="default">Disponível</Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Este horário está disponível para reservas de clientes</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => toggleSlotBlock(slot.id, slot.isBlocked)}
-                                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700 mr-1"
-                                  >
-                                    <Lock className="h-3 w-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Clique para bloquear este horário temporariamente</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => removeTimeSlot(slot.id)}
-                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Clique para remover este horário permanentemente</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Add new slots */}
-                    {!isPast && (
-                      <div className="pt-2 border-t">
-                        <p className="text-xs text-gray-500 mb-2">Add time slots:</p>
-                        <div className="grid grid-cols-3 gap-1">
-                          {availableHours.map((hour) => {
-                            const available = isSlotAvailable(dateStr, hour);
-                            return (
+                      );
+                    }
+                    
+                    if (isSlotAvailable(dateStr, hour)) {
+                      return (
+                        <div key={hourIndex} className="relative">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <Button
-                                key={hour}
-                                size="sm"
-                                variant={available ? "outline" : "ghost"}
-                                disabled={!available}
+                                variant="ghost"
+                                className="w-full justify-between items-center text-sm py-1 h-auto border border-dashed border-gray-300 hover:border-gray-400"
                                 onClick={() => addTimeSlot(dateStr, hour)}
-                                className="text-xs h-7"
                               >
-                                {available ? (
-                                  <Plus className="h-3 w-3 mr-1" />
-                                ) : null}
-                                {hour}
+                                <span>{hour}</span>
+                                <Plus className="h-3 w-3" />
                               </Button>
-                            );
-                          })}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Adicionar horário disponível</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
-                      </div>
-                    )}
-
-                    {isPast && (
-                      <p className="text-xs text-gray-400 text-center py-4">
-                        Past date
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      );
+                    }
+                    
+                    return null;
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Legenda</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-                  <span className="text-sm">Horário disponível</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
-                  <span className="text-sm">Horário reservado</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-100 border border-red-300 rounded flex items-center justify-center">
-                    <Lock className="h-2 w-2 text-red-600" />
-                  </div>
-                  <span className="text-sm">Horário bloqueado</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-500 rounded"></div>
-                  <span className="text-sm">Hoje</span>
-                </div>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Legenda</CardTitle>
+            <CardDescription>Entenda os status dos horários</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
+                <span className="text-sm">Disponível</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-100 border border-blue-200 rounded"></div>
+                <span className="text-sm">Reservado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>
+                <span className="text-sm">Bloqueado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-blue-500 rounded"></div>
+                <span className="text-sm">Hoje</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-    </TooltipProvider>
+      </TooltipProvider>
+    </GarageLayout>
   );
 }

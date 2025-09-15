@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { GarageLayout } from '@/components/layout/garage-layout';
 
 interface GarageSettings {
   id: string;
@@ -127,7 +128,7 @@ export default function SettingsPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -135,46 +136,37 @@ export default function SettingsPage() {
   if (!settings) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-500">Garage settings not found</p>
+        <p className="text-muted-foreground">Garage settings not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={() => router.push('/garage-admin')}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
+    <GarageLayout>
+      <div className="min-h-screen bg-background">
+        <div className="bg-card shadow-sm border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Garage Settings</h1>
-                <p className="text-slate-600">Manage your garage information and preferences</p>
+                <h1 className="text-2xl font-bold text-foreground">Configurações da Oficina</h1>
+                <p className="text-muted-foreground text-sm">Gerencie as informações e preferências da sua oficina</p>
               </div>
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
             </div>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <Card className="shadow-xl rounded-lg border border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <Card className="shadow-xl rounded-lg border border-border bg-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -254,7 +246,7 @@ export default function SettingsPage() {
                 <Label htmlFor="description">Description</Label>
                 <textarea
                   id="description"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                   rows={3}
                   value={settings.description || ''}
                   onChange={(e) => setSettings({ ...settings, description: e.target.value })}
@@ -264,8 +256,8 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Pricing */}
-          <Card className="shadow-xl rounded-lg border border-border">
+            {/* Pricing */}
+            <Card className="shadow-xl rounded-lg border border-border bg-card">
             <CardHeader>
               <CardTitle>Pricing</CardTitle>
               <CardDescription>
@@ -298,8 +290,8 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Opening Hours */}
-          <Card className="shadow-xl rounded-lg border border-border">
+            {/* Opening Hours */}
+            <Card className="shadow-xl rounded-lg border border-border bg-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
@@ -350,8 +342,9 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </GarageLayout>
   );
 }

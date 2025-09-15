@@ -6,36 +6,42 @@ import {
   Menu, 
   X, 
   Home, 
-  Search, 
   Calendar, 
   Settings, 
   User,
-  MessageSquare,
   LogOut,
-  Car
+  Car,
+  ClipboardList,
+  BarChart2,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { signOut } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 
-interface SidebarProps {
+interface GarageSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
 }
 
-export function Sidebar({ isOpen, onToggle }: SidebarProps) {
-  const [activeItem, setActiveItem] = useState('home');
-
+export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
+  const pathname = usePathname();
+  
   const menuItems = [
-    { id: 'home', label: 'Dashboard', icon: Home, href: '/' },
-    { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
-    { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/vehicles' },
+    { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/garage-admin' },
+    { id: 'schedule', label: 'Agenda', icon: Calendar, href: '/garage-admin/schedule' },
+    { id: 'bookings', label: 'Reservas', icon: ClipboardList, href: '/garage-admin/bookings' },
+    { id: 'settings', label: 'Configurações', icon: Settings, href: '/garage-admin/settings' },
   ];
 
   const bottomItems = [
-    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
-    { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
-    { id: 'logout', label: 'Logout', icon: LogOut, action: () => signOut({ callbackUrl: '/signin' }) },
+    { id: 'profile', label: 'Perfil', icon: User, href: '/profile' },
+    { id: 'logout', label: 'Sair', icon: LogOut, action: () => signOut({ callbackUrl: '/signin' }) },
   ];
+
+  const isActive = (href: string) => {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   return (
     <>
@@ -73,8 +79,6 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </Button>
         </div>
 
-
-
         {/* Navigation */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
@@ -83,11 +87,10 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               <a
                 key={item.id}
                 href={item.href}
-                onClick={() => setActiveItem(item.id)}
                 className={cn(
                   "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeItem === item.id
-                    ? "bg-muted text-foreground"
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted",
                   !isOpen && "justify-center"
                 )}
@@ -111,8 +114,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   onClick={item.action}
                   className={cn(
                     "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left",
-                    activeItem === item.id
-                      ? "bg-muted text-foreground"
+                    isActive(item.href || '')
+                      ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     !isOpen && "justify-center"
                   )}
@@ -125,11 +128,10 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 <a
                   key={item.id}
                   href={item.href}
-                  onClick={() => setActiveItem(item.id)}
                   className={cn(
                     "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    activeItem === item.id
-                      ? "bg-muted text-foreground"
+                    isActive(item.href)
+                      ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     !isOpen && "justify-center"
                   )}
