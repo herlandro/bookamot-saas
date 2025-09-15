@@ -16,7 +16,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
-    const vehicleId = params.id
+    // Usando await para desempacotar params, que agora é uma Promise no Next.js
+    const vehicleId = (await params).id
 
     const vehicle = await prisma.vehicle.findFirst({
       where: {
@@ -78,9 +79,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     // Check if vehicle exists and belongs to user
+    // Usando await para desempacotar params, que agora é uma Promise no Next.js
+    const vehicleId = (await params).id
     const existingVehicle = await prisma.vehicle.findFirst({
       where: {
-        id: params.id,
+        id: vehicleId,
         ownerId: session.user.id
       }
     })
@@ -104,9 +107,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     // Update vehicle
+    // Usando o vehicleId já obtido anteriormente
     const updatedVehicle = await prisma.vehicle.update({
       where: {
-        id: params.id
+        id: vehicleId
       },
       data: validationResult.data
     })
@@ -149,9 +153,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     // Check if vehicle exists and belongs to user
+    // Usando await para desempacotar params, que agora é uma Promise no Next.js
+    const vehicleId = (await params).id
     const existingVehicle = await prisma.vehicle.findFirst({
       where: {
-        id: params.id,
+        id: vehicleId,
         ownerId: session.user.id
       },
       include: {
@@ -181,9 +187,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     // Delete vehicle
+    // Usando o vehicleId já obtido anteriormente
     await prisma.vehicle.delete({
       where: {
-        id: params.id
+        id: vehicleId
       }
     })
 

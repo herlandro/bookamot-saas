@@ -15,6 +15,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type VehicleFormData = z.infer<typeof updateVehicleSchema>
 
+// Definição dos rótulos para tipos de combustível
+const fuelTypeLabels = {
+  'PETROL': 'Petrol',
+  'DIESEL': 'Diesel',
+  'ELECTRIC': 'Electric',
+  'HYBRID': 'Hybrid',
+  'PLUGIN_HYBRID': 'Plug-in Hybrid',
+  'LPG': 'LPG'
+}
+
 export default function EditVehiclePage({ params }: { params: { id: string } }) {
   // Acessando params.id diretamente em um componente do cliente
   // O Next.js recomenda usar await, mas isso não é possível em componentes do cliente
@@ -275,19 +285,12 @@ export default function EditVehiclePage({ params }: { params: { id: string } }) 
               <div className="space-y-2">
                 <Label htmlFor="fuelType">Fuel Type</Label>
                 <Select
-                  value={formData.fuelType}
+                  value={formData.fuelType || ''}
                   onValueChange={(value: string) => handleInputChange('fuelType', value)}
                 >
-                  <SelectTrigger className={errors.fuelType ? 'border-red-500' : ''}>
-                    <SelectValue>
-                      {formData.fuelType ? {
-                        'PETROL': 'Petrol',
-                        'DIESEL': 'Diesel',
-                        'ELECTRIC': 'Electric',
-                        'HYBRID': 'Hybrid',
-                        'PLUGIN_HYBRID': 'Plug-in Hybrid',
-                        'LPG': 'LPG'
-                      }[formData.fuelType] : 'Select fuel type'}
+                  <SelectTrigger id="fuelType" className={errors.fuelType ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Select fuel type">
+                      {formData.fuelType ? fuelTypeLabels[formData.fuelType as keyof typeof fuelTypeLabels] : ''}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
