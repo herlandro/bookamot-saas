@@ -30,6 +30,7 @@ export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -55,6 +56,34 @@ export default function VehiclesPage() {
       console.error('Error fetching vehicles:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    if (!confirm('Are you sure you want to remove this vehicle? This action cannot be undone.')) {
+      return
+    }
+
+    setIsDeleting(true)
+    setError('')
+
+    try {
+      const response = await fetch(`/api/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete vehicle')
+      }
+
+      // Remove the vehicle from the state
+      setVehicles(vehicles.filter(vehicle => vehicle.id !== vehicleId))
+    } catch (error: any) {
+      setError(error.message || 'Failed to delete vehicle')
+      console.error('Error deleting vehicle:', error)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -198,6 +227,14 @@ export default function VehiclesPage() {
                       variant="secondary"
                     >
                       Edit Vehicle
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeleteVehicle(vehicle.id)}
+                      className="w-full"
+                      variant="destructive"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? 'Removing...' : 'Remove Vehicle'}
                     </Button>
                   </div>
                 </CardContent>

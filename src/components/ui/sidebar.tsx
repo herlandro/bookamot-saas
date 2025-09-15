@@ -11,7 +11,8 @@ import {
   Settings, 
   User,
   MessageSquare,
-  LogOut
+  LogOut,
+  Car
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { signOut } from 'next-auth/react';
@@ -28,6 +29,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'search', label: 'Search Results', icon: Search, href: '/search-results' },
     { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
+    { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/vehicles' },
   ];
 
   const bottomItems = [
