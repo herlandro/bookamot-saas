@@ -131,7 +131,7 @@ export default function ProfilePage() {
       <div className="container max-w-4xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
       
-      <Card className="mb-8 border border-border">
+      <Card className="mb-8 shadow-xl rounded-lg border border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -196,7 +196,7 @@ export default function ProfilePage() {
       </Card>
       
       {userProfile?.garage && (
-        <Card className="border border-border">
+        <Card className="shadow-xl rounded-lg border border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />

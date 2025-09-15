@@ -182,7 +182,7 @@ export default function EditVehiclePage({ params }: { params: { id: string } }) 
         Back to Vehicles
       </Button>
 
-      <Card className="max-w-2xl mx-auto border border-border">
+      <Card className="max-w-2xl mx-auto shadow-xl rounded-lg border border-border">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
