@@ -16,7 +16,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       
@@ -26,7 +26,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         sidebarOpen ? "lg:ml-64" : "lg:ml-16"
       )}>
         {/* Top Bar for Mobile */}
-        <div className="lg:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4">
+        <div className="lg:hidden bg-background border-b border-border p-4">
           <button
             onClick={toggleSidebar}
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"

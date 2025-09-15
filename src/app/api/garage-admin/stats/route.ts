@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Calculate monthly revenue (mock calculation - £50 per MOT test)
-    const monthlyBookingsCount = await prisma.booking.count({
+    // Calcular receita mensal com base nos preços reais dos serviços
+    const completedBookings = await prisma.booking.findMany({
       where: {
         garageId: garage.id,
         date: {
@@ -70,9 +70,19 @@ export async function GET(request: NextRequest) {
         },
         status: 'COMPLETED',
       },
+      include: {
+        garage: {
+          select: {
+            motPrice: true
+          }
+        }
+      }
     });
 
-    const monthlyRevenue = monthlyBookingsCount * 50; // £50 per completed MOT
+    // Calcular receita total somando o preço de cada serviço
+    const monthlyRevenue = completedBookings.reduce((total: number, booking: { garage: { motPrice: number | null } }) => {
+      return total + (booking.garage.motPrice || 0);
+    }, 0);
 
     const stats = {
       totalBookings,

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -50,10 +49,10 @@ const timeSlots = [
 
 // Usando as variáveis CSS para cores de status
 const statusColors = {
-  CONFIRMED: 'bg-info text-info-foreground',
-  COMPLETED: 'bg-success text-success-foreground',
-  CANCELLED: 'bg-destructive text-destructive-foreground',
-  PENDING: 'bg-warning text-warning-foreground'
+  CONFIRMED: 'bg-blue-500 text-white',
+  COMPLETED: 'bg-green-500 text-white',
+  CANCELLED: 'bg-red-500 text-white',
+  PENDING: 'bg-yellow-500 text-black'
 }
 
 const statusLabels = {
@@ -165,7 +164,7 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full bg-card border border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -207,32 +206,32 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
             if (status === 'BLOCKED') {
               return (
                 <div key={status} className="flex items-center gap-1">
-                  <StatusBadge variant="outline" className="w-auto h-auto py-0.5 px-2">
+                  <Badge className="bg-muted text-muted-foreground border-0">
                     {label}
-                  </StatusBadge>
+                  </Badge>
                 </div>
               )
             }
             
-            // Mapear o status para a variante do StatusBadge
-            let variant: 'success' | 'warning' | 'destructive' | 'info' | 'default' = 'default';
+            // Definir cores com base no status
+            let badgeClass = '';
             switch(status) {
-              case 'CONFIRMED': variant = 'info'; break;
-              case 'COMPLETED': variant = 'success'; break;
-              case 'CANCELLED': variant = 'destructive'; break;
-              case 'PENDING': variant = 'warning'; break;
+              case 'CONFIRMED': badgeClass = 'bg-primary text-primary-foreground border-0'; break;
+              case 'COMPLETED': badgeClass = 'bg-success text-success-foreground border-0'; break;
+              case 'CANCELLED': badgeClass = 'bg-destructive text-destructive-foreground border-0'; break;
+              case 'PENDING': badgeClass = 'bg-warning text-warning-foreground border-0'; break;
             }
             
             return (
               <div key={status} className="flex items-center gap-1">
-                <StatusBadge variant={variant} className="w-auto h-auto py-0.5 px-2">
+                <Badge className={`${badgeClass} py-0.5 px-2`}>
                   {label}
-                </StatusBadge>
+                </Badge>
               </div>
             )
           })}
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="bg-green-50 border-green-300 text-green-800">
+            <Badge variant="outline" className="bg-success/10 border-success/20 text-success">
               Disponível
             </Badge>
           </div>
@@ -244,11 +243,11 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
           <div className="min-w-[800px]">
             {/* Header with days */}
             <div className="grid grid-cols-8 gap-1 mb-2">
-              <div className="p-2 text-sm font-medium text-center">Horário</div>
+              <div className="p-2 text-sm font-medium text-center text-foreground">Horário</div>
               {selectedWeek.map((date, index) => (
                 <div key={index} className={cn(
                   "p-2 text-sm font-medium text-center rounded",
-                  isToday(date) ? "bg-blue-100 text-blue-800" : "bg-gray-50"
+                  isToday(date) ? "bg-primary/20 text-primary" : "bg-card text-foreground"
                 )}>
                   <div>{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
                   <div className="text-xs">{date.getDate()}</div>
@@ -260,7 +259,7 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
             <div className="space-y-1">
               {timeSlots.map((timeSlot) => (
                 <div key={timeSlot} className="grid grid-cols-8 gap-1">
-                  <div className="p-2 text-sm font-medium text-center bg-gray-50 rounded">
+                  <div className="p-2 text-sm font-medium text-center bg-muted text-muted-foreground rounded">
                     {timeSlot}
                   </div>
                   {selectedWeek.map((date, dayIndex) => {
@@ -277,13 +276,13 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
                         key={`${dayIndex}-${timeSlot}`}
                         className={cn(
                           "p-1 min-h-[60px] border rounded transition-colors",
-                          isPast ? "bg-gray-100" : 
-                          isBlocked ? "bg-gray-200 border-gray-400" :
-                          slotBookings.length > 0 ? "bg-white border-blue-300" : "bg-green-50 border-green-300",
-                          isEditMode && !isPast && slotBookings.length === 0 ? "cursor-pointer hover:bg-blue-50 hover:border-blue-400" : 
-                          !isEditMode && slotBookings.length === 0 && !isPast && !isBlocked ? "cursor-pointer hover:bg-green-100" :
-                          slotBookings.length > 0 ? "cursor-pointer" : "cursor-default",
-                          hasPendingChange ? "ring-2 ring-blue-500 ring-opacity-50" : ""
+                          isPast ? "bg-muted text-muted-foreground" : 
+                           isBlocked ? "bg-muted border-border text-muted-foreground" :
+                           slotBookings.length > 0 ? "bg-card border-primary/30" : "bg-success/10 border-success/20",
+                          isEditMode && !isPast && slotBookings.length === 0 ? "cursor-pointer hover:bg-primary/10 hover:border-primary/40" : 
+                          !isEditMode && slotBookings.length === 0 && !isPast && !isBlocked ? "cursor-pointer hover:bg-success/20" :
+                          slotBookings.length > 0 ? "cursor-pointer hover:bg-muted" : "cursor-default",
+                          hasPendingChange ? "ring-2 ring-primary ring-opacity-50" : ""
                         )}
                         onClick={() => {
                           if (isEditMode && slotBookings.length === 0 && !isPast && onSlotClick) {
@@ -313,7 +312,7 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
                                 <span className="truncate">{booking.vehicle.registration}</span>
                               </div>
                             </Badge>
-                            <div className="text-xs text-gray-600 mt-0.5 truncate flex items-center gap-1">
+                            <div className="text-xs text-muted-foreground font-medium mt-0.5 truncate flex items-center gap-1">
                               <User className="h-3 w-3 flex-shrink-0" />
                               <span className="truncate">{booking.user.name}</span>
                             </div>
@@ -321,23 +320,23 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
                         ))}
                         
                         {slotBookings.length === 0 && isBlocked && (
-                          <div className="text-xs text-gray-600 text-center pt-4 flex items-center justify-center gap-1">
+                          <div className="text-xs text-muted-foreground font-medium text-center pt-4 flex items-center justify-center gap-1">
                             <Lock className="h-3 w-3" />
                             <span>Bloqueado</span>
                             {hasPendingChange && (
-                              <span className="text-blue-600 font-semibold">(Alterando)</span>
+                              <span className="text-primary font-semibold">(Alterando)</span>
                             )}
                           </div>
                         )}
                         
                         {slotBookings.length === 0 && !isPast && !isBlocked && (
-                          <div className="text-xs text-green-600 text-center pt-4">
+                          <div className="text-xs text-success font-medium text-center pt-4">
                             <span>Disponível</span>
                             {hasPendingChange && (
-                              <div className="text-blue-600 font-semibold">(Bloqueando)</div>
+                              <div className="text-primary font-semibold">(Bloqueando)</div>
                             )}
                             {isEditMode && !hasPendingChange && (
-                              <div className="text-blue-500 text-xs mt-1">Clique para bloquear</div>
+                              <div className="text-primary text-xs font-medium mt-1">Clique para bloquear</div>
                             )}
                           </div>
                         )}

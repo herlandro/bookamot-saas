@@ -174,7 +174,7 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="border border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -265,7 +265,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* Pricing */}
-          <Card>
+          <Card className="border border-border">
             <CardHeader>
               <CardTitle>Pricing</CardTitle>
               <CardDescription>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* Opening Hours */}
-          <Card>
+          <Card className="border border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />

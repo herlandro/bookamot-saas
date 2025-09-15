@@ -71,45 +71,77 @@ export default function AddVehiclePage() {
     setValidatingReg(true)
     setLookupError(null)
     
-    try {
-      const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration)}`)
-      
-      if (response.ok) {
-        const vehicleData = await response.json()
+    // Número máximo de tentativas
+    const maxRetries = 3
+    let currentRetry = 0
+    let success = false
+    
+    while (currentRetry < maxRetries && !success) {
+      try {
+        const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration)}`)
         
-        // Preencher os campos do formulário com os dados retornados
-        setFormData(prev => ({
-          ...prev,
-          make: vehicleData.make || prev.make,
-          model: vehicleData.model || prev.model,
-          year: vehicleData.year || prev.year,
-          fuelType: vehicleData.fuelType || prev.fuelType,
-          color: vehicleData.color || prev.color,
-          engineSize: vehicleData.engineSize || prev.engineSize
-        }))
-      } else {
-        const error = await response.json()
-        setLookupError(error.error || 'Não foi possível encontrar informações para este veículo')
+        if (response.ok) {
+          const vehicleData = await response.json()
+          
+          // Preencher os campos do formulário com os dados retornados da API
+          setFormData(prev => ({
+            ...prev,
+            make: vehicleData.make || prev.make,
+            model: vehicleData.model || prev.model,
+            year: vehicleData.year || prev.year,
+            fuelType: vehicleData.fuelType || prev.fuelType,
+            color: vehicleData.color || prev.color,
+            engineSize: vehicleData.engineSize || prev.engineSize
+          }))
+          
+          success = true
+        } else {
+          // Se a resposta não for bem-sucedida, incrementar a contagem de tentativas
+          currentRetry++
+          
+          if (currentRetry < maxRetries) {
+            // Esperar um pouco antes de tentar novamente (backoff exponencial)
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
+          }
+        }
+      } catch (error) {
+        console.error(`Erro ao validar registro (tentativa ${currentRetry + 1}/${maxRetries}):`, error)
+        currentRetry++
+        
+        if (currentRetry < maxRetries) {
+          // Esperar um pouco antes de tentar novamente
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
+        }
       }
-    } catch (error) {
-      console.error('Erro ao validar registro:', error)
-      setLookupError('Erro ao validar o número de registro. Tente novamente.')
-    } finally {
-      setValidatingReg(false)
     }
+    
+    if (!success) {
+      setLookupError('Não foi possível obter informações do veículo após várias tentativas. Verifique o número de registro ou preencha os campos manualmente.')
+    }
+    
+    setValidatingReg(false)
   }
   
-  // Manipulador para quando o campo de registro perde o foco ou o usuário avança para o próximo campo
+  // Armazenar o último valor de registro validado
+  const [lastValidatedReg, setLastValidatedReg] = useState<string>('')
+  
+  // Manipulador para quando o campo de registro perde o foco
   const handleRegistrationBlur = () => {
-    if (formData.registration) {
+    if (formData.registration && formData.registration !== lastValidatedReg) {
       validateRegistration(formData.registration)
+      setLastValidatedReg(formData.registration)
     }
   }
   
-  // Manipulador para quando o usuário clica em outro campo (captura eventos que o onBlur pode não capturar)
+  // Manipulador para quando o usuário clica em outro campo
   const handleRegistrationValidation = () => {
-    if (formData.registration && !validatingReg) {
+    // Só valida se o erro específico estiver presente e o registro for diferente do último validado
+    if (lookupError === 'Não foi possível obter informações do veículo após várias tentativas. Verifique o número de registro ou preencha os campos manualmente.' 
+        && formData.registration 
+        && formData.registration !== lastValidatedReg 
+        && !validatingReg) {
       validateRegistration(formData.registration)
+      setLastValidatedReg(formData.registration)
     }
   }
 
@@ -219,9 +251,10 @@ export default function AddVehiclePage() {
                     }
                     onBlur={handleRegistrationBlur}
                     onKeyDown={(e) => {
-                      if (e.key === 'Tab' && formData.registration) {
+                      if (e.key === 'Tab' && formData.registration && formData.registration !== lastValidatedReg) {
                         e.preventDefault()
                         validateRegistration(formData.registration)
+                        setLastValidatedReg(formData.registration)
                         // Focar no próximo campo após a validação
                         setTimeout(() => {
                           document.getElementById('make')?.focus()
@@ -258,7 +291,12 @@ export default function AddVehiclePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                       handleInputChange('make', e.target.value)
                     }
-                    onFocus={handleRegistrationValidation}
+                    onFocus={() => {
+                      if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                        validateRegistration(formData.registration);
+                        setLastValidatedReg(formData.registration);
+                      }
+                    }}
                     className={errors.make ? 'border-red-500' : ''}
                   />
                   {errors.make && (
@@ -275,7 +313,12 @@ export default function AddVehiclePage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                       handleInputChange('model', e.target.value)
                     }
-                    onFocus={handleRegistrationValidation}
+                    onFocus={() => {
+                      if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                        validateRegistration(formData.registration);
+                        setLastValidatedReg(formData.registration);
+                      }
+                    }}
                     className={errors.model ? 'border-red-500' : ''}
                   />
                   {errors.model && (
@@ -287,51 +330,67 @@ export default function AddVehiclePage() {
               {/* Year and Fuel Type */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="year">Year *</Label>
-                  <Select 
-                    value={formData.year?.toString() || ''} 
-                    onValueChange={(value: string) => handleInputChange('year', parseInt(value))}
-                    onOpenChange={() => handleRegistrationValidation()}
-                  >
-                    <SelectTrigger className={errors.year ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.year && (
-                    <p className="text-sm text-red-500">{errors.year}</p>
-                  )}
+                <Label htmlFor="year">Year *</Label>
+                <div>
+                  <div>
+                    <Select 
+                      value={formData.year?.toString() || ''} 
+                      onValueChange={(value: string) => handleInputChange('year', parseInt(value))}
+                    >
+                      <SelectTrigger className={errors.year ? 'border-red-500' : ''} onClick={() => {
+                        if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                          validateRegistration(formData.registration);
+                          setLastValidatedReg(formData.registration);
+                        }
+                      }}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map(year => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fuelType">Fuel Type *</Label>
-                  <Select 
-                    value={formData.fuelType || ''} 
-                    onValueChange={(value: string) => handleInputChange('fuelType', value)}
-                    onOpenChange={() => handleRegistrationValidation()}
-                  >
-                    <SelectTrigger className={errors.fuelType ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Select fuel type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PETROL">Petrol</SelectItem>
-                      <SelectItem value="DIESEL">Diesel</SelectItem>
-                      <SelectItem value="ELECTRIC">Electric</SelectItem>
-                      <SelectItem value="HYBRID">Hybrid</SelectItem>
-                      <SelectItem value="LPG">LPG</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.fuelType && (
-                    <p className="text-sm text-red-500">{errors.fuelType}</p>
-                  )}
+                {errors.year && (
+                  <p className="text-sm text-red-500">{errors.year}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fuelType">Fuel Type *</Label>
+                <div>
+                  <div>
+                    <Select 
+                      value={formData.fuelType || ''} 
+                      onValueChange={(value: string) => handleInputChange('fuelType', value)}
+                    >
+                      <SelectTrigger className={errors.fuelType ? 'border-red-500' : ''} onClick={() => {
+                        if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                          validateRegistration(formData.registration);
+                          setLastValidatedReg(formData.registration);
+                        }
+                      }}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PETROL">Petrol</SelectItem>
+                        <SelectItem value="DIESEL">Diesel</SelectItem>
+                        <SelectItem value="ELECTRIC">Electric</SelectItem>
+                        <SelectItem value="HYBRID">Hybrid</SelectItem>
+                        <SelectItem value="LPG">LPG</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                {errors.fuelType && (
+                  <p className="text-sm text-red-500">{errors.fuelType}</p>
+                )}
+              </div>
               </div>
 
               {/* Color and Engine Size */}

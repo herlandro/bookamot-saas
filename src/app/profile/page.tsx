@@ -83,7 +83,7 @@ export default function ProfilePage() {
       <MainLayout>
         <div className="container max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
-        <Card>
+        <Card className="border border-border">
           <CardHeader>
             <Skeleton className="h-8 w-1/3 mb-2" />
             <Skeleton className="h-4 w-1/4" />
@@ -113,7 +113,7 @@ export default function ProfilePage() {
       <MainLayout>
         <div className="container max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
-        <Card>
+        <Card className="border border-border">
           <CardContent className="py-8">
             <div className="text-center">
               <p className="text-red-500 mb-4">{error}</p>
@@ -131,7 +131,7 @@ export default function ProfilePage() {
       <div className="container max-w-4xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Perfil do Usuário</h1>
       
-      <Card className="mb-8">
+      <Card className="mb-8 border border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -196,7 +196,7 @@ export default function ProfilePage() {
       </Card>
       
       {userProfile?.garage && (
-        <Card>
+        <Card className="border border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />

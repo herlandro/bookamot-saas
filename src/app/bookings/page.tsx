@@ -122,8 +122,8 @@ export default function BookingsPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading bookings...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading bookings...</p>
             </div>
           </div>
         </div>
@@ -140,8 +140,8 @@ export default function BookingsPage() {
       <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-          <p className="text-gray-600 mt-2">View and manage your MOT test appointments</p>
+          <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
+          <p className="text-muted-foreground mt-2">View and manage your MOT test appointments</p>
         </div>
         <Button onClick={() => router.push('/search')} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -150,16 +150,16 @@ export default function BookingsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+          <p className="text-destructive">{error}</p>
         </div>
       )}
 
       {/* Filter Controls */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filter by status:</span>
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground">Filter by status:</span>
         </div>
         <div className="flex gap-2">
           <Button
@@ -195,11 +195,11 @@ export default function BookingsPage() {
 
       {filteredBookings.length === 0 ? (
         <div className="text-center py-12">
-          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-foreground mb-2">
             {statusFilter === 'all' ? 'No bookings found' : `No ${statusFilter} bookings found`}
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             {statusFilter === 'all' 
               ? 'Book your first MOT test to get started'
               : `You don't have any ${statusFilter} bookings`
@@ -236,21 +236,21 @@ export default function BookingsPage() {
                       <CardContent>
                         <div className="space-y-3">
                           <div>
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-foreground">
                               {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
                             </p>
                           </div>
                           
                           <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2 text-gray-600">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Calendar className="h-4 w-4" />
                               {formatDate(new Date(booking.date))}
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-4 w-4" />
                               {booking.timeSlot}
                             </div>
-                            <div className="flex items-start gap-2 text-gray-600">
+                            <div className="flex items-start gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4 mt-0.5" />
                               <div>
                                 <p className="font-medium">{booking.garage.name}</p>
@@ -263,8 +263,8 @@ export default function BookingsPage() {
                             </div>
                           </div>
                           
-                          <div className="pt-3 border-t flex justify-between items-center">
-                            <p className="text-xs text-gray-500">
+                          <div className="pt-3 border-t border-border flex justify-between items-center">
+                            <p className="text-xs text-muted-foreground">
                               Booked on {formatDate(new Date(booking.createdAt))}
                             </p>
                             <div className="flex items-center gap-2">
@@ -317,21 +317,21 @@ export default function BookingsPage() {
                       <CardContent>
                         <div className="space-y-3">
                           <div>
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-foreground">
                               {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
                             </p>
                           </div>
                           
                           <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2 text-gray-600">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Calendar className="h-4 w-4" />
                               {formatDate(new Date(booking.date))}
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-4 w-4" />
                               {booking.timeSlot}
                             </div>
-                            <div className="flex items-start gap-2 text-gray-600">
+                            <div className="flex items-start gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4 mt-0.5" />
                               <div>
                                 <p className="font-medium">{booking.garage.name}</p>
@@ -341,8 +341,8 @@ export default function BookingsPage() {
                             </div>
                           </div>
                           
-                          <div className="pt-3 border-t">
-                            <p className="text-xs text-gray-500">
+                          <div className="pt-3 border-t border-border">
+                            <p className="text-xs text-muted-foreground">
                               Booked on {formatDate(new Date(booking.createdAt))}
                             </p>
                           </div>

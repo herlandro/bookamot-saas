@@ -306,7 +306,7 @@ export default function GarageAdminPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -316,13 +316,13 @@ export default function GarageAdminPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50">
-      <div className="bg-white shadow-sm border-b">
+      <div className="min-h-screen">
+      <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Garage Admin Panel</h1>
-              <p className="text-slate-600">Manage your bookings and schedule</p>
+              <h1 className="text-2xl font-bold text-foreground">Garage Admin Panel</h1>
+              <p className="text-muted-foreground text-sm">Manage your bookings and schedule</p>
             </div>
             <div className="flex gap-3">
               {!isEditMode ? (
@@ -374,47 +374,47 @@ export default function GarageAdminPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card className="border border-border bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-foreground">Total Bookings</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalBookings}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.totalBookings}</div>
                 <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border border-border bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Today's Bookings</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-foreground">Today's Bookings</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.todayBookings}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.todayBookings}</div>
                 <p className="text-xs text-muted-foreground">Scheduled for today</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border border-border bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Week</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">This Week</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.weeklyBookings}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.weeklyBookings}</div>
                 <p className="text-xs text-muted-foreground">Bookings this week</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border border-border bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">Monthly Revenue</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">£{stats.monthlyRevenue}</div>
+                <div className="text-2xl font-bold text-foreground">£{stats.monthlyRevenue}</div>
                 <p className="text-xs text-muted-foreground">This month</p>
               </CardContent>
             </Card>

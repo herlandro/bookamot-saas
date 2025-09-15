@@ -156,7 +156,7 @@ export default function SearchPage() {
 
         {/* Vehicle Selection */}
         {vehicles.length > 0 && (
-          <Card className="mb-6">
+          <Card className="mb-6 border border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Car className="h-5 w-5" />
@@ -190,7 +190,7 @@ export default function SearchPage() {
         )}
 
         {/* Search */}
-        <Card className="mb-6">
+        <Card className="mb-6 border border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
@@ -225,7 +225,7 @@ export default function SearchPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {garages.map((garage) => (
-                <Card key={garage.id} className="hover:shadow-lg transition-shadow">
+                <Card key={garage.id} className="hover:shadow-lg transition-shadow border border-border">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
@@ -293,7 +293,7 @@ export default function SearchPage() {
 
         {/* No Results */}
         {!loading && garages.length === 0 && searchLocation && (
-          <Card>
+          <Card className="border border-border">
             <CardContent className="text-center py-12">
               <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No MOT centers found</h3>
@@ -309,7 +309,7 @@ export default function SearchPage() {
 
         {/* No Vehicle Warning */}
         {vehicles.length === 0 && (
-          <Card className="border-yellow-200 bg-yellow-50">
+          <Card className="border-yellow-200 bg-yellow-50 border border-border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-yellow-800">
                 <Car className="h-5 w-5" />

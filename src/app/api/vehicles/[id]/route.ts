@@ -16,9 +16,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
+    const vehicleId = params.id
+
     const vehicle = await prisma.vehicle.findFirst({
       where: {
-        id: params.id,
+        id: vehicleId,
         owner: {
           email: session.user.email
         }

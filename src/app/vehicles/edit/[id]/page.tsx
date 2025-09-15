@@ -16,7 +16,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 type VehicleFormData = z.infer<typeof updateVehicleSchema>
 
 export default function EditVehiclePage({ params }: { params: { id: string } }) {
-  // Acesso direto ao params.id é mais seguro neste contexto
+  // Acessando params.id diretamente em um componente do cliente
+  // O Next.js recomenda usar await, mas isso não é possível em componentes do cliente
+  // que usam hooks como useSession e useRouter
   const id = params.id
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -180,7 +182,7 @@ export default function EditVehiclePage({ params }: { params: { id: string } }) 
         Back to Vehicles
       </Button>
 
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto border border-border">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -277,7 +279,16 @@ export default function EditVehiclePage({ params }: { params: { id: string } }) 
                   onValueChange={(value: string) => handleInputChange('fuelType', value)}
                 >
                   <SelectTrigger className={errors.fuelType ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select fuel type" />
+                    <SelectValue>
+                      {formData.fuelType ? {
+                        'PETROL': 'Petrol',
+                        'DIESEL': 'Diesel',
+                        'ELECTRIC': 'Electric',
+                        'HYBRID': 'Hybrid',
+                        'PLUGIN_HYBRID': 'Plug-in Hybrid',
+                        'LPG': 'LPG'
+                      }[formData.fuelType] : 'Select fuel type'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PETROL">Petrol</SelectItem>

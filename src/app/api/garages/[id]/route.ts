@@ -31,9 +31,21 @@ export async function GET(
       )
     }
 
-    // Calculate average rating (mock data for now)
-    const rating = Math.random() * 2 + 3 // Random rating between 3-5
-    const reviewCount = Math.floor(Math.random() * 50) + 5 // Random review count
+    // Buscar avaliações reais do banco de dados
+    const reviews = await prisma.review.findMany({
+      where: {
+        garageId: garage.id
+      },
+      select: {
+        rating: true
+      }
+    })
+    
+    // Calcular média de avaliações reais
+    const reviewCount = reviews.length
+    const rating = reviewCount > 0
+      ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviewCount
+      : 0 // Se não houver avaliações, a média é 0
 
     return NextResponse.json({
       id: garage.id,

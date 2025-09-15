@@ -50,17 +50,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed top-0 left-0 h-full bg-gray-900 border-r border-border z-50 transition-all duration-300 ease-in-out flex flex-col",
+        "fixed top-0 left-0 h-full bg-background border-r border-border z-50 transition-all duration-300 ease-in-out flex flex-col",
         isOpen ? "w-64" : "w-0 lg:w-16"
       )}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           {isOpen && (
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">B</span>
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">B</span>
               </div>
-              <span className="text-white font-semibold">BookaMOT</span>
+              <span className="text-foreground font-semibold">BookaMOT</span>
             </div>
           )}
           
@@ -68,7 +68,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={onToggle}
-            className="text-gray-400 hover:text-white hover:bg-gray-800 p-2"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted p-2"
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -88,8 +88,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 className={cn(
                   "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   activeItem === item.id
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-800",
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
                   !isOpen && "justify-center"
                 )}
                 title={!isOpen ? item.label : undefined}
@@ -102,7 +102,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         </nav>
 
         {/* Bottom Navigation */}
-        <div className="border-t border-gray-800 p-2">
+        <div className="border-t border-border p-2">
           {bottomItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -113,8 +113,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   className={cn(
                     "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left",
                     activeItem === item.id
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-gray-800",
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     !isOpen && "justify-center"
                   )}
                   title={!isOpen ? item.label : undefined}
@@ -130,8 +130,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   className={cn(
                     "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeItem === item.id
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-gray-800",
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     !isOpen && "justify-center"
                   )}
                   title={!isOpen ? item.label : undefined}

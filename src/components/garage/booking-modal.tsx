@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Clock, User, Car, Phone, Mail, Calendar, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -32,9 +31,9 @@ interface BookingModalProps {
   onStatusUpdate: (bookingId: string, newStatus: string) => void
 }
 
-// Usando as variáveis CSS para cores de status
+// Usando cores consistentes do sistema
 const statusColors = {
-  CONFIRMED: 'bg-info text-info-foreground',
+  CONFIRMED: 'bg-primary text-primary-foreground',
   COMPLETED: 'bg-success text-success-foreground',
   CANCELLED: 'bg-destructive text-destructive-foreground',
   PENDING: 'bg-warning text-warning-foreground'
@@ -97,12 +96,12 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/50" 
+        className="absolute inset-0 bg-background/80" 
         onClick={onClose}
       />
       
       {/* Modal Content */}
-      <Card className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto border border-border">
+      <Card className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto border border-border bg-card">
         <CardContent className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -128,20 +127,16 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
         <div className="space-y-6">
             {/* Status Badge */}
             <div className="flex justify-center">
-              <StatusBadge 
-                variant={booking.status === 'CONFIRMED' ? 'info' : 
-                         booking.status === 'COMPLETED' ? 'success' : 
-                         booking.status === 'CANCELLED' ? 'destructive' : 
-                         booking.status === 'PENDING' ? 'warning' : 'default'}
-                className="px-4 py-2 text-sm font-medium"
+              <Badge 
+                className={`${statusColors[booking.status]} px-4 py-2 text-sm font-medium`}
               >
                 {statusLabels[booking.status]}
-              </StatusBadge>
+              </Badge>
             </div>
 
             {/* Booking Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
+              <Card className="bg-card border border-border">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -157,7 +152,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-card border border-border">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <User className="h-4 w-4 text-muted-foreground" />
@@ -175,7 +170,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
             </div>
 
             {/* Vehicle Details */}
-            <Card>
+            <Card className="bg-card border border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Car className="h-4 w-4 text-muted-foreground" />

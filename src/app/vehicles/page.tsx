@@ -97,11 +97,11 @@ export default function VehiclesPage() {
     const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
     if (daysUntilExpiry < 0) {
-      return { status: 'expired', label: 'Expired', color: 'bg-red-500' }
+      return { status: 'expired', label: 'Expired', color: 'bg-destructive' }
     } else if (daysUntilExpiry <= 30) {
-      return { status: 'expiring', label: `${daysUntilExpiry} days left`, color: 'bg-yellow-500' }
+      return { status: 'expiring', label: `${daysUntilExpiry} days left`, color: 'bg-warning' }
     } else {
-      return { status: 'valid', label: 'Valid', color: 'bg-green-500' }
+      return { status: 'valid', label: 'Valid', color: 'bg-success' }
     }
   }
 
@@ -124,8 +124,8 @@ export default function VehiclesPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading vehicles...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading vehicles...</p>
             </div>
           </div>
         </div>
@@ -138,8 +138,8 @@ export default function VehiclesPage() {
       <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Vehicles</h1>
-          <p className="text-gray-600 mt-2">Manage your vehicles and MOT history</p>
+          <h1 className="text-3xl font-bold text-foreground">My Vehicles</h1>
+          <p className="text-muted-foreground mt-2">Manage your vehicles and MOT history</p>
         </div>
         <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -148,19 +148,22 @@ export default function VehiclesPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 mb-6">
+          <p>{error}</p>
         </div>
       )}
 
       {vehicles.length === 0 ? (
         <div className="text-center py-12">
-          <Car className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No vehicles found</h3>
-          <p className="text-gray-600 mb-6">Add your first vehicle to start booking MOT tests</p>
-          <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 mx-auto">
+          <Car className="h-12 w-12 mx-auto text-muted-foreground" />
+          <h3 className="mt-4 text-xl font-semibold text-foreground">No vehicles found</h3>
+          <p className="mt-1 text-muted-foreground">Add your first vehicle to book an MOT test</p>
+          <Button 
+            className="mt-4 flex items-center gap-2 mx-auto"
+            onClick={() => router.push('/vehicles/add')}
+          >
             <Plus className="h-4 w-4" />
-            Add Your First Vehicle
+            Add Vehicle
           </Button>
         </div>
       ) : (
@@ -168,7 +171,7 @@ export default function VehiclesPage() {
           {vehicles.map((vehicle) => {
             const motStatus = getMotStatus(vehicle)
             return (
-              <Card key={vehicle.id} className="hover:shadow-lg transition-shadow">
+              <Card key={vehicle.id} className="hover:shadow-lg transition-shadow border border-border">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -177,7 +180,7 @@ export default function VehiclesPage() {
                         {vehicle.year} {vehicle.make} {vehicle.model}
                       </CardDescription>
                     </div>
-                    <Badge className={`${motStatus.color} text-white flex items-center gap-1`}>
+                    <Badge className={`${motStatus.color} text-primary-foreground flex items-center gap-1`}>
                       {getMotIcon(motStatus.status)}
                       {motStatus.label}
                     </Badge>
@@ -186,34 +189,34 @@ export default function VehiclesPage() {
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Color:</span>
+                      <span className="text-muted-foreground">Color:</span>
                       <span className="font-medium">{vehicle.color}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Fuel Type:</span>
+                      <span className="text-muted-foreground">Fuel Type:</span>
                       <span className="font-medium">{vehicle.fuelType}</span>
                     </div>
                     {vehicle.engineSize && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Engine Size:</span>
+                        <span className="text-muted-foreground">Engine Size:</span>
                         <span className="font-medium">{vehicle.engineSize}L</span>
                       </div>
                     )}
                     {vehicle.motExpiryDate && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">MOT Expires:</span>
+                        <span className="text-muted-foreground">MOT Expires:</span>
                         <span className="font-medium">{formatDate(new Date(vehicle.motExpiryDate))}</span>
                       </div>
                     )}
                     {vehicle.lastMotDate && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Last MOT:</span>
+                        <span className="text-muted-foreground">Last MOT:</span>
                         <span className="font-medium">{formatDate(new Date(vehicle.lastMotDate))}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t flex flex-col gap-2">
+                  <div className="mt-4 pt-4 border-t border-border flex flex-col gap-2">
                     <Button 
                       onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
                       className="w-full"

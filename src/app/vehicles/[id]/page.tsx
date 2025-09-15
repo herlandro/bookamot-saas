@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,10 +38,11 @@ interface MotHistoryItem {
     dangerous: boolean
   }>
 }
-
 export default function VehicleDetailsPage({ params }: { params: { id: string } }) {
-  const { data: session, status } = useSession()
   const router = useRouter()
+  const { data: session, status } = useSession()
+  // Corrigindo o uso do hook use() com tipagem adequada
+  const vehicleId = use(params as any).id
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -68,12 +69,12 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
       return
     }
 
-    fetchVehicle()
-  }, [session, status, router, params.id])
+    fetchVehicle(vehicleId)
+  }, [session, status, router, vehicleId])
 
-  const fetchVehicle = async () => {
+  const fetchVehicle = async (vehicleId: string) => {
     try {
-      const response = await fetch(`/api/vehicles/${params.id}`)
+      const response = await fetch(`/api/vehicles/${vehicleId}`)
       if (!response.ok) {
         throw new Error('Failed to fetch vehicle')
       }
@@ -100,7 +101,7 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
     
     setIsLoadingHistory(true)
     try {
-      const response = await fetch(`/api/vehicles/${params.id}/mot-history`)
+      const response = await fetch(`/api/vehicles/${vehicleId}/mot-history`)
       if (!response.ok) {
         throw new Error('Failed to fetch MOT history')
       }
@@ -132,7 +133,7 @@ export default function VehicleDetailsPage({ params }: { params: { id: string } 
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/vehicles/${params.id}`, {
+      const response = await fetch(`/api/vehicles/${vehicleId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'

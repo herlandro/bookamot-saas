@@ -127,13 +127,13 @@ export default function Dashboard() {
   const getBookingStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge className="bg-blue-500 text-white">Confirmed</Badge>
+        return <Badge className="bg-blue-500 text-primary-foreground">Confirmed</Badge>
       case 'completed':
-        return <Badge className="bg-green-500 text-white">Completed</Badge>
+        return <Badge className="bg-green-500 text-primary-foreground">Completed</Badge>
       case 'cancelled':
-        return <Badge className="bg-red-500 text-white">Cancelled</Badge>
+        return <Badge className="bg-destructive text-destructive-foreground">Cancelled</Badge>
       default:
-        return <Badge className="bg-gray-500 text-white">{status}</Badge>
+        return <Badge className="bg-muted text-muted-foreground">{status}</Badge>
     }
   }
 
@@ -163,8 +163,8 @@ export default function Dashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -179,26 +179,26 @@ export default function Dashboard() {
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">My Dashboard</h2>
-          <p className="text-gray-600 mt-2">Welcome, {session.user?.name || session.user?.email}</p>
+          <h2 className="text-3xl font-bold text-foreground">My Dashboard</h2>
+          <p className="text-muted-foreground mt-2">Welcome, {session.user?.name || session.user?.email}</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">{error}</p>
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+            <p className="text-destructive">{error}</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Container de Bookings */}
-          <Card className="shadow-lg border-t-4 border-t-blue-500">
+          <Card className="shadow-lg border border-border">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-xl font-bold">Minhas Reservas</CardTitle>
                   <CardDescription>Gerencie suas reservas de MOT</CardDescription>
                 </div>
-                <Button onClick={() => router.push('/search')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => router.push('/search')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                   Adicionar Booking
                 </Button>
@@ -207,9 +207,9 @@ export default function Dashboard() {
             <CardContent>
               {bookings.length === 0 ? (
                 <div className="text-center py-8">
-                  <Calendar className="h-16 w-16 text-blue-200 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">Nenhuma reserva encontrada</p>
-                  <Button onClick={() => router.push('/search')} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Calendar className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">Nenhuma reserva encontrada</p>
+                  <Button onClick={() => router.push('/search')} size="sm" className="bg-primary hover:bg-primary/90">
                     Agendar MOT
                   </Button>
                 </div>
@@ -220,7 +220,7 @@ export default function Dashboard() {
                     .map((booking) => (
                     <div 
                       key={booking.id} 
-                      className="border rounded-lg p-4 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer" 
+                      className="border border-border rounded-lg p-4 hover:bg-muted hover:shadow-md transition-all cursor-pointer" 
                       onClick={() => {
                         // Verificar se a reserva pode ser editada
                         const bookingDate = new Date(booking.date);
@@ -238,13 +238,13 @@ export default function Dashboard() {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-medium">{booking.vehicle.registration}</p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
                           </p>
                         </div>
                         {getBookingStatusBadge(booking.status)}
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
+                      <div className="text-sm text-muted-foreground space-y-1">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           {formatDate(new Date(booking.date))} às {booking.timeSlot}
@@ -262,14 +262,14 @@ export default function Dashboard() {
           </Card>
 
           {/* Container de Vehicles */}
-          <Card className="shadow-lg border-t-4 border-t-green-500">
+          <Card className="shadow-lg border border-border">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-xl font-bold">Meus Veículos</CardTitle>
                   <CardDescription>Gerencie seus veículos e datas de MOT</CardDescription>
                 </div>
-                <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                   Adicionar Veículo
                 </Button>
@@ -278,9 +278,9 @@ export default function Dashboard() {
             <CardContent>
               {vehicles.length === 0 ? (
                 <div className="text-center py-8">
-                  <Car className="h-16 w-16 text-green-200 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">Nenhum veículo encontrado</p>
-                  <Button onClick={() => router.push('/vehicles/add')} size="sm" className="bg-green-600 hover:bg-green-700">
+                  <Car className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">Nenhum veículo encontrado</p>
+                  <Button onClick={() => router.push('/vehicles/add')} size="sm" className="bg-primary hover:bg-primary/90">
                     Adicionar Veículo
                   </Button>
                 </div>
@@ -299,22 +299,22 @@ export default function Dashboard() {
                       return (
                         <div 
                           key={vehicle.id} 
-                          className={`border rounded-lg p-4 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer ${isFirstVehicle && motStatus.urgent ? 'border-red-300 bg-red-50 hover:bg-red-100' : ''}`}
+                          className={`border border-border rounded-lg p-4 hover:bg-muted hover:shadow-md transition-all cursor-pointer ${isFirstVehicle && motStatus.urgent ? 'border-destructive/30 bg-destructive/10 hover:bg-destructive/20' : ''}`}
                           onClick={() => router.push(`/vehicles/${vehicle.id}`)}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <p className="font-medium">{vehicle.registration}</p>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-muted-foreground">
                                 {vehicle.year} {vehicle.make} {vehicle.model}
                               </p>
                             </div>
-                            <Badge className={`${motStatus.urgent ? 'bg-red-500' : 'bg-green-500'} text-white flex items-center gap-1`}>
+                            <Badge className={`${motStatus.urgent ? 'bg-destructive' : 'bg-green-500'} ${motStatus.urgent ? 'text-destructive-foreground' : 'text-primary-foreground'} flex items-center gap-1`}>
                               {motStatus.urgent ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                               {motStatus.message}
                             </Badge>
                           </div>
-                          <div className="text-sm text-gray-600 mt-2">
+                          <div className="text-sm text-muted-foreground mt-2">
                             <div className="flex justify-between items-center">
                               <span>Próximo MOT:</span>
                               <span className="font-medium">{vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'Não disponível'}</span>
@@ -323,7 +323,7 @@ export default function Dashboard() {
                           {isFirstVehicle && motStatus.urgent && (
                             <Button 
                               size="sm" 
-                              className="w-full mt-3 bg-red-600 hover:bg-red-700"
+                              className="w-full mt-3 bg-destructive hover:bg-destructive/90"
                               onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
                             >
                               Agendar MOT
