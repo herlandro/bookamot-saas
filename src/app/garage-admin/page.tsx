@@ -108,7 +108,7 @@ export default function GarageAdminPage() {
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
+      const response = await fetch(`/api/garage-admin/bookings/${bookingId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -120,6 +120,8 @@ export default function GarageAdminPage() {
         // Refresh bookings and stats
         fetchBookings();
         fetchStats();
+      } else {
+        console.error('Failed to update booking status:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error updating booking:', error);
