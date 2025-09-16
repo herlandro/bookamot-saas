@@ -49,8 +49,16 @@ function getAvailableTimeSlots(garage: any, date: Date, requestedTime?: string):
         block.timeSlot === timeSlot
     );
     
-    // If not blocked, add to available slots
-    if (!isBlocked) {
+    // Check if this slot is already booked
+    const isBooked = garage.bookings && garage.bookings.some(
+      (booking: any) => 
+        booking.date.toDateString() === date.toDateString() && 
+        booking.timeSlot === timeSlot &&
+        ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(booking.status)
+    );
+    
+    // If not blocked and not booked, add to available slots
+    if (!isBlocked && !isBooked) {
       slots.push(timeSlot);
     }
     
@@ -140,6 +148,14 @@ export async function GET(request: NextRequest) {
           where: {
             date: new Date(date),
             ...(time ? { timeSlot: time } : {})
+          }
+        } : false,
+        bookings: date ? {
+          where: {
+            date: new Date(date),
+            status: {
+              notIn: ['CANCELLED'] // Exclude cancelled bookings
+            }
           }
         } : false,
         reviews: {
