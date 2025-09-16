@@ -26,7 +26,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [activeItem, setActiveItem] = useState('home');
 
   const menuItems = [
-    { id: 'home', label: 'Dashboard', icon: Home, href: '/' },
+    { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/vehicles' },
   ];

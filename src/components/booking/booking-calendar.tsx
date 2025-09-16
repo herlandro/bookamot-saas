@@ -241,10 +241,10 @@ export function BookingCalendar({ garage, vehicle, onBookingSelect, onCancel }: 
             
             <div className="flex gap-2 pt-4">
               <Button onClick={handleConfirmBooking} className="flex-1">
-                Confirm Booking
+                Confirmar Reserva
               </Button>
               <Button variant="outline" onClick={onCancel}>
-                Cancel
+                Cancelar
               </Button>
             </div>
           </CardContent>

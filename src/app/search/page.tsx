@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Star, Clock, Car, ArrowLeft } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Clock, Car, ArrowLeft, Calendar } from 'lucide-react'
 import { formatCurrency, calculateDistance } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 
@@ -25,6 +25,7 @@ interface Garage {
   rating?: number
   reviewCount?: number
   distance?: number
+  availableSlots?: string[]
 }
 
 interface Vehicle {
@@ -39,11 +40,14 @@ export default function SearchPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [searchLocation, setSearchLocation] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]) // Today's date
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<{[garageId: string]: string}>({})
+  const [selectedGridDate, setSelectedGridDate] = useState<string>(new Date().toISOString().split('T')[0]) // Inicializa com a data atual
   const [garages, setGarages] = useState<Garage[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(false)
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -54,25 +58,24 @@ export default function SearchPage() {
   useEffect(() => {
     if (session?.user) {
       fetchUserVehicles()
-      getCurrentLocation()
     }
   }, [session])
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (error) => {
-          console.error('Error getting location:', error)
-        }
-      )
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchLocation)
+    }, 500) // 500ms delay
+    
+    return () => clearTimeout(timer)
+  }, [searchLocation])
+  
+  // Auto search when debounced search term changes
+  useEffect(() => {
+    if (debouncedSearchTerm.trim()) {
+      searchGarages()
     }
-  }
+  }, [debouncedSearchTerm])
 
   const fetchUserVehicles = async () => {
     try {
@@ -90,22 +93,24 @@ export default function SearchPage() {
   }
 
   const searchGarages = async () => {
-    if (!searchLocation.trim()) return
+    if (!searchLocation.trim()) {
+      setGarages([])
+      return
+    }
     
     setLoading(true)
     try {
       const params = new URLSearchParams({
         location: searchLocation,
-        ...(userLocation && {
-          lat: userLocation.lat.toString(),
-          lng: userLocation.lng.toString()
-        })
+        date: selectedDate // Include date to get available slots
       })
       
       const response = await fetch(`/api/garages/search?${params}`)
       if (response.ok) {
         const data = await response.json()
         setGarages(data.garages || [])
+        // Reset selected time slots when new search results come in
+        setSelectedTimeSlots({})
       }
     } catch (error) {
       console.error('Error searching garages:', error)
@@ -120,13 +125,24 @@ export default function SearchPage() {
       return
     }
     
+    const selectedTimeSlot = selectedTimeSlots[garage.id]
+    
     // Store booking data in session storage for the booking flow
     sessionStorage.setItem('bookingData', JSON.stringify({
       garage,
-      vehicle: selectedVehicle
+      vehicle: selectedVehicle,
+      date: selectedDate,
+      timeSlot: selectedTimeSlot
     }))
     
     router.push(`/booking/${garage.id}`)
+  }
+  
+  const handleTimeSlotSelect = (garageId: string, timeSlot: string) => {
+    setSelectedTimeSlots(prev => ({
+      ...prev,
+      [garageId]: timeSlot
+    }))
   }
 
   if (status === 'loading') {
@@ -201,17 +217,105 @@ export default function SearchPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter postcode or city (e.g., SW1A 1AA, London)"
-                value={searchLocation}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
-                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && searchGarages()}
-                className="flex-1"
-              />
-              <Button onClick={searchGarages} disabled={loading || !searchLocation.trim()}>
-                {loading ? 'Searching...' : 'Search'}
-              </Button>
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter postcode or city (e.g., SW1A 1AA, London)"
+                  value={searchLocation}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
+                  className="flex-1"
+                />
+                {searchLocation && (
+                  <Button variant="ghost" onClick={() => {
+                    setSearchLocation('')
+                    setGarages([])
+                  }}>
+                    Clear
+                  </Button>
+                )}
+                <Button onClick={searchGarages} disabled={loading || !searchLocation.trim()}>
+                  {loading ? 'Searching...' : 'Search'}
+                </Button>
+              </div>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Select date for available slots:</span>
+                  <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setSelectedDate(e.target.value)
+                      setSelectedGridDate(e.target.value) // Atualiza também a data selecionada no grid
+                      if (searchLocation.trim()) {
+                        // Re-search with new date
+                        searchGarages()
+                      }
+                    }}
+                    className="w-auto"
+                    min={new Date().toISOString().split('T')[0]} // Can't select dates in the past
+                  />
+                </div>
+                
+                <div className="border rounded-lg p-4">
+                  <div className="text-sm font-medium mb-3">Select date for available slots:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from({ length: 14 }, (_, i) => {
+                      const date = new Date(selectedDate);
+                      date.setDate(date.getDate() + i);
+                      const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+                      const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3);
+                      const dateString = date.toISOString().split('T')[0];
+                      
+                      return (
+                        <div
+                          key={dateString}
+                          onClick={() => {
+                            // Não atualiza o campo de data superior, apenas busca com a nova data
+                            setSelectedGridDate(dateString); // Atualiza a data selecionada no grid
+                            
+                            if (searchLocation.trim()) {
+                              const params = new URLSearchParams({
+                                location: searchLocation,
+                                date: dateString // Usa a data clicada diretamente
+                              });
+                              
+                              setLoading(true);
+                              fetch(`/api/garages/search?${params}`)
+                                .then(response => {
+                                  if (response.ok) return response.json();
+                                  throw new Error('Falha na busca');
+                                })
+                                .then(data => {
+                                  setGarages(data.garages || []);
+                                  setSelectedTimeSlots({});
+                                })
+                                .catch(error => {
+                                  console.error('Erro ao buscar garagens:', error);
+                                })
+                                .finally(() => {
+                                  setLoading(false);
+                                });
+                            }
+                          }}
+                          className={`
+                            px-3 py-2 rounded-md text-sm cursor-pointer transition-colors
+                            border hover:border-primary flex flex-col items-center
+                            ${loading && searchLocation.trim() ? 'opacity-50 pointer-events-none' : ''}
+                            ${selectedGridDate === dateString 
+                              ? 'bg-primary text-primary-foreground border-primary' 
+                              : 'bg-background hover:bg-primary/5 border-border'}
+                          `}
+                        >
+                          <span className="font-medium">{dayName}</span>
+                          <span>{formattedDate}</span>
+                        </div>
+                       );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -219,12 +323,22 @@ export default function SearchPage() {
         {/* Results */}
         {garages.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">
-              Found {garages.length} MOT Test Centers
-            </h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {garages.map((garage) => (
+            {/* Filter out garages with no available slots */}
+            {(() => {
+              const garagesWithSlots = garages.filter(garage => 
+                'availableSlots' in garage && 
+                garage.availableSlots && 
+                garage.availableSlots.length > 0
+              );
+              
+              return (
+                <>
+                  <h2 className="text-2xl font-semibold">
+                    Found {garagesWithSlots.length} MOT Test Centers
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {garagesWithSlots.map((garage) => (
                 <Card key={garage.id} className="hover:shadow-lg transition-shadow shadow-xl rounded-lg border border-border">
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -267,6 +381,34 @@ export default function SearchPage() {
                       </div>
                     )}
                     
+                    {/* Available Time Slots */}
+                    {'availableSlots' in garage && garage.availableSlots && garage.availableSlots.length > 0 ? (
+                      <div className="pt-4 border-t">
+                        <div className="text-sm font-medium mb-2">Available Time Slots:</div>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {garage.availableSlots.map((slot: string) => (
+                            <div 
+                              key={slot}
+                              onClick={() => handleTimeSlotSelect(garage.id, slot)}
+                              className={`
+                                px-3 py-1 rounded-md text-sm cursor-pointer transition-colors
+                                border border-border hover:border-primary
+                                ${selectedTimeSlots[garage.id] === slot 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'bg-background hover:bg-primary/5'}
+                              `}
+                            >
+                              {slot}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pt-4 border-t text-sm text-muted-foreground">
+                        No available slots for today. Try another date.
+                      </div>
+                    )}
+                    
                     <div className="flex items-center justify-between pt-4 border-t">
                       <div>
                         <div className="text-2xl font-bold text-primary">
@@ -277,7 +419,7 @@ export default function SearchPage() {
                       
                       <Button 
                         onClick={() => handleBooking(garage)}
-                        disabled={!selectedVehicle}
+                        disabled={!selectedVehicle || !selectedTimeSlots[garage.id]}
                         className="flex items-center gap-2"
                       >
                         <Clock className="h-4 w-4" />
@@ -286,8 +428,11 @@ export default function SearchPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
