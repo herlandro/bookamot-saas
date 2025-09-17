@@ -16,7 +16,7 @@ interface Booking {
   reference: string
   date: string
   timeSlot: string
-  status: 'confirmed' | 'completed' | 'cancelled'
+  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
   garage: {
     id: string
     name: string
@@ -80,7 +80,11 @@ export default function BookingsPage() {
     let filtered = bookings
     
     if (statusFilter !== 'all') {
-      filtered = bookings.filter(booking => booking.status === statusFilter)
+      filtered = bookings.filter(booking => {
+        // Convert database status (uppercase) to frontend status (lowercase)
+        const normalizedStatus = booking.status.toLowerCase()
+        return normalizedStatus === statusFilter
+      })
     }
     
     // Sort by date (newest first)
@@ -90,7 +94,8 @@ export default function BookingsPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status.toLowerCase()
+    switch (normalizedStatus) {
       case 'confirmed':
         return <StatusBadge variant="info">Confirmed</StatusBadge>
       case 'completed':
@@ -99,6 +104,10 @@ export default function BookingsPage() {
         return <StatusBadge variant="destructive">Cancelled</StatusBadge>
       case 'pending':
         return <StatusBadge variant="warning">Pending</StatusBadge>
+      case 'in_progress':
+        return <StatusBadge variant="info">In Progress</StatusBadge>
+      case 'no_show':
+        return <StatusBadge variant="destructive">No Show</StatusBadge>
       default:
         return <StatusBadge variant="default">{status}</StatusBadge>
     }
@@ -107,7 +116,7 @@ export default function BookingsPage() {
   const isUpcoming = (booking: Booking) => {
     const bookingDate = new Date(booking.date)
     const now = new Date()
-    return bookingDate >= now && booking.status === 'confirmed'
+    return bookingDate >= now && booking.status === 'CONFIRMED'
   }
 
   const isPast = (booking: Booking) => {
@@ -189,6 +198,13 @@ export default function BookingsPage() {
             onClick={() => setStatusFilter('cancelled')}
           >
             Cancelled
+          </Button>
+          <Button
+            variant={statusFilter === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('pending')}
+          >
+            Pending
           </Button>
         </div>
       </div>
@@ -274,7 +290,7 @@ export default function BookingsPage() {
                               >
                                 View Details
                               </Button>
-                              {(booking.status === 'confirmed') && (
+                              {(booking.status === 'CONFIRMED') && (
                                 <Button
                                   size="sm"
                                   variant="secondary"
