@@ -44,11 +44,9 @@ async function simpleValidationTest() {
     console.log('- Backend: API valida data/hora antes de processar alterações');
     console.log('- Mensagem de erro: "Não é possível bloquear/desbloquear slots que já passaram"');
     
-    console.log('\n🎯 Para testar:');
-    console.log('1. Acesse http://localhost:3000/garage-admin');
-    console.log('2. Clique em "Editar Agenda"');
-    console.log('3. Tente clicar em um slot que já passou');
-    console.log('4. Deve aparecer um alerta impedindo a ação');
+    console.log('\n⚠️  FUNCIONALIDADE REMOVIDA:');
+    console.log('A funcionalidade de agenda foi removida da aplicação.');
+    console.log('Este teste não é mais aplicável.');
     
   } catch (error) {
     console.error('❌ Erro durante o teste:', error.message);

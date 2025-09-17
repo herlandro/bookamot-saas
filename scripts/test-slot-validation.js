@@ -43,8 +43,8 @@ async function testSlotValidation() {
       console.log('🔍 Testando validação com slot passado...');
       console.log(`Slot ID: ${pastSlot.id} (${pastSlot.date.toISOString().split('T')[0]} ${pastSlot.timeSlot})`);
       
-      // Simular requisição para bloquear slot passado
-      const testUrl = 'http://localhost:3000/api/garage-admin/schedule';
+      // Schedule API has been removed - test disabled
+      // const testUrl = 'http://localhost:3000/api/garage-admin/schedule';
       const response = await fetch(testUrl, {
         method: 'PATCH',
         headers: {
