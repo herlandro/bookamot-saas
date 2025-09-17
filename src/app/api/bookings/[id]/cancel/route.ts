@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // PATCH to cancel a booking
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Check if booking exists and belongs to user
     const existingBooking = await prisma.booking.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customerId: session.user.id
       }
     })
@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Cancel booking
     const updatedBooking = await prisma.booking.update({
       where: {
-        id: params.id
+        id: (await params).id
       },
       data: {
         status: 'CANCELLED'

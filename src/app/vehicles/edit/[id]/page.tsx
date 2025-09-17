@@ -25,11 +25,9 @@ const fuelTypeLabels = {
   'LPG': 'LPG'
 }
 
-export default function EditVehiclePage({ params }: { params: { id: string } }) {
-  // Acessando params.id diretamente em um componente do cliente
-  // O Next.js recomenda usar await, mas isso não é possível em componentes do cliente
-  // que usam hooks como useSession e useRouter
-  const id = params.id
+export default function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
+  // Usando React.use() para desempacotar a Promise params conforme recomendado pelo Next.js
+  const id = React.use(params).id
   const { data: session, status } = useSession()
   const router = useRouter()
   const [formData, setFormData] = useState<Partial<VehicleFormData>>({
@@ -289,9 +287,7 @@ export default function EditVehiclePage({ params }: { params: { id: string } }) 
                   onValueChange={(value: string) => handleInputChange('fuelType', value)}
                 >
                   <SelectTrigger id="fuelType" className={errors.fuelType ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select fuel type">
-                      {formData.fuelType ? fuelTypeLabels[formData.fuelType as keyof typeof fuelTypeLabels] : ''}
-                    </SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PETROL">Petrol</SelectItem>

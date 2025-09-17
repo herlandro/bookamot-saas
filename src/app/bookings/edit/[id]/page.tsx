@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,7 +27,8 @@ interface Booking {
   }
 }
 
-export default function EditBookingPage({ params }: { params: { id: string } }) {
+export default function EditBookingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
   const { data: session, status } = useSession()
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
@@ -47,11 +48,11 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
     }
 
     fetchBooking()
-  }, [session, status, router, params.id])
+  }, [session, status, router, id])
 
   const fetchBooking = async () => {
     try {
-      const response = await fetch(`/api/bookings/${params.id}`)
+      const response = await fetch(`/api/bookings/${id}`)
       if (!response.ok) {
         throw new Error('Failed to fetch booking')
       }
@@ -77,7 +78,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
 
   const fetchAvailableTimeSlots = async (date: string, garageId: string) => {
     try {
-      const response = await fetch(`/api/garages/${garageId}/availability?date=${date}&bookingId=${params.id}`)
+      const response = await fetch(`/api/garages/${garageId}/availability?date=${date}&bookingId=${id}`)
       if (!response.ok) {
         throw new Error('Failed to fetch available time slots')
       }
@@ -115,7 +116,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
     
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/bookings/${params.id}`, {
+      const response = await fetch(`/api/bookings/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -128,7 +129,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
       })
 
       if (response.ok) {
-        router.push(`/bookings/${params.id}`)
+        router.push(`/bookings/${id}`)
       } else {
         const error = await response.json()
         setError(error.error || 'Failed to update booking')
@@ -187,7 +188,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
         <Button 
           variant="ghost" 
           className="mb-6 flex items-center gap-2" 
-          onClick={() => router.push(`/bookings/${params.id}`)}
+          onClick={() => router.push(`/bookings/${id}`)}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Booking Details
@@ -200,7 +201,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
               ? 'This booking is in the past and cannot be edited.' 
               : `This booking has a status of ${booking.status} and cannot be edited.`}
           </p>
-          <Button onClick={() => router.push(`/bookings/${params.id}`)}>View Booking Details</Button>
+          <Button onClick={() => router.push(`/bookings/${id}`)}>View Booking Details</Button>
         </div>
       </div>
     )
@@ -211,7 +212,7 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
       <Button 
         variant="ghost" 
         className="mb-6 flex items-center gap-2" 
-        onClick={() => router.push(`/bookings/${params.id}`)}
+        onClick={() => router.push(`/bookings/${id}`)}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Booking Details

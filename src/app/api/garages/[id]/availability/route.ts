@@ -6,7 +6,7 @@ import { generateTimeSlots } from '@/lib/utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -39,7 +39,7 @@ export async function GET(
 
     // Check if garage exists
     const garage = await prisma.garage.findUnique({
-      where: { id: params.id }
+      where: { id: (await params).id }
     })
 
     if (!garage) {
@@ -61,7 +61,7 @@ export async function GET(
 
     const existingBookings = await prisma.booking.findMany({
       where: {
-        garageId: params.id,
+        garageId: (await params).id,
         date: {
           gte: startOfDay,
           lte: endOfDay
@@ -77,7 +77,7 @@ export async function GET(
     })
 
     // Get booked time slots
-    const bookedSlots = existingBookings.map(booking => booking.timeSlot)
+    const bookedSlots = existingBookings.map((booking: { timeSlot: string }) => booking.timeSlot)
 
     // Filter out booked slots
     const availableSlots = allTimeSlots.filter(slot => !bookedSlots.includes(slot))

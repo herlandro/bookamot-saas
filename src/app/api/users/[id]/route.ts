@@ -3,11 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getUserById, updateUser } from '@/lib/db/users';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    // Extrair o ID diretamente do objeto params
-    const userId = params.id;
+    // Aguardar a Promise params antes de acessar suas propriedades
+    const userId = (await params).id;
     
     if (!session) {
       return NextResponse.json(
@@ -44,10 +44,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = params.id;
+    const userId = (await params).id;
     
     if (!session) {
       return NextResponse.json(

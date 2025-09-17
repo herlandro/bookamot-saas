@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 // GET a specific booking
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Check if booking exists and belongs to user or garage owner
     const booking = await prisma.booking.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         OR: [
           { customerId: session.user.id },
           { garage: { ownerId: session.user.id } }
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PATCH to update a booking
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Check if booking exists and belongs to user
     const existingBooking = await prisma.booking.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customerId: session.user.id
       },
       include: {
@@ -167,7 +167,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           date: date ? new Date(date) : existingBooking.date,
           timeSlot: timeSlot || existingBooking.timeSlot,
           status: { notIn: ['CANCELLED'] },
-          id: { not: params.id } // Exclude current booking
+          id: { not: (await params).id } // Exclude current booking
         }
       })
 
@@ -182,7 +182,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Update booking
     const updatedBooking = await prisma.booking.update({
       where: {
-        id: params.id
+        id: (await params).id
       },
       data: {
         date: date ? new Date(date) : undefined,
@@ -206,7 +206,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE a booking
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -220,7 +220,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Check if booking exists and belongs to user
     const existingBooking = await prisma.booking.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customerId: session.user.id
       }
     })
@@ -245,7 +245,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Delete booking
     await prisma.booking.delete({
       where: {
-        id: params.id
+        id: (await params).id
       }
     })
 

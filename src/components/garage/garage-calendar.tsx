@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '../ui/checkbox'
+import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Booking {
@@ -60,13 +62,15 @@ const statusLabels = {
   COMPLETED: 'Concluído',
   CANCELLED: 'Cancelado',
   PENDING: 'Pendente',
-  BLOCKED: 'Bloqueado'
+  BLOCKED: 'Indisponível'
 }
 
 export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateChange, isEditMode = false, pendingChanges = {}, initialDate }: GarageCalendarProps) {
   const [currentDate, setCurrentDate] = useState(initialDate ? new Date(initialDate) : new Date())
   const [selectedWeek, setSelectedWeek] = useState<Date[]>([])
   const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([])
+  const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [showCancelled, setShowCancelled] = useState<boolean>(true)
 
   useEffect(() => {
     generateWeekDays(currentDate)
@@ -135,9 +139,21 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
 
   const getBookingsForSlot = (date: Date, timeSlot: string) => {
     const dateStr = formatDate(date)
-    return bookings.filter(booking => 
+    let filteredBookings = bookings.filter(booking => 
       booking.date === dateStr && booking.timeSlot === timeSlot
     )
+    
+    // Filter out cancelled bookings if showCancelled is false
+    if (!showCancelled) {
+      filteredBookings = filteredBookings.filter(booking => booking.status !== 'CANCELLED')
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'ALL') {
+      filteredBookings = filteredBookings.filter(booking => booking.status === statusFilter)
+    }
+    
+    return filteredBookings
   }
 
   const getSlotInfo = (date: Date, timeSlot: string) => {
@@ -163,6 +179,17 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
     return slotDateTime < now
   }
 
+  const shouldShowSlot = (date: Date, timeSlot: string, slotBookings: any[], isBlocked: boolean) => {
+    if (statusFilter === 'ALL') return true
+    
+    if (statusFilter === 'BLOCKED') {
+      return isBlocked && slotBookings.length === 0
+    }
+    
+    // For other status filters, only show if there are bookings with that status
+    return slotBookings.length > 0
+  }
+
   return (
     <Card className="w-full bg-card border border-border">
       <CardHeader>
@@ -178,6 +205,38 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filtrar por status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todos</SelectItem>
+                    <SelectItem value="PENDING">Pendente</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmado</SelectItem>
+                    <SelectItem value="COMPLETED">Concluído</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelado</SelectItem>
+                    <SelectItem value="BLOCKED">Indisponível</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                   id="show-cancelled"
+                   checked={showCancelled}
+                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShowCancelled(e.target.checked)}
+                   className="h-4 w-4"
+                 />
+                <label
+                  htmlFor="show-cancelled"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  Mostrar cancelados
+                </label>
+              </div>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -271,6 +330,21 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
                     const originallyBlocked = slotInfo?.isBlocked || false
                     const isBlocked = hasPendingChange ? pendingChanges[slotKey] : originallyBlocked
                     
+                    // Check if this slot should be shown based on the filter
+                    const allSlotBookings = bookings.filter(booking => 
+                      booking.date === formatDate(date) && booking.timeSlot === timeSlot
+                    )
+                    
+                    if (!shouldShowSlot(date, timeSlot, allSlotBookings, isBlocked)) {
+                      return (
+                        <div key={`${dayIndex}-${timeSlot}`} className="p-1 min-h-[60px] border rounded bg-muted/30 opacity-30">
+                          <div className="text-xs text-muted-foreground text-center pt-4">
+                            Filtrado
+                          </div>
+                        </div>
+                      )
+                    }
+                    
                     return (
                       <div
                         key={`${dayIndex}-${timeSlot}`}
@@ -322,7 +396,7 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
                         {slotBookings.length === 0 && isBlocked && (
                           <div className="text-xs text-muted-foreground font-medium text-center pt-4 flex items-center justify-center gap-1">
                             <Lock className="h-3 w-3" />
-                            <span>Bloqueado</span>
+                            <span>Indisponível</span>
                             {hasPendingChange && (
                               <span className="text-primary font-semibold">(Alterando)</span>
                             )}

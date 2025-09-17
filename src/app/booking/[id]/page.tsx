@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { BookingCalendar } from '@/components/booking/booking-calendar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -67,11 +67,10 @@ interface BookingData {
   timeSlot?: string
 }
 
-export default function BookingPage() {
+export default function BookingPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const params = useParams()
-  const garageId = params.id as string
+  const garageId = React.use(params).id
   
   const [bookingData, setBookingData] = useState<BookingData | null>(null)
   const [loading, setLoading] = useState(true)
