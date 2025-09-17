@@ -90,22 +90,9 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
   }, [initialDate])
 
   const fetchAvailabilitySlots = async () => {
-    if (selectedWeek.length === 0) return
-    
-    try {
-      const startDate = selectedWeek[0].toISOString().split('T')[0]
-      const endDate = selectedWeek[6].toISOString().split('T')[0]
-      
-      const response = await fetch(`/api/garage-admin/schedule?startDate=${startDate}&endDate=${endDate}`)
-      if (response.ok) {
-        const data = await response.json()
-        // Flatten the schedule array to get all slots
-        const allSlots = data.schedule?.flatMap((day: any) => day.slots) || []
-        setAvailabilitySlots(allSlots)
-      }
-    } catch (error) {
-      console.error('Error fetching availability slots:', error)
-    }
+    // Schedule functionality has been removed
+    // This function is kept for compatibility but does nothing
+    setAvailabilitySlots([])
   }
 
   const generateWeekDays = (date: Date) => {

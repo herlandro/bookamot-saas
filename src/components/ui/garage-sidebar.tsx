@@ -29,7 +29,6 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/garage-admin' },
-    { id: 'schedule', label: 'Agenda', icon: Calendar, href: '/garage-admin/schedule' },
     { id: 'bookings', label: 'Reservas', icon: ClipboardList, href: '/garage-admin/bookings' },
     { id: 'settings', label: 'Configurações', icon: Settings, href: '/garage-admin/settings' },
   ];
