@@ -226,14 +226,9 @@ export default function GarageAdminPage() {
       
       console.log(`Buscando slots de ${startDate} a ${endDate} (expandido para semana completa)`);
       
-      // Get all availability slots to find slot IDs
-      const response = await fetch(`/api/garage-admin/schedule?startDate=${startDate}&endDate=${endDate}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch slot data');
-      }
-      
-      const data = await response.json();
-      const allSlots = data.schedule?.flatMap((day: any) => day.slots) || [];
+      // Schedule functionality has been removed
+      // This section is kept for compatibility but does nothing
+      const allSlots: any[] = [];
       
       console.log(`Encontrados ${allSlots.length} slots`);
       
@@ -253,31 +248,9 @@ export default function GarageAdminPage() {
           s.date === date && s.timeSlot === timeSlot
         );
         
-        if (slot) {
-          console.log(`Slot encontrado, ID: ${slot.id}`);
-          
-          const patchResponse = await fetch('/api/garage-admin/schedule', {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              slotId: slot.id,
-              isBlocked: shouldBlock
-            })
-          });
-          
-          if (!patchResponse.ok) {
-            const errorData = await patchResponse.json();
-            console.error('Erro na requisição PATCH:', errorData);
-            throw new Error(errorData.error || 'Failed to update slot');
-          } else {
-            console.log(`Slot ${slot.id} atualizado com sucesso`);
-          }
-        } else {
-          console.error(`Slot não encontrado para ${date} ${timeSlot}`);
-          console.log('Slots disponíveis:', allSlots.map((s: any) => ({ date: s.date, timeSlot: s.timeSlot })));
-        }
+        // Schedule functionality has been removed
+        // This slot update logic is no longer functional
+        console.log(`Schedule functionality removed - slot update skipped for ${date} ${timeSlot}`);
       });
       
       await Promise.all(promises);
@@ -329,13 +302,7 @@ export default function GarageAdminPage() {
             <div className="flex gap-3">
               {!isEditMode ? (
                 <>
-                  <Button
-                    onClick={handleEditMode}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Editar Agenda
-                  </Button>
+
                   <Button
                     onClick={() => router.push('/garage-admin/settings')}
                     variant="outline"

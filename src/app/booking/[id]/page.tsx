@@ -86,6 +86,10 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
       try {
         const parsed = JSON.parse(storedData)
         if (parsed.garage?.id === garageId) {
+          // Convert date string back to Date object if it exists
+          if (parsed.date && typeof parsed.date === 'string') {
+            parsed.date = new Date(parsed.date)
+          }
           setBookingData(parsed)
         } else {
           // Garage ID doesn't match, fetch garage data
@@ -293,12 +297,18 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
                       Data e Horário
                     </h3>
                     <div className="space-y-2 text-sm">
-                      <div className="font-medium text-base">{bookingData.date && bookingData.date instanceof Date ? bookingData.date.toLocaleDateString('pt-BR', { 
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : ''}</div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span className="font-medium">Data:</span> 
+                        <span className="font-medium">
+                          {bookingData.date && bookingData.date instanceof Date ? 
+                            bookingData.date.toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }) : ''}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="h-3 w-3" />
                         <span className="font-medium">Horário:</span> {bookingData.timeSlot || ''}
