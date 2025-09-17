@@ -45,6 +45,8 @@ model User {
   image         String?
   phone         String?
   password      String?
+  resetToken    String?
+  resetTokenExpiry DateTime?
   role          UserRole  @default(CUSTOMER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

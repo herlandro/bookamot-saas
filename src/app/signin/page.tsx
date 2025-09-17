@@ -136,7 +136,7 @@ export default function SignIn() {
 
               <div className="text-sm">
                 <Link href="/forgot-password" className="font-medium text-primary hover:text-primary/90">
-                  Forgot your password?
+                  Esqueceu sua senha?
                 </Link>
               </div>
             </div>
