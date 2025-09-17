@@ -90,9 +90,34 @@ export function GarageCalendar({ bookings, onBookingClick, onSlotClick, onDateCh
   }, [initialDate])
 
   const fetchAvailabilitySlots = async () => {
-    // Schedule functionality has been removed
-    // This function is kept for compatibility but does nothing
-    setAvailabilitySlots([])
+    if (selectedWeek.length === 0) return
+    
+    try {
+      const startDate = selectedWeek[0].toISOString().split('T')[0]
+      const endDate = selectedWeek[selectedWeek.length - 1].toISOString().split('T')[0]
+      
+      const response = await fetch(`/api/garage-admin/slots?startDate=${startDate}&endDate=${endDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Convert blocked slots to TimeSlot format
+        const blockedSlots: TimeSlot[] = data.blockedSlots.map((slot: any) => ({
+          id: `${slot.date}-${slot.timeSlot}`,
+          date: new Date(slot.date).toISOString().split('T')[0],
+          timeSlot: slot.timeSlot,
+          isBooked: false,
+          isBlocked: true
+        }))
+        
+        setAvailabilitySlots(blockedSlots)
+      } else {
+        console.error('Failed to fetch blocked slots')
+        setAvailabilitySlots([])
+      }
+    } catch (error) {
+      console.error('Error fetching availability slots:', error)
+      setAvailabilitySlots([])
+    }
   }
 
   const generateWeekDays = (date: Date) => {

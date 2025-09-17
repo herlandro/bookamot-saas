@@ -187,52 +187,7 @@ export default function GarageAdminPage() {
         return;
       }
       
-      // Get all unique dates from pending changes to determine the full range
-      const changedDates = Object.keys(pendingChanges).map(key => {
-        const lastDashIndex = key.lastIndexOf('-');
-        return key.substring(0, lastDashIndex);
-      });
-      
-      const uniqueDates = [...new Set(changedDates)].sort();
-      console.log('Datas com alterações:', uniqueDates);
-      
-      if (uniqueDates.length === 0) {
-        console.log('Nenhuma data válida encontrada nas alterações');
-        setIsEditMode(false);
-        setLoading(false);
-        return;
-      }
-      
-      // Use the earliest and latest dates from changes, or fall back to current week
-      let startDate = uniqueDates[0];
-      let endDate = uniqueDates[uniqueDates.length - 1];
-      
-      // Expand to include full week range if needed
-      const startDateObj = new Date(startDate);
-      const endDateObj = new Date(endDate);
-      
-      const startOfWeek = new Date(startDateObj);
-      const startDay = startOfWeek.getDay();
-      const startDiff = startOfWeek.getDate() - startDay + (startDay === 0 ? -6 : 1);
-      startOfWeek.setDate(startDiff);
-      
-      const endOfWeek = new Date(endDateObj);
-      const endDay = endOfWeek.getDay();
-      const endDiff = endOfWeek.getDate() + (7 - endDay) % 7;
-      endOfWeek.setDate(endDiff);
-      
-      startDate = startOfWeek.toISOString().split('T')[0];
-      endDate = endOfWeek.toISOString().split('T')[0];
-      
-      console.log(`Buscando slots de ${startDate} a ${endDate} (expandido para semana completa)`);
-      
-      // Schedule functionality has been removed
-      // This section is kept for compatibility but does nothing
-      const allSlots: any[] = [];
-      
-      console.log(`Encontrados ${allSlots.length} slots`);
-      
-      // Apply all pending changes
+      // Apply all pending changes using the new API
       const promises = Object.entries(pendingChanges).map(async ([slotKey, shouldBlock]) => {
         // Split correctly: slotKey format is "YYYY-MM-DD-HH:MM"
         const lastDashIndex = slotKey.lastIndexOf('-');
@@ -241,21 +196,35 @@ export default function GarageAdminPage() {
         
         console.log(`Processando slot: ${date} ${timeSlot}, bloquear: ${shouldBlock}`);
         
-        // The date is already in ISO format (YYYY-MM-DD) from GarageCalendar
-        console.log(`Procurando slot com data ISO: ${date}`);
-        
-        const slot = allSlots.find((s: any) => 
-          s.date === date && s.timeSlot === timeSlot
-        );
-        
-        // Schedule functionality has been removed
-        // This slot update logic is no longer functional
-        console.log(`Schedule functionality removed - slot update skipped for ${date} ${timeSlot}`);
+        try {
+          const response = await fetch('/api/garage-admin/slots', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              date: date,
+              timeSlot: timeSlot,
+              action: shouldBlock ? 'block' : 'unblock',
+              reason: shouldBlock ? 'Bloqueado pelo administrador' : undefined
+            }),
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro ao processar slot');
+          }
+          
+          console.log(`Slot ${date} ${timeSlot} ${shouldBlock ? 'bloqueado' : 'desbloqueado'} com sucesso`);
+        } catch (error) {
+          console.error(`Erro ao processar slot ${date} ${timeSlot}:`, error);
+          throw error;
+        }
       });
       
       await Promise.all(promises);
       
-      console.log('Todas as alterações foram processadas');
+      console.log('Todas as alterações foram processadas com sucesso');
       
       // Exit edit mode and refresh data
       setIsEditMode(false);
@@ -265,6 +234,8 @@ export default function GarageAdminPage() {
       
       // Force calendar to refresh by incrementing key
       setCalendarKey(prev => prev + 1);
+      
+      alert('Alterações salvas com sucesso!');
     } catch (error) {
       console.error('Error saving changes:', error);
       alert('Erro ao salvar alterações. Tente novamente.');
@@ -302,7 +273,13 @@ export default function GarageAdminPage() {
             <div className="flex gap-3">
               {!isEditMode ? (
                 <>
-
+                  <Button
+                    onClick={handleEditMode}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Editar Calendário
+                  </Button>
                   <Button
                     onClick={() => router.push('/garage-admin/settings')}
                     variant="outline"
