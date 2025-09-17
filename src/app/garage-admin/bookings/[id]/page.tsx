@@ -367,7 +367,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
                   <Button 
                     variant="outline" 
                     className="w-full flex items-center justify-center gap-2"
-                    onClick={() => window.open(`/vehicles/${booking.vehicle.id}`, '_blank')}
+                    onClick={() => router.push(`/garage-admin/vehicles/${booking.vehicle.id}`)}
                   >
                     <Car className="h-4 w-4" />
                     Ver Detalhes do Veículo
