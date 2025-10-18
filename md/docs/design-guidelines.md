@@ -2,7 +2,7 @@
 
 ## Purpose & Scope
 
-Standards for building consistent, maintainable, and visually appealing user interfaces for the [NOME_PROJETO] platform. Covers component architecture, styling conventions, color systems, typography, responsive design, accessibility, and performance using Shadcn UI, Tailwind CSS, and modern Next.js/React best practices.
+Standards for building consistent, maintainable, and visually appealing user interfaces for the **BookaMOT** platform. Covers component architecture, styling conventions, color systems, typography, responsive design, accessibility, and performance using Shadcn UI, Tailwind CSS, and modern Next.js/React best practices.
 
 ## Core Principles
 
@@ -76,7 +76,7 @@ export function StaticCard() { /* ... */ }
 
 ## Color System
 
-Use semantic CSS variables with oklch color format in `globals.css`. The [NOME_PROJETO] platform uses a carefully crafted color palette optimized for the application's specific needs:
+Use semantic CSS variables with oklch color format in `globals.css`. The **BookaMOT** platform uses a carefully crafted color palette optimized for the application's specific needs:
 
 
 **Usage:**
@@ -92,7 +92,7 @@ Use semantic CSS variables with oklch color format in `globals.css`. The [NOME_P
 
 ## Typography
 
-The [NOME_PROJETO] platform uses **Geist** font family for optimal readability and professional appearance:
+The **BookaMOT** platform uses **Geist** font family for optimal readability and professional appearance:
 
 - **Primary Font:** Geist Sans configured in `layout.tsx` and `globals.css`
 - **Monospace Font:** Geist Mono for code and technical content

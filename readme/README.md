@@ -1,161 +1,105 @@
-# BookaMOT - MOT Booking System
+# Setup and Deployment Guides
 
-BookaMOT is a modern web application that simplifies the process of booking MOT tests for vehicles in the UK. It connects vehicle owners with approved MOT testing stations and manages the entire booking process.
+This directory contains detailed guides for setting up and deploying the BookaMOT application.
 
-## Features
+---
 
-- User authentication and authorization
-- Vehicle management
-- MOT booking system
-- Dashboard with booking statistics
-- Garage management for MOT testing stations
-- Real-time booking status updates
+## 📚 Available Guides
 
-## Prerequisites
+### **[SETUP-DEV.md](SETUP-DEV.md)**
+Detailed development environment setup guide.
 
-Before you begin, ensure you have the following installed:
-- Node.js (v18 or higher)
-- npm or yarn package manager
-- Git
-- PostgreSQL (v14 or higher) - Recommended
-  - Or SQLite for quick development (no additional installation required)
+**Contents:**
+- System requirements
+- Installing dependencies (Node.js, PostgreSQL)
+- Environment configuration
+- Database setup
+- Running the application
+- Troubleshooting
 
-## Getting Started
+**Use when:**
+- Setting up on a new machine
+- Onboarding new developers
+- Troubleshooting setup issues
 
-Follow these steps to set up the project for local development:
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone [repository-url]
-   cd bookamot-saas
-   ```
+### **[DEPLOY.md](DEPLOY.md)**
+Production deployment instructions for Coolify VPS.
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+**Contents:**
+- PostgreSQL configuration on Coolify
+- Environment variables for production
+- Deployment steps
+- Post-deployment verification
 
-3. **Environment Setup**
-   - Create a `.env` file in the root directory
-   - Add the following required environment variables:
-     ```env
-     # For PostgreSQL (recommended)
-     DATABASE_URL="postgresql://username:password@localhost:5432/bookamot"
-     
-     # Or for SQLite (alternative)
-     # DATABASE_URL="file:./prisma/dev.db"
-     ```
+**Use when:**
+- Deploying to production
+- Setting up staging environment
+- Configuring production database
 
-4. **Database Setup**
-   
-   For PostgreSQL:
-   ```bash
-   # Create PostgreSQL database
-   createdb bookamot
-   
-   # Run Prisma migrations to create/update the local database
-   npx prisma migrate dev
+---
 
-   # Generate Prisma Client
-   npx prisma generate
-   ```
-   
-   For SQLite (alternative):
-   ```bash
-   # Run Prisma migrations to create/update the local database
-   npx prisma migrate dev
+### **[SCALABILITY-ROADMAP.md](SCALABILITY-ROADMAP.md)**
+Roadmap for improving scalability and code quality.
 
-   # Generate Prisma Client
-   npx prisma generate
-   ```
+**Contents:**
+- Phase 1: Automated Tests (Jest, Cypress)
+- Phase 2: CI/CD and Containerization
+- Phase 3: Performance Optimization
+- Phase 4: Monitoring and Observability
+- Phase 5: Advanced Scalability
 
-5. **Start the Development Server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+**Use when:**
+- Planning future improvements
+- Understanding technical debt
+- Prioritizing development work
 
-The application should now be running at `http://localhost:3000`
+---
 
-## Database Management
+### **[SCALABILITY-GUIDE.md](SCALABILITY-GUIDE.md)**
+Detailed implementation guide for scalability improvements.
 
-- The project uses PostgreSQL for local development and production
-- SQLite is also supported as an alternative for quick development
-- Prisma Studio can be used to manage the database:
-  ```bash
-  npx prisma studio
-  ```
-- Access Prisma Studio at `http://localhost:5555`
-- To access PostgreSQL directly:
-  ```bash
-  psql -d bookamot
-  ```
+**Contents:**
+- Jest configuration and test examples
+- Docker containerization
+- GitHub Actions CI/CD
+- Redis caching implementation
+- Performance monitoring
+- Load balancing strategies
 
-## Project Structure
+**Use when:**
+- Implementing automated tests
+- Setting up CI/CD pipeline
+- Adding caching layer
+- Optimizing performance
 
-```
-bookamot-saas/
-├── prisma/              # Database schema and migrations
-├── public/              # Static assets
-├── src/
-│   ├── app/            # Next.js app router pages
-│   ├── components/     # Reusable React components
-│   ├── lib/           # Utility functions and configurations
-│   └── types/         # TypeScript type definitions
-```
+---
 
-## Development Guidelines
+## 🚀 Quick Links
 
-- Follow the existing code style and conventions
-- Write meaningful commit messages
-- Update migrations when making database schema changes
-- Test your changes thoroughly before committing
+### For New Developers
+1. Read [../README.md](../README.md) - Project overview
+2. Follow [SETUP-DEV.md](SETUP-DEV.md) - Detailed setup
+3. Review [../md/docs/README.md](../md/docs/README.md) - Documentation index
 
-## Available Scripts
+### For Deployment
+1. Review [DEPLOY.md](DEPLOY.md) - Deployment guide
+2. Check [../md/docs/database-seeding-quick-reference.md](../md/docs/database-seeding-quick-reference.md) - Database setup
 
-- `npm run dev`: Start development server
-- `npm run build`: Build for production
-- `npm start`: Start production server
-- `npm run lint`: Run ESLint
-- `npx prisma studio`: Open database management UI
+### For Scaling
+1. Review [SCALABILITY-ROADMAP.md](SCALABILITY-ROADMAP.md) - Roadmap
+2. Implement from [SCALABILITY-GUIDE.md](SCALABILITY-GUIDE.md) - Implementation guide
 
-## Important Notes
+---
 
-- Never commit the `dev.db` file or any other database files
-- Always keep your `.env` file secure and never commit it
-- Run migrations after pulling changes that include database schema updates
-- Use Prisma Studio for database management during development
-- For detailed setup instructions on a new machine, refer to `README-DEV-SETUP.md`
-- For deployment instructions, refer to `README-DEPLOY.md`
+## 📁 Related Documentation
 
-## Security Best Practices
+- **Main README:** [../README.md](../README.md)
+- **Technical Docs:** [../md/docs/](../md/docs/)
+- **Application Flows:** [../md/docs/app-flows/](../md/docs/app-flows/)
+- **Database Schema:** [../md/docs/database-schema.md](../md/docs/database-schema.md)
 
-- Always use environment variables for sensitive data (API keys, database credentials, etc.)
-- Keep the Node.js version updated to receive security patches
-- Regularly update project dependencies using `npm audit` and fix vulnerabilities
-- Use strong password hashing with bcrypt (already configured)
-- Implement rate limiting for API routes to prevent abuse
-- Enable CORS only for trusted domains
-- Never log sensitive information or stack traces in production
-- Keep the `.env.example` file updated but never include real credentials
+---
 
-## Performance Optimization
-
-- Enable caching for static assets
-- Use Image component for optimized image loading
-- Implement lazy loading for components when possible
-- Keep bundle size minimal by:
-  - Using dynamic imports for large components
-  - Removing unused dependencies
-  - Implementing code splitting
-- Monitor API endpoint performance
-- Use connection pooling for database queries
-- Implement proper error boundaries to prevent app crashes
-- Use production builds for deployment with:
-  ```bash
-  npm run build
-  npm start
-  ```
+**For quick start, see the main [README.md](../README.md) in the project root.**
