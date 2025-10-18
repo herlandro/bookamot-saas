@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { MapPin, Navigation, Loader2, ArrowRight, AlertCircle } from 'lucide-react'
+import gsap from 'gsap'
 
 interface LocationStepProps {
   onNext: (locationData: { postcode?: string; lat?: number; lng?: number }) => void
@@ -22,6 +23,10 @@ export function LocationStep({ onNext, onBack }: LocationStepProps) {
   const [error, setError] = useState('')
   const [loadingLocation, setLoadingLocation] = useState(false)
   const [useCurrentLocation, setUseCurrentLocation] = useState(false)
+
+  const mapPinContainerRef = useRef<HTMLDivElement>(null)
+  const mapPinIconRef = useRef<SVGSVGElement>(null)
+  const pulseRingRef = useRef<HTMLDivElement>(null)
 
   // Handle checkbox toggle for current location
   const handleLocationCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,19 +105,81 @@ export function LocationStep({ onNext, onBack }: LocationStepProps) {
     onNext({ postcode: postcode.trim().toUpperCase() })
   }
 
+  // Map pin drop animation with pulsing effect
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (prefersReducedMotion || !mapPinContainerRef.current || !mapPinIconRef.current || !pulseRingRef.current) {
+      return
+    }
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline()
+
+      // Pin drops from above
+      tl.from(mapPinIconRef.current, {
+        y: -60,
+        opacity: 0,
+        duration: 0.6,
+        ease: 'bounce.out',
+      })
+      // Slight rotation on landing
+      .to(mapPinIconRef.current, {
+        rotation: 5,
+        duration: 0.15,
+        ease: 'power2.out',
+      })
+      .to(mapPinIconRef.current, {
+        rotation: -5,
+        duration: 0.15,
+        ease: 'power2.inOut',
+      })
+      .to(mapPinIconRef.current, {
+        rotation: 0,
+        duration: 0.15,
+        ease: 'power2.out',
+      })
+
+      // Continuous pulsing ring effect
+      gsap.to(pulseRingRef.current, {
+        scale: 1.5,
+        opacity: 0,
+        duration: 2,
+        ease: 'power1.out',
+        repeat: -1,
+        repeatDelay: 0.5,
+      })
+
+      // Subtle floating animation for the pin
+      gsap.to(mapPinIconRef.current, {
+        y: -4,
+        duration: 2,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        delay: 1,
+      })
+    }, mapPinContainerRef)
+
+    return () => ctx.revert()
+  }, [])
+
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <MapPin className="w-8 h-8 text-primary" />
+        <div ref={mapPinContainerRef} className="relative w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          {/* Pulsing ring effect */}
+          <div
+            ref={pulseRingRef}
+            className="absolute inset-0 rounded-full bg-primary/30"
+            style={{ transformOrigin: 'center' }}
+          />
+          <MapPin ref={mapPinIconRef} className="w-8 h-8 text-primary relative z-10" />
         </div>
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
           Great! Now let's find MOT centres near you
         </h2>
-        <p className="text-muted-foreground">
-          We'll search for approved garages in your area
-        </p>
       </div>
 
       {/* Main Form */}
@@ -137,9 +204,6 @@ export function LocationStep({ onNext, onBack }: LocationStepProps) {
                 className={`text-lg h-14 ${useCurrentLocation ? 'opacity-50' : ''}`}
                 maxLength={8}
               />
-              <p className="text-sm text-muted-foreground">
-                Type in your postcode to search nearby garages
-              </p>
             </div>
 
             {/* Right Side: Use Current Location Checkbox */}
@@ -166,9 +230,6 @@ export function LocationStep({ onNext, onBack }: LocationStepProps) {
                   Use my current location
                 </Label>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Automatically find the closest garages to you
-              </p>
             </div>
           </div>
         </div>

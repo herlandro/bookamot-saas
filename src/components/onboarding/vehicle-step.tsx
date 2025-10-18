@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Car, Loader2, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react'
 import { createVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
+import gsap from 'gsap'
 
 interface VehicleStepProps {
   onNext: (vehicleData: any) => void
@@ -34,6 +35,98 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
   const [loading, setLoading] = useState(false)
   const [validatingReg, setValidatingReg] = useState(false)
   const [lookupSuccess, setLookupSuccess] = useState(false)
+
+  const formRef = useRef<HTMLDivElement>(null)
+  const successMessageRef = useRef<HTMLParagraphElement>(null)
+  const carIconRef = useRef<HTMLDivElement>(null)
+  const carContainerRef = useRef<HTMLDivElement>(null)
+
+  // Entrance animation
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (prefersReducedMotion || !formRef.current) {
+      return
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.from('.form-field', {
+        y: 20,
+        opacity: 0,
+        duration: 0.4,
+        stagger: 0.1,
+        ease: 'power2.out',
+      })
+    }, formRef)
+
+    return () => ctx.revert()
+  }, [])
+
+  // Car animation - drives in from left and bounces
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (prefersReducedMotion || !carContainerRef.current || !carIconRef.current) {
+      return
+    }
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline()
+
+      // Car drives in from left
+      tl.from(carContainerRef.current, {
+        x: -100,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power2.out',
+      })
+      // Bounce effect
+      .to(carContainerRef.current, {
+        y: -8,
+        duration: 0.3,
+        ease: 'power1.out',
+      })
+      .to(carContainerRef.current, {
+        y: 0,
+        duration: 0.3,
+        ease: 'bounce.out',
+      })
+
+      // Continuous subtle bounce
+      gsap.to(carIconRef.current, {
+        y: -3,
+        duration: 1.5,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      })
+    }, carContainerRef)
+
+    return () => ctx.revert()
+  }, [])
+
+  // Success animation when lookup succeeds
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (prefersReducedMotion || !successMessageRef.current || !lookupSuccess) {
+      return
+    }
+
+    gsap.fromTo(
+      successMessageRef.current,
+      {
+        scale: 0.8,
+        opacity: 0,
+      },
+      {
+        scale: 1,
+        opacity: 1,
+        duration: 0.4,
+        ease: 'back.out(1.7)',
+      }
+    )
+  }, [lookupSuccess])
 
   // Auto-lookup vehicle details from registration
   const validateRegistration = async (registration: string) => {
@@ -173,65 +266,65 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
     <div className="w-full max-w-2xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Car className="w-8 h-8 text-primary" />
+        <div ref={carContainerRef} className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div ref={carIconRef}>
+            <Car className="w-8 h-8 text-primary" />
+          </div>
         </div>
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
           Tell us about your vehicle
         </h2>
-        <p className="text-muted-foreground">
-          Enter your registration number and we'll look up the details for you
-        </p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Try: <span className="font-mono font-semibold">AB12CDE</span>, <span className="font-mono font-semibold">WJ11USE</span>, or <span className="font-mono font-semibold">XY99ZZZ</span>
-        </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Registration Number */}
-        <div className="space-y-2">
-          <Label htmlFor="registration" className="text-base font-medium">
-            Registration Number *
-          </Label>
-          <div className="relative">
-            <Input
-              id="registration"
-              placeholder="e.g., AB12 CDE"
-              value={formData.registration || ''}
-              onChange={(e) => handleInputChange('registration', e.target.value.toUpperCase())}
-              onBlur={() => validateRegistration(formData.registration || '')}
-              className={`text-lg h-12 pr-10 ${errors.registration ? 'border-red-500' : ''} ${lookupSuccess ? 'border-green-500' : ''}`}
-              disabled={loading}
-            />
-            {validatingReg && (
-              <Loader2 className="absolute right-3 top-3 h-6 w-6 animate-spin text-muted-foreground" />
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+        {/* Row 1: Registration, Make, Model */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 form-field">
+          {/* Registration Number */}
+          <div className="space-y-2 md:col-span-3">
+            <Label htmlFor="registration" className="text-base font-medium">
+              Registration Number *
+            </Label>
+            <div className="relative">
+              <Input
+                id="registration"
+                placeholder="e.g., AB12 CDE"
+                value={formData.registration || ''}
+                onChange={(e) => handleInputChange('registration', e.target.value.toUpperCase())}
+                onBlur={() => validateRegistration(formData.registration || '')}
+                className={`text-lg h-12 pr-10 ${errors.registration ? 'border-red-500' : ''} ${lookupSuccess ? 'border-green-500' : ''}`}
+                disabled={loading}
+              />
+              {validatingReg && (
+                <Loader2 className="absolute right-3 top-3 h-6 w-6 animate-spin text-muted-foreground" />
+              )}
+              {lookupSuccess && !validatingReg && (
+                <CheckCircle className="absolute right-3 top-3 h-6 w-6 text-green-500" />
+              )}
+            </div>
+            {errors.registration && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.registration}
+              </p>
             )}
-            {lookupSuccess && !validatingReg && (
-              <CheckCircle className="absolute right-3 top-3 h-6 w-6 text-green-500" />
+            {lookupSuccess && (
+              <p ref={successMessageRef} className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                Vehicle details found and filled in!
+              </p>
             )}
           </div>
-          {errors.registration && (
-            <p className="text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
-              {errors.registration}
-            </p>
-          )}
-          {lookupSuccess && (
-            <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
-              Vehicle details found and filled in!
-            </p>
-          )}
         </div>
 
-        {/* Make and Model */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Row 2: Make, Model, Year, Fuel Type */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 form-field">
+          {/* Make */}
           <div className="space-y-2">
             <Label htmlFor="make">Make *</Label>
             <Input
               id="make"
-              placeholder="e.g., Ford, BMW, Toyota"
+              placeholder="e.g., Ford"
               value={formData.make || ''}
               onChange={(e) => handleInputChange('make', e.target.value)}
               className={errors.make ? 'border-red-500' : ''}
@@ -242,11 +335,12 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
             )}
           </div>
 
+          {/* Model */}
           <div className="space-y-2">
             <Label htmlFor="model">Model *</Label>
             <Input
               id="model"
-              placeholder="e.g., Focus, 3 Series"
+              placeholder="e.g., Focus"
               value={formData.model || ''}
               onChange={(e) => handleInputChange('model', e.target.value)}
               className={errors.model ? 'border-red-500' : ''}
@@ -256,10 +350,8 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
               <p className="text-sm text-red-500">{errors.model}</p>
             )}
           </div>
-        </div>
 
-        {/* Year and Fuel Type */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Year */}
           <div className="space-y-2">
             <Label htmlFor="year">Year *</Label>
             <Select
@@ -268,7 +360,7 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
               disabled={loading}
             >
               <SelectTrigger className={errors.year ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Select year" />
+                <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
                 {years.map(year => (
@@ -283,6 +375,7 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
             )}
           </div>
 
+          {/* Fuel Type */}
           <div className="space-y-2">
             <Label htmlFor="fuelType">Fuel Type *</Label>
             <Select
@@ -304,20 +397,22 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col-reverse md:flex-row gap-3 pt-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between form-field">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
-            className="w-full md:w-auto"
+            className="w-full sm:w-auto order-2 sm:order-1"
             disabled={loading}
           >
             Back
           </Button>
+
           <Button
             type="submit"
-            className="w-full md:flex-1 h-12 text-base font-semibold group"
             disabled={loading}
+            className="w-full sm:w-auto group order-1 sm:order-2"
+            size="lg"
           >
             {loading ? (
               <>

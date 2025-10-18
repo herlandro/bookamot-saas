@@ -211,9 +211,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     const whereCondition: any = {
-      customer: {
-        email: session.user.email
-      }
+      customerId: session.user.id
     }
 
     if (status) {
@@ -225,6 +223,7 @@ export async function GET(request: NextRequest) {
       include: {
         garage: {
           select: {
+            id: true,
             name: true,
             address: true,
             city: true,
@@ -234,6 +233,7 @@ export async function GET(request: NextRequest) {
         },
         vehicle: {
           select: {
+            id: true,
             registration: true,
             make: true,
             model: true,
@@ -252,8 +252,20 @@ export async function GET(request: NextRequest) {
       where: whereCondition
     })
 
+    // Map database fields to frontend expected format
+    const formattedBookings = bookings.map(booking => ({
+      id: booking.id,
+      reference: booking.bookingRef,
+      date: booking.date,
+      timeSlot: booking.timeSlot,
+      status: booking.status,
+      garage: booking.garage,
+      vehicle: booking.vehicle,
+      createdAt: booking.createdAt
+    }))
+
     return NextResponse.json({
-      bookings,
+      bookings: formattedBookings,
       total,
       limit,
       offset

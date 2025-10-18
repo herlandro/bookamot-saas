@@ -1,6 +1,9 @@
-import React from 'react'
+'use client'
+
+import React, { useEffect, useRef } from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import gsap from 'gsap'
 
 interface ProgressIndicatorProps {
   currentStep: number
@@ -17,6 +20,31 @@ interface ProgressIndicatorProps {
  * Displays a visual progress bar showing the current step in the onboarding flow
  */
 export function ProgressIndicator({ currentStep, totalSteps, steps }: ProgressIndicatorProps) {
+  const progressBarRef = useRef<HTMLDivElement>(null)
+  const prevStepRef = useRef(currentStep)
+
+  // Animate progress bar when step changes
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (prefersReducedMotion || !progressBarRef.current) {
+      return
+    }
+
+    // Only animate if step actually changed
+    if (prevStepRef.current !== currentStep) {
+      const targetWidth = (currentStep / totalSteps) * 100
+
+      gsap.to(progressBarRef.current, {
+        width: `${targetWidth}%`,
+        duration: 0.6,
+        ease: 'power2.out',
+      })
+
+      prevStepRef.current = currentStep
+    }
+  }, [currentStep, totalSteps])
+
   return (
     <div className="w-full py-6 px-4 md:px-8">
       {/* Mobile: Simple progress bar */}
@@ -31,7 +59,8 @@ export function ProgressIndicator({ currentStep, totalSteps, steps }: ProgressIn
         </div>
         <div className="w-full bg-muted rounded-full h-2">
           <div
-            className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
+            ref={progressBarRef}
+            className="bg-primary h-2 rounded-full"
             style={{ width: `${(currentStep / totalSteps) * 100}%` }}
           />
         </div>

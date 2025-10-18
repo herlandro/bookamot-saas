@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { VehicleStep } from '@/components/onboarding/vehicle-step'
 import { LocationStep } from '@/components/onboarding/location-step'
 import { SearchStep } from '@/components/onboarding/search-step'
 import { Loader2 } from 'lucide-react'
+import gsap from 'gsap'
 
 /**
  * Onboarding Page
@@ -27,6 +28,8 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [vehicleData, setVehicleData] = useState<any>(null)
   const [locationData, setLocationData] = useState<any>(null)
+  const cardContentRef = useRef<HTMLDivElement>(null)
+  const prevStepRef = useRef(currentStep)
 
   // Define onboarding steps
   const steps = [
@@ -71,6 +74,37 @@ export default function OnboardingPage() {
       return
     }
   }, [status, session, router])
+
+  // Animate step transitions
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (prefersReducedMotion || !cardContentRef.current) {
+      return
+    }
+
+    // Only animate if step actually changed
+    if (prevStepRef.current !== currentStep) {
+      const isForward = currentStep > prevStepRef.current
+
+      // Animate out and in
+      gsap.fromTo(
+        cardContentRef.current,
+        {
+          opacity: 0,
+          x: isForward ? 50 : -50,
+        },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.5,
+          ease: 'power2.out',
+        }
+      )
+
+      prevStepRef.current = currentStep
+    }
+  }, [currentStep])
 
   // Show loading state while checking authentication
   if (status === 'loading') {
@@ -124,26 +158,26 @@ export default function OnboardingPage() {
         {/* Step Content */}
         <div className="mt-8">
           <Card className="max-w-4xl mx-auto shadow-xl border-border">
-            <CardContent className="p-0">
+            <CardContent ref={cardContentRef} className="p-0">
               {/* Render current step */}
               {currentStep === 1 && (
                 <WelcomeStep onNext={handleNext} />
               )}
-              
+
               {currentStep === 2 && (
                 <VehicleStep
                   onNext={handleVehicleNext}
                   onBack={handleBack}
                 />
               )}
-              
+
               {currentStep === 3 && (
                 <LocationStep
                   onNext={handleLocationNext}
                   onBack={handleBack}
                 />
               )}
-              
+
               {currentStep === 4 && locationData && (
                 <SearchStep
                   locationData={locationData}
