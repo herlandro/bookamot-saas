@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
 
     const { registration, make, model, year, fuelType, engineSize, color } = validationResult.data
 
-    // Check if vehicle already exists for this user
+    // Check if this user has already registered this specific vehicle
+    // Note: Different users CAN register vehicles with the same registration number
     const existingVehicle = await prisma.vehicle.findFirst({
       where: {
         registration: registration.toUpperCase(),
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (existingVehicle) {
       return NextResponse.json(
-        { error: 'Vehicle with this registration already exists' },
+        { error: 'You have already registered this vehicle' },
         { status: 409 }
       )
     }
@@ -126,10 +127,36 @@ export async function POST(request: NextRequest) {
       message: 'Vehicle added successfully'
     }, { status: 201 })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating vehicle:', error)
+
+    // Handle specific Prisma errors
+    if (error.code === 'P2003') {
+      // Foreign key constraint violation - user doesn't exist
+      return NextResponse.json(
+        { error: 'Your session is invalid. Please log out and log in again.' },
+        { status: 401 }
+      )
+    }
+
+    if (error.code === 'P2002') {
+      // Unique constraint violation
+      return NextResponse.json(
+        { error: 'This vehicle registration is already in use.' },
+        { status: 409 }
+      )
+    }
+
+    // Provide more detailed error information in development
+    const errorMessage = process.env.NODE_ENV === 'development'
+      ? `Internal server error: ${error.message}`
+      : 'Internal server error'
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     )
   }

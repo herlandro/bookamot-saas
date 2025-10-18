@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateDistance } from '@/lib/utils'
+import { geocodeAddress } from '@/lib/geocoding'
 
 // Function to get available time slots based on garage schedules
 function getAvailableTimeSlots(garage: any, date: Date, requestedTime?: string): string[] {
@@ -74,34 +75,7 @@ function getAvailableTimeSlots(garage: any, date: Date, requestedTime?: string):
   return slots;
 }
 
-// Function to get coordinates from postcode or city name (simplified - in production use a geocoding service)
-function getCoordinatesFromPostcode(input: string): { lat: number, lng: number } | null {
-  // Simplified mapping for Hertfordshire postcodes and cities
-  const locationMap: { [key: string]: { lat: number, lng: number } } = {
-    // Postcodes
-    'SG1': { lat: 51.9025, lng: -0.2021 }, // Stevenage
-    'SG4': { lat: 51.9489, lng: -0.2881 }, // Hitchin
-    'SG5': { lat: 51.9501, lng: -0.2795 }, // Hitchin
-    'SG6': { lat: 51.9781, lng: -0.2281 }, // Letchworth
-    'SG7': { lat: 51.9906, lng: -0.1881 }, // Baldock
-    // Cities
-    'STEVENAGE': { lat: 51.9025, lng: -0.2021 },
-    'HITCHIN': { lat: 51.9489, lng: -0.2881 },
-    'LETCHWORTH': { lat: 51.9781, lng: -0.2281 },
-    'BALDOCK': { lat: 51.9906, lng: -0.1881 },
-    'LONDON': { lat: 51.5074, lng: -0.1278 },
-  };
-  
-  // Try to match by postcode prefix (first 2-3 characters)
-  const prefix = input.substring(0, 3).toUpperCase();
-  if (locationMap[prefix]) {
-    return locationMap[prefix];
-  }
-  
-  // Try to match by city name
-  const cityName = input.toUpperCase().trim();
-  return locationMap[cityName] || null;
-}
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -113,16 +87,22 @@ export async function GET(request: NextRequest) {
     const time = searchParams.get('time')
     const limit = parseInt(searchParams.get('limit') || '20')
     const radius = parseInt(searchParams.get('radius') || '25') // miles
-    
+
+    console.log('🔍 Search params:', { location, lat, lng, date, time, limit, radius })
+    console.log('🔄 API recompiled - distance ordering active')
+
     let searchLat: number | null = null;
     let searchLng: number | null = null;
-    
+
     // Determine search coordinates
      if (lat && lng) {
        searchLat = parseFloat(lat);
        searchLng = parseFloat(lng);
+       console.log('📍 Using provided coordinates:', { searchLat, searchLng })
      } else if (location && location !== 'Current Location') {
-      const coords = getCoordinatesFromPostcode(location);
+      // Use the new geocoding service (database + external API)
+      const coords = await geocodeAddress(location);
+      console.log('📍 Geocoded location:', location, '→', coords)
       if (coords) {
         searchLat = coords.lat;
         searchLng = coords.lng;
@@ -132,6 +112,17 @@ export async function GET(request: NextRequest) {
     // Build search conditions
     const searchConditions: any = {
       dvlaApproved: true // Only show approved garages
+    }
+
+    // If location is provided but couldn't be geocoded, search by text (name, city, postcode)
+    if (location && searchLat === null && searchLng === null) {
+      console.log(`🔤 Searching by text: "${location}"`)
+      searchConditions.OR = [
+        { name: { contains: location, mode: 'insensitive' } },
+        { city: { contains: location, mode: 'insensitive' } },
+        { postcode: { contains: location, mode: 'insensitive' } },
+        { address: { contains: location, mode: 'insensitive' } }
+      ]
     }
 
     // Fetch garages with related data
@@ -166,10 +157,12 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    console.log(`🏢 Found ${garages.length} garages in database`);
+
     // Calculate distances and process garages
     const garagesWithDistance = garages.map((garage: any) => {
       let distance: number | undefined;
-      
+
       if (searchLat !== null && searchLng !== null && garage.latitude && garage.longitude) {
         distance = calculateDistance(
           searchLat,
@@ -177,6 +170,7 @@ export async function GET(request: NextRequest) {
           garage.latitude,
           garage.longitude
         );
+        console.log(`📍 ${garage.name}: ${distance.toFixed(2)} miles from search location`)
       }
       
       // Calculate average rating
@@ -190,7 +184,7 @@ export async function GET(request: NextRequest) {
         ? getAvailableTimeSlots(garage, new Date(date), time || undefined)
         : [];
       
-      return {
+      const result = {
         id: garage.id,
         name: garage.name,
         address: garage.address,
@@ -203,26 +197,41 @@ export async function GET(request: NextRequest) {
         reviewCount: ratings.length,
         availableSlots
       };
+
+      console.log(`🔧 Returning garage: ${garage.name}, distance: ${distance}`)
+
+      return result;
     });
     
     // Filter by distance if coordinates provided (within radius)
     let filteredGarages = garagesWithDistance;
     if (searchLat !== null && searchLng !== null) {
-      filteredGarages = garagesWithDistance.filter((garage: any) => 
-        garage.distance !== undefined && garage.distance <= radius
+      console.log(`📏 Filtering by distance (radius: ${radius} miles)`)
+      // Include garages within radius OR garages without coordinates (so they still appear)
+      filteredGarages = garagesWithDistance.filter((garage: any) =>
+        garage.distance === undefined || garage.distance <= radius
       );
+      console.log(`✅ ${filteredGarages.length} garages within radius (or without coordinates)`)
     }
-    
+
     // Sort by distance if available, otherwise by price
     filteredGarages.sort((a: any, b: any) => {
+      // Garages with distance come first, sorted by distance
       if (a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;
       }
+      // If only one has distance, it comes first
+      if (a.distance !== undefined) return -1;
+      if (b.distance !== undefined) return 1;
+      // If neither has distance, sort by price
       return a.motPrice - b.motPrice;
     });
-    
+
     // Limit results
     const limitedGarages = filteredGarages.slice(0, limit);
+
+    console.log(`📤 Returning ${limitedGarages.length} garages`)
+    console.log(`📦 First garage in response:`, JSON.stringify(limitedGarages[0], null, 2))
 
     return NextResponse.json({
       success: true,

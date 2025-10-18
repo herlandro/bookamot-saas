@@ -166,7 +166,7 @@ export default function AddVehiclePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -182,7 +182,30 @@ export default function AddVehiclePage() {
       })
 
       if (response.ok) {
-        router.push('/dashboard')
+        // Check if there's a booking context stored (user came from search results)
+        const bookingContext = sessionStorage.getItem('bookingSearchContext')
+
+        if (bookingContext) {
+          try {
+            const context = JSON.parse(bookingContext)
+            // Redirect to booking page with the stored garage ID
+            const bookingParams = new URLSearchParams()
+            bookingParams.append('garageId', context.selectedGarageId)
+            if (context.date) bookingParams.append('date', context.date)
+            if (context.selectedTimeSlot) bookingParams.append('time', context.selectedTimeSlot)
+
+            // Clear the booking context
+            sessionStorage.removeItem('bookingSearchContext')
+
+            router.push(`/booking/${context.selectedGarageId}?${bookingParams.toString()}`)
+          } catch (error) {
+            console.error('Error parsing booking context:', error)
+            router.push('/dashboard')
+          }
+        } else {
+          // No booking context, redirect to dashboard
+          router.push('/dashboard')
+        }
       } else {
         const error = await response.json()
         if (error.details) {
@@ -208,6 +231,15 @@ export default function AddVehiclePage() {
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 30 }, (_, i) => currentYear - i)
 
+  // Check if user is in booking flow
+  const getBookingContext = () => {
+    if (typeof window === 'undefined') return null
+    const context = sessionStorage.getItem('bookingSearchContext')
+    return context ? JSON.parse(context) : null
+  }
+
+  const bookingContext = getBookingContext()
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
@@ -228,6 +260,15 @@ export default function AddVehiclePage() {
               </p>
             </div>
           </div>
+
+          {/* Booking Flow Info */}
+          {bookingContext && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Booking in progress:</strong> After adding your vehicle, you'll be redirected to complete your MOT booking.
+              </p>
+            </div>
+          )}
 
         <Card>
           <CardHeader>

@@ -96,6 +96,15 @@ export default function Dashboard() {
       setBookings(bookingsData.bookings || [])
       setVehicles(vehiclesData.vehicles || [])
 
+      // Check if user is new (no vehicles and no bookings) - redirect to onboarding
+      const hasNoVehicles = !vehiclesData.vehicles || vehiclesData.vehicles.length === 0
+      const hasNoBookings = !bookingsData.bookings || bookingsData.bookings.length === 0
+
+      if (hasNoVehicles && hasNoBookings) {
+        router.push('/onboarding')
+        return
+      }
+
       // Calculate stats
       const now = new Date()
       const upcomingBookings = bookingsData.bookings?.filter((booking: Booking) => {

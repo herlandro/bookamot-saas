@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,6 +39,7 @@ interface Vehicle {
 export default function SearchPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [searchLocation, setSearchLocation] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]) // Today's date
@@ -48,6 +49,29 @@ export default function SearchPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(false)
+  const [urlParamsLoaded, setUrlParamsLoaded] = useState(false)
+
+  // Read URL parameters and populate form fields
+  useEffect(() => {
+    const location = searchParams.get('location')
+    const date = searchParams.get('date')
+    const time = searchParams.get('time')
+
+    console.log('📥 URL Parameters:', { location, date, time })
+
+    if (location) {
+      setSearchLocation(location)
+      setDebouncedSearchTerm(location) // Set immediately to trigger search
+    }
+
+    if (date) {
+      setSelectedDate(date)
+      setSelectedGridDate(date)
+    }
+
+    // Mark that URL params have been loaded
+    setUrlParamsLoaded(true)
+  }, [searchParams])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -74,8 +98,11 @@ export default function SearchPage() {
   useEffect(() => {
     if (debouncedSearchTerm.trim()) {
       searchGarages()
+    } else {
+      setGarages([])
     }
-  }, [debouncedSearchTerm])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, selectedDate])
 
   const fetchUserVehicles = async () => {
     try {
@@ -93,24 +120,32 @@ export default function SearchPage() {
   }
 
   const searchGarages = async () => {
-    if (!searchLocation.trim()) {
+    if (!debouncedSearchTerm.trim()) {
       setGarages([])
       return
     }
-    
+
     setLoading(true)
     try {
       const params = new URLSearchParams({
-        location: searchLocation,
+        location: debouncedSearchTerm,
         date: selectedDate // Include date to get available slots
       })
-      
+
+      console.log('🔍 Searching garages with params:', { location: debouncedSearchTerm, date: selectedDate })
+
       const response = await fetch(`/api/garages/search?${params}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Search results:', data)
+        console.log('📊 Garages order:', data.garages?.map((g: any, i: number) =>
+          `${i+1}. ${g.name} (${g.distance?.toFixed(2) || 'N/A'} miles)`
+        ))
         setGarages(data.garages || [])
         // Reset selected time slots when new search results come in
         setSelectedTimeSlots({})
+      } else {
+        console.error('❌ Search failed:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error searching garages:', error)

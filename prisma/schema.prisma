@@ -109,7 +109,7 @@ model Garage {
 
 model Vehicle {
   id           String   @id @default(cuid())
-  registration String   @unique
+  registration String
   make         String
   model        String
   year         Int
@@ -125,6 +125,10 @@ model Vehicle {
   owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   bookings Booking[]
   motHistory MotHistory[]
+
+  // Composite unique constraint: same user cannot register same vehicle twice
+  // But different users can register vehicles with the same registration number
+  @@unique([registration, ownerId], name: "unique_vehicle_per_user")
 }
 
 model Booking {

@@ -55,7 +55,7 @@ export default function SignUp() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: formData.userType.toUpperCase(),
+          role: formData.userType === 'garage' ? 'GARAGE_OWNER' : 'CUSTOMER',
           garageName: formData.userType === 'garage' ? formData.garageName : undefined,
           address: formData.userType === 'garage' ? formData.address : undefined,
           phone: formData.userType === 'garage' ? formData.phone : undefined,

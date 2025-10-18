@@ -35,9 +35,20 @@ export default function HomePage() {
   }
 
   const handleSearch = () => {
-    // Implement search functionality
-    console.log('Searching with:', { postcode, date, time });
-    router.push('/search-results');
+    // Build search parameters
+    const params = new URLSearchParams();
+    if (postcode) {
+      params.append('location', postcode);
+    }
+    if (date) {
+      params.append('date', format(date, 'yyyy-MM-dd'));
+    }
+    if (time) {
+      params.append('time', time);
+    }
+
+    // Redirect to search page
+    router.push(`/search?${params.toString()}`);
   };
 
   const getCurrentLocation = () => {

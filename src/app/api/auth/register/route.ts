@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { UserRole } from '@prisma/client'
+import { geocodeAddress } from '@/lib/geocoding'
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,12 +85,42 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Try to geocode the address to get coordinates
+      console.log(`🏢 Geocoding garage address: ${address}`)
+      const coords = await geocodeAddress(address)
+
+      // Extract city and postcode from address (simple extraction)
+      // Format expected: "123 Street Name, City, Postcode" or similar
+      const addressParts = address.split(',').map(part => part.trim())
+      let city = 'Unknown'
+      let postcode = 'N/A'
+
+      // Try to extract postcode (UK postcode pattern)
+      const postcodeRegex = /\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i
+      const postcodeMatch = address.match(postcodeRegex)
+      if (postcodeMatch) {
+        postcode = postcodeMatch[0].toUpperCase()
+      }
+
+      // Try to extract city (usually second-to-last or last part before postcode)
+      if (addressParts.length >= 2) {
+        // If we found a postcode, city is likely the part before it
+        const cityPart = addressParts[addressParts.length - (postcodeMatch ? 2 : 1)]
+        if (cityPart && !postcodeRegex.test(cityPart)) {
+          city = cityPart
+        }
+      }
+
+      console.log(`📍 Extracted: city="${city}", postcode="${postcode}", coords=${coords ? `(${coords.lat}, ${coords.lng})` : 'null'}`)
+
       await prisma.garage.create({
         data: {
           name: garageName,
           address,
-          city: 'London', // Default city, should be extracted from address
-          postcode: 'SW1A 1AA', // Default postcode, should be extracted from address
+          city,
+          postcode,
+          latitude: coords?.lat,
+          longitude: coords?.lng,
           phone,
           email,
           ownerId: user.id,
