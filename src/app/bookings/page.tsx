@@ -60,13 +60,19 @@ export default function BookingsPage() {
 
   const fetchBookings = async () => {
     try {
+      console.log('Fetching bookings...')
       const response = await fetch('/api/bookings', {
         credentials: 'include'
       })
+      console.log('Response status:', response.status)
       if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Error response:', errorData)
         throw new Error('Failed to fetch bookings')
       }
       const data = await response.json()
+      console.log('Bookings data:', data)
+      console.log('Number of bookings:', data.bookings?.length || 0)
       setBookings(data.bookings || [])
     } catch (error) {
       setError('Failed to load bookings')
@@ -77,19 +83,23 @@ export default function BookingsPage() {
   }
 
   const filterBookings = () => {
+    console.log('Filtering bookings. Total bookings:', bookings.length)
+    console.log('Status filter:', statusFilter)
     let filtered = bookings
-    
+
     if (statusFilter !== 'all') {
       filtered = bookings.filter(booking => {
         // Convert database status (uppercase) to frontend status (lowercase)
         const normalizedStatus = booking.status.toLowerCase()
+        console.log(`Booking ${booking.reference}: status=${booking.status}, normalized=${normalizedStatus}, filter=${statusFilter}, match=${normalizedStatus === statusFilter}`)
         return normalizedStatus === statusFilter
       })
     }
-    
+
     // Sort by date (newest first)
     filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    
+
+    console.log('Filtered bookings:', filtered.length)
     setFilteredBookings(filtered)
   }
 
@@ -116,13 +126,15 @@ export default function BookingsPage() {
   const isUpcoming = (booking: Booking) => {
     const bookingDate = new Date(booking.date)
     const now = new Date()
-    return bookingDate >= now && booking.status === 'CONFIRMED'
+    now.setHours(0, 0, 0, 0) // Reset to start of day for comparison
+    return bookingDate >= now && !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(booking.status)
   }
 
   const isPast = (booking: Booking) => {
     const bookingDate = new Date(booking.date)
     const now = new Date()
-    return bookingDate < now
+    now.setHours(0, 0, 0, 0) // Reset to start of day for comparison
+    return bookingDate < now || ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(booking.status)
   }
 
   if (status === 'loading' || isLoading) {
@@ -216,7 +228,7 @@ export default function BookingsPage() {
             {statusFilter === 'all' ? 'No bookings found' : `No ${statusFilter} bookings found`}
           </h3>
           <p className="text-muted-foreground mb-6">
-            {statusFilter === 'all' 
+            {statusFilter === 'all'
               ? 'Book your first MOT test to get started'
               : `You don't have any ${statusFilter} bookings`
             }
@@ -228,6 +240,13 @@ export default function BookingsPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {(() => {
+            const upcomingCount = filteredBookings.filter(isUpcoming).length
+            const pastCount = filteredBookings.filter(isPast).length
+            console.log(`Upcoming bookings: ${upcomingCount}, Past bookings: ${pastCount}`)
+            return null
+          })()}
+
           {/* Upcoming Bookings */}
           {filteredBookings.some(isUpcoming) && (
             <div>

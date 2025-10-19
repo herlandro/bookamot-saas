@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Search, 
-  Calendar, 
-  Settings, 
+import {
+  Menu,
+  X,
+  Home,
+  Search,
+  Calendar,
+  Settings,
   User,
   MessageSquare,
   LogOut,
@@ -32,9 +32,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   ];
 
   const bottomItems = [
-    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
-    { id: 'logout', label: 'Logout', icon: LogOut, action: () => signOut({ callbackUrl: '/signin' }) },
+    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
   ];
 
   return (
@@ -101,7 +100,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         </nav>
 
         {/* Bottom Navigation */}
-        <div className="border-t border-border p-2">
+        <div className="border-t border-border p-2 space-y-1">
           {bottomItems.map((item) => {
             const Icon = item.icon;
             return (

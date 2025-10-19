@@ -30,12 +30,11 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/garage-admin' },
     { id: 'bookings', label: 'Reservas', icon: ClipboardList, href: '/garage-admin/bookings' },
-    { id: 'settings', label: 'Configurações', icon: Settings, href: '/garage-admin/settings' },
   ];
 
   const bottomItems = [
+    { id: 'settings', label: 'Configurações', icon: Settings, href: '/garage-admin/settings' },
     { id: 'profile', label: 'Perfil', icon: User, href: '/profile' },
-    { id: 'logout', label: 'Sair', icon: LogOut, action: () => signOut({ callbackUrl: '/signin' }) },
   ];
 
   const isActive = (href: string) => {
@@ -103,7 +102,7 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
         </nav>
 
         {/* Bottom Navigation */}
-        <div className="border-t border-border p-2">
+        <div className="border-t border-border p-2 space-y-1">
           {bottomItems.map((item) => {
             const Icon = item.icon;
             return (

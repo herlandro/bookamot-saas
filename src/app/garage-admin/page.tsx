@@ -272,23 +272,13 @@ export default function GarageAdminPage() {
             </div>
             <div className="flex gap-3">
               {!isEditMode ? (
-                <>
-                  <Button
-                    onClick={handleEditMode}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Editar Calendário
-                  </Button>
-                  <Button
-                    onClick={() => router.push('/garage-admin/settings')}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </Button>
-                </>
+                <Button
+                  onClick={handleEditMode}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar Calendário
+                </Button>
               ) : (
                 <>
                   <Button

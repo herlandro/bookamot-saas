@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { User, Mail, Phone, Calendar, Shield, Building } from 'lucide-react'
-import { getUserById } from '@/lib/db/users'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui'
@@ -168,9 +167,9 @@ export default function ProfilePage() {
               <p className="text-sm font-medium text-muted-foreground mb-1">Tipo de Conta</p>
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-muted-foreground" />
-                <p className="text-lg">
-                  {session?.user?.role === 'CUSTOMER' ? 'Cliente' : 
-                   session?.user?.role === 'GARAGE_OWNER' ? 'Proprietário de Oficina' : 
+                <p className="text-lg text-foreground">
+                  {session?.user?.role === 'CUSTOMER' ? 'Cliente' :
+                   session?.user?.role === 'GARAGE_OWNER' ? 'Proprietário de Oficina' :
                    session?.user?.role}
                 </p>
               </div>
@@ -186,11 +185,14 @@ export default function ProfilePage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button onClick={fetchUserProfile} variant="outline">
-            Atualizar Dados
-          </Button>
           <Button onClick={() => router.push('/profile/edit')}>
             Editar Perfil
+          </Button>
+          <Button
+            onClick={() => signOut({ callbackUrl: '/signin' })}
+            variant="destructive"
+          >
+            Sair
           </Button>
         </CardFooter>
       </Card>

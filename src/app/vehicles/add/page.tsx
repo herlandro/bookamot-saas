@@ -470,8 +470,11 @@ export default function AddVehiclePage() {
               </div>
 
               {/* Submit Button */}
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={loading} className="flex-1">
+              <div className="flex justify-between gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => router.back()}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -483,9 +486,6 @@ export default function AddVehiclePage() {
                       Add Vehicle
                     </>
                   )}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.back()}>
-                  Cancel
                 </Button>
               </div>
             </form>

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { GarageLayout } from '@/components/layout/garage-layout';
+import { ThemeSettingsCard } from '@/components/ui/theme-settings-card';
 
 interface GarageSettings {
   id: string;
@@ -342,6 +343,9 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Theme Settings */}
+          <ThemeSettingsCard />
           </div>
         </div>
       </div>

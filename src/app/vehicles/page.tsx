@@ -6,9 +6,11 @@ import useAuth from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Car, Calendar, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Plus, Car, Calendar, AlertTriangle, CheckCircle, ArrowUpDown, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface Vehicle {
   id: string
@@ -22,7 +24,10 @@ interface Vehicle {
   lastMotResult?: string
   lastMotDate?: string
   motExpiryDate?: string
+  hasActiveBooking?: boolean
 }
+
+type SortField = 'registration' | 'make' | 'fuelType' | 'motStatus'
 
 export default function VehiclesPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -31,6 +36,9 @@ export default function VehiclesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [sortBy, setSortBy] = useState<SortField>('registration')
+  const [selectedVehicles, setSelectedVehicles] = useState<string[]>([])
+  const [bookings, setBookings] = useState<any[]>([])
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -40,6 +48,7 @@ export default function VehiclesPage() {
 
     if (user) {
       fetchVehicles()
+      fetchBookings()
     }
   }, [user, authLoading, router])
 
@@ -57,6 +66,26 @@ export default function VehiclesPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch('/api/bookings')
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings')
+      }
+      const data = await response.json()
+      setBookings(data.bookings || [])
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+    }
+  }
+
+  const hasActiveBooking = (vehicleId: string) => {
+    return bookings.some(booking =>
+      booking.vehicle.id === vehicleId &&
+      !['CANCELLED', 'COMPLETED'].includes(booking.status)
+    )
   }
 
   const handleDeleteVehicle = async (vehicleId: string) => {
@@ -79,12 +108,82 @@ export default function VehiclesPage() {
 
       // Remove the vehicle from the state
       setVehicles(vehicles.filter(vehicle => vehicle.id !== vehicleId))
+      setSelectedVehicles(selectedVehicles.filter(id => id !== vehicleId))
     } catch (error: any) {
       setError(error.message || 'Failed to delete vehicle')
       console.error('Error deleting vehicle:', error)
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedVehicles.length === 0) return
+
+    if (!confirm(`Are you sure you want to remove ${selectedVehicles.length} vehicle(s)? This action cannot be undone.`)) {
+      return
+    }
+
+    setIsDeleting(true)
+    setError('')
+
+    try {
+      const deletePromises = selectedVehicles.map(vehicleId =>
+        fetch(`/api/vehicles/${vehicleId}`, { method: 'DELETE' })
+      )
+
+      const results = await Promise.all(deletePromises)
+      const failedDeletes = results.filter(r => !r.ok)
+
+      if (failedDeletes.length > 0) {
+        throw new Error(`Failed to delete ${failedDeletes.length} vehicle(s)`)
+      }
+
+      // Remove deleted vehicles from state
+      setVehicles(vehicles.filter(v => !selectedVehicles.includes(v.id)))
+      setSelectedVehicles([])
+    } catch (error: any) {
+      setError(error.message || 'Failed to delete selected vehicles')
+      console.error('Error deleting vehicles:', error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedVehicles.length === vehicles.length) {
+      setSelectedVehicles([])
+    } else {
+      setSelectedVehicles(vehicles.map(v => v.id))
+    }
+  }
+
+  const toggleSelectVehicle = (vehicleId: string) => {
+    if (selectedVehicles.includes(vehicleId)) {
+      setSelectedVehicles(selectedVehicles.filter(id => id !== vehicleId))
+    } else {
+      setSelectedVehicles([...selectedVehicles, vehicleId])
+    }
+  }
+
+  const sortVehicles = (vehiclesToSort: Vehicle[]) => {
+    return [...vehiclesToSort].sort((a, b) => {
+      switch (sortBy) {
+        case 'registration':
+          return a.registration.localeCompare(b.registration)
+        case 'make':
+          return `${a.make} ${a.model}`.localeCompare(`${b.make} ${b.model}`)
+        case 'fuelType':
+          return a.fuelType.localeCompare(b.fuelType)
+        case 'motStatus':
+          const aStatus = getMotStatus(a).status
+          const bStatus = getMotStatus(b).status
+          const statusOrder = { expired: 0, expiring: 1, valid: 2, unknown: 3 }
+          return (statusOrder[aStatus as keyof typeof statusOrder] || 3) - (statusOrder[bStatus as keyof typeof statusOrder] || 3)
+        default:
+          return 0
+      }
+    })
   }
 
   const getMotStatus = (vehicle: Vehicle) => {
@@ -157,94 +256,132 @@ export default function VehiclesPage() {
         <div className="text-center py-12">
           <Car className="h-12 w-12 mx-auto text-muted-foreground" />
           <h3 className="mt-4 text-xl font-semibold text-foreground">No vehicles found</h3>
-          <p className="mt-1 text-muted-foreground">Add your first vehicle to book an MOT test</p>
-          <Button 
-            className="mt-4 flex items-center gap-2 mx-auto"
-            onClick={() => router.push('/vehicles/add')}
-          >
-            <Plus className="h-4 w-4" />
-            Add Vehicle
-          </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((vehicle) => {
+        <>
+        {/* Sort and Selection Controls */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg border border-border">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedVehicles.length === vehicles.length && vehicles.length > 0}
+                onChange={toggleSelectAll}
+                id="select-all"
+              />
+              <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                Select All ({selectedVehicles.length}/{vehicles.length})
+              </label>
+            </div>
+            {selectedVehicles.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSelected}
+                disabled={isDeleting}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected ({selectedVehicles.length})
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortField)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="registration">Registration</SelectItem>
+                <SelectItem value="make">Make/Model</SelectItem>
+                <SelectItem value="fuelType">Fuel Type</SelectItem>
+                <SelectItem value="motStatus">MOT Status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Vehicles List */}
+        <div className="space-y-4">{sortVehicles(vehicles).map((vehicle) => {
             const motStatus = getMotStatus(vehicle)
+            const vehicleHasActiveBooking = hasActiveBooking(vehicle.id)
             return (
-              <Card key={vehicle.id} className="hover:shadow-lg transition-shadow border border-border">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{vehicle.registration}</CardTitle>
-                      <CardDescription>
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                      </CardDescription>
-                    </div>
-                    <Badge className={`${motStatus.color} text-primary-foreground flex items-center gap-1`}>
-                      {getMotIcon(motStatus.status)}
-                      {motStatus.label}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Color:</span>
-                      <span className="font-medium">{vehicle.color}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fuel Type:</span>
-                      <span className="font-medium">{vehicle.fuelType}</span>
-                    </div>
-                    {vehicle.engineSize && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Engine Size:</span>
-                        <span className="font-medium">{vehicle.engineSize}L</span>
+              <Card key={vehicle.id} className="hover:shadow-md transition-shadow border border-border">
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    {/* Checkbox and Vehicle Info */}
+                    <div className="flex items-center gap-4 flex-1">
+                      <Checkbox
+                        checked={selectedVehicles.includes(vehicle.id)}
+                        onChange={() => toggleSelectVehicle(vehicle.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-bold text-foreground">{vehicle.registration}</h3>
+                          <Badge className={`${motStatus.color} text-primary-foreground flex items-center gap-1`}>
+                            {getMotIcon(motStatus.status)}
+                            {motStatus.label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </p>
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <span className="text-muted-foreground">
+                            <strong>Fuel:</strong> {vehicle.fuelType}
+                          </span>
+                          <span className="text-muted-foreground">
+                            <strong>Color:</strong> {vehicle.color}
+                          </span>
+                          {vehicle.engineSize && (
+                            <span className="text-muted-foreground">
+                              <strong>Engine:</strong> {vehicle.engineSize}L
+                            </span>
+                          )}
+                          {vehicle.motExpiryDate && (
+                            <span className="text-muted-foreground">
+                              <strong>MOT Expires:</strong> {formatDate(new Date(vehicle.motExpiryDate))}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {vehicle.motExpiryDate && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">MOT Expires:</span>
-                        <span className="font-medium">{formatDate(new Date(vehicle.motExpiryDate))}</span>
-                      </div>
-                    )}
-                    {vehicle.lastMotDate && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Last MOT:</span>
-                        <span className="font-medium">{formatDate(new Date(vehicle.lastMotDate))}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-border flex flex-col gap-2">
-                    <Button 
-                      onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      Book MOT Test
-                    </Button>
-                    <Button 
-                      onClick={() => router.push(`/vehicles/edit/${vehicle.id}`)}
-                      className="w-full"
-                      variant="secondary"
-                    >
-                      Edit Vehicle
-                    </Button>
-                    <Button 
-                      onClick={() => handleDeleteVehicle(vehicle.id)}
-                      className="w-full"
-                      variant="destructive"
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? 'Removing...' : 'Remove Vehicle'}
-                    </Button>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-2 md:ml-auto">
+                      {!vehicleHasActiveBooking && (
+                        <Button
+                          onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Book MOT Test
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => router.push(`/vehicles/edit/${vehicle.id}`)}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        Edit Vehicle
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteVehicle(vehicle.id)}
+                        variant="destructive"
+                        size="sm"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Removing...' : 'Remove Vehicle'}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             )
           })}
         </div>
+        </>
       )}
     </div>
     </MainLayout>
