@@ -5,10 +5,10 @@ import { prisma } from '@/lib/prisma'
 import { updateVehicleSchema } from '@/lib/validations'
 
 // GET a specific vehicle
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -30,8 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         motHistory: {
           orderBy: {
             testDate: 'desc'
-          },
-          take: 1
+          }
         }
       }
     })
@@ -43,6 +42,24 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
+    const latestMot = vehicle.motHistory[0]
+
+    // Calculate MOT status
+    let motStatus = 'NO_MOT'
+    if (latestMot?.expiryDate) {
+      const today = new Date()
+      const expiryDate = new Date(latestMot.expiryDate)
+      const daysUntilExpiry = Math.floor((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (daysUntilExpiry < 0) {
+        motStatus = 'EXPIRED'
+      } else if (daysUntilExpiry <= 30) {
+        motStatus = 'EXPIRING_SOON'
+      } else {
+        motStatus = 'VALID'
+      }
+    }
+
     return NextResponse.json({
       id: vehicle.id,
       registration: vehicle.registration,
@@ -52,8 +69,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       fuelType: vehicle.fuelType,
       engineSize: vehicle.engineSize,
       color: vehicle.color,
-      lastMotDate: vehicle.motHistory[0]?.testDate || null,
-      lastMotResult: vehicle.motHistory[0]?.result || null,
+      lastMotDate: latestMot?.testDate ? latestMot.testDate.toISOString().split('T')[0] : null,
+      lastMotResult: latestMot?.result || null,
+      nextMotDate: latestMot?.expiryDate ? latestMot.expiryDate.toISOString().split('T')[0] : null,
+      motStatus: motStatus,
       createdAt: vehicle.createdAt
     })
 

@@ -23,7 +23,9 @@ interface Vehicle {
   engineSize?: number
   lastMotResult?: string
   lastMotDate?: string
+  nextMotDate?: string
   motExpiryDate?: string
+  motStatus?: 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_MOT'
   hasActiveBooking?: boolean
 }
 
@@ -187,20 +189,37 @@ export default function VehiclesPage() {
   }
 
   const getMotStatus = (vehicle: Vehicle) => {
-    if (!vehicle.motExpiryDate) {
+    // Use the motStatus from API if available
+    if (vehicle.motStatus) {
+      switch (vehicle.motStatus) {
+        case 'VALID':
+          return { status: 'valid', label: 'Valid', color: 'bg-green-600' }
+        case 'EXPIRING_SOON':
+          return { status: 'expiring', label: 'Expiring Soon', color: 'bg-yellow-600' }
+        case 'EXPIRED':
+          return { status: 'expired', label: 'Expired', color: 'bg-red-600' }
+        case 'NO_MOT':
+          return { status: 'unknown', label: 'No MOT', color: 'bg-slate-500' }
+        default:
+          return { status: 'unknown', label: 'Unknown', color: 'bg-slate-500' }
+      }
+    }
+
+    // Fallback to old calculation if motStatus not available
+    if (!vehicle.nextMotDate) {
       return { status: 'unknown', label: 'Unknown', color: 'bg-slate-500' }
     }
 
-    const expiryDate = new Date(vehicle.motExpiryDate)
+    const expiryDate = new Date(vehicle.nextMotDate)
     const today = new Date()
     const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
     if (daysUntilExpiry < 0) {
-      return { status: 'expired', label: 'Expired', color: 'bg-destructive' }
+      return { status: 'expired', label: 'Expired', color: 'bg-red-600' }
     } else if (daysUntilExpiry <= 30) {
-      return { status: 'expiring', label: `${daysUntilExpiry} days left`, color: 'bg-warning' }
+      return { status: 'expiring', label: `${daysUntilExpiry} days left`, color: 'bg-yellow-600' }
     } else {
-      return { status: 'valid', label: 'Valid', color: 'bg-success' }
+      return { status: 'valid', label: 'Valid', color: 'bg-green-600' }
     }
   }
 
@@ -339,9 +358,28 @@ export default function VehiclesPage() {
                               <strong>Engine:</strong> {vehicle.engineSize}L
                             </span>
                           )}
-                          {vehicle.motExpiryDate && (
+                        </div>
+
+                        {/* MOT Information */}
+                        <div className="flex flex-wrap gap-4 text-sm mt-3 pt-3 border-t border-border">
+                          {vehicle.lastMotDate && (
                             <span className="text-muted-foreground">
-                              <strong>MOT Expires:</strong> {formatDate(new Date(vehicle.motExpiryDate))}
+                              <strong>Last MOT:</strong> {vehicle.lastMotDate}
+                              {vehicle.lastMotResult && (
+                                <Badge className="ml-2 text-xs" variant={vehicle.lastMotResult === 'PASS' ? 'default' : 'destructive'}>
+                                  {vehicle.lastMotResult}
+                                </Badge>
+                              )}
+                            </span>
+                          )}
+                          {vehicle.nextMotDate && (
+                            <span className="text-muted-foreground">
+                              <strong>Next MOT:</strong> {vehicle.nextMotDate}
+                            </span>
+                          )}
+                          {!vehicle.lastMotDate && (
+                            <span className="text-muted-foreground italic">
+                              No MOT history available
                             </span>
                           )}
                         </div>

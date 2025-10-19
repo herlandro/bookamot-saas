@@ -57,6 +57,7 @@ model User {
   bookings   Booking[]
   garage     Garage?
   reviews    Review[]
+  motNotifications MotNotification[]
 }
 
 model VerificationToken {
@@ -125,6 +126,7 @@ model Vehicle {
   owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   bookings Booking[]
   motHistory MotHistory[]
+  motNotifications MotNotification[]
 
   // Composite unique constraint: same user cannot register same vehicle twice
   // But different users can register vehicles with the same registration number
@@ -185,8 +187,28 @@ model MotHistory {
   certificateNumber String?
   expiryDate        DateTime?
   mileage           Int?
+  odometerUnit      String?    // MI or KM
+  odometerResultType String?   // READ, UNREADABLE, NOT_AVAILABLE
   testLocation      String?
+  testNumber        String?    @unique
+  dataSource        String?    // DVSA or other source
+
+  // Defect counts
+  dangerousDefects  Int        @default(0)
+  majorDefects      Int        @default(0)
+  minorDefects      Int        @default(0)
+  advisoryDefects   Int        @default(0)
+  prsDefects        Int        @default(0)  // PRS = Presented for Rectification
+
+  // Defect details (JSON array of defect objects)
+  defectDetails     String?    // JSON string of defect details
+
+  // Vehicle info at time of test
+  registrationAtTimeOfTest String?
+
+  // Additional metadata
   createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now()) @updatedAt
 
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 }
@@ -204,6 +226,33 @@ model Review {
   garage     Garage  @relation(fields: [garageId], references: [id], onDelete: Cascade)
   bookingId  String  @unique
   booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model MotNotification {
+  id            String   @id @default(cuid())
+  vehicleId     String
+  userId        String
+  type          NotificationType // EXPIRING_SOON, EXPIRED, FAILED
+  title         String
+  message       String
+  daysUntilExpiry Int?
+  isRead        Boolean  @default(false)
+  sentAt        DateTime @default(now())
+  readAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([vehicleId])
+}
+
+enum NotificationType {
+  EXPIRING_SOON
+  EXPIRED
+  FAILED
 }
 
 // Enums

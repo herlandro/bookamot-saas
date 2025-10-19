@@ -7,7 +7,7 @@ import { createVehicleSchema } from '@/lib/validations'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
         motHistory: {
           orderBy: {
             testDate: 'desc'
-          },
-          take: 1
+          }
         }
       },
       orderBy: {
@@ -35,19 +34,42 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      vehicles: vehicles.map(vehicle => ({
-        id: vehicle.id,
-        registration: vehicle.registration,
-        make: vehicle.make,
-        model: vehicle.model,
-        year: vehicle.year,
-        fuelType: vehicle.fuelType,
-        engineSize: vehicle.engineSize,
-        color: vehicle.color,
-        lastMotDate: vehicle.motHistory[0]?.testDate || null,
-        lastMotResult: vehicle.motHistory[0]?.result || null,
-        createdAt: vehicle.createdAt
-      }))
+      vehicles: vehicles.map(vehicle => {
+        // Get the most recent MOT record
+        const latestMot = vehicle.motHistory[0]
+
+        // Calculate MOT status
+        let motStatus = 'NO_MOT'
+        if (latestMot?.expiryDate) {
+          const today = new Date()
+          const expiryDate = new Date(latestMot.expiryDate)
+          const daysUntilExpiry = Math.floor((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+          if (daysUntilExpiry < 0) {
+            motStatus = 'EXPIRED'
+          } else if (daysUntilExpiry <= 30) {
+            motStatus = 'EXPIRING_SOON'
+          } else {
+            motStatus = 'VALID'
+          }
+        }
+
+        return {
+          id: vehicle.id,
+          registration: vehicle.registration,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          fuelType: vehicle.fuelType,
+          engineSize: vehicle.engineSize,
+          color: vehicle.color,
+          lastMotDate: latestMot?.testDate ? latestMot.testDate.toISOString().split('T')[0] : null,
+          lastMotResult: latestMot?.result || null,
+          nextMotDate: latestMot?.expiryDate ? latestMot.expiryDate.toISOString().split('T')[0] : null,
+          motStatus: motStatus,
+          createdAt: vehicle.createdAt
+        }
+      })
     })
 
   } catch (error) {
