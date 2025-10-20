@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Calendar, 
-  Settings, 
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Calendar,
+  Settings,
   User,
   LogOut,
   Car,
-  ClipboardList,
+  CalendarCheck,
   BarChart2,
-  Clock
+  Clock,
+  Users,
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { signOut } from 'next-auth/react';
@@ -28,16 +30,25 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
   const pathname = usePathname();
   
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/garage-admin' },
-    { id: 'bookings', label: 'Reservas', icon: ClipboardList, href: '/garage-admin/bookings' },
+    { id: 'analytics', label: 'Dashboard', icon: LayoutDashboard, href: '/garage-admin/analytics' },
+    { id: 'calendar', label: 'Calendar', icon: Calendar, href: '/garage-admin' },
+    { id: 'bookings', label: 'Bookings', icon: CalendarCheck, href: '/garage-admin/bookings' },
+    { id: 'customers', label: 'Customers', icon: Users, href: '/garage-admin/customers' },
+    { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/garage-admin/vehicles' },
+    { id: 'reviews', label: 'Reviews', icon: Star, href: '/garage-admin/reviews' },
   ];
 
   const bottomItems = [
-    { id: 'settings', label: 'Configurações', icon: Settings, href: '/garage-admin/settings' },
-    { id: 'profile', label: 'Perfil', icon: User, href: '/profile' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/garage-admin/settings' },
+    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
   ];
 
   const isActive = (href: string) => {
+    // Exact match for the main garage-admin page (calendar)
+    if (href === '/garage-admin') {
+      return pathname === '/garage-admin';
+    }
+    // For other pages, check exact match or if it's a sub-page
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -106,39 +117,21 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
           {bottomItems.map((item) => {
             const Icon = item.icon;
             return (
-              item.action ? (
-                <button
-                  key={item.id}
-                  onClick={item.action}
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left",
-                    isActive(item.href || '')
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                    !isOpen && "justify-center"
-                  )}
-                  title={!isOpen ? item.label : undefined}
-                >
-                  <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
-                  {isOpen && <span>{item.label}</span>}
-                </button>
-              ) : (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive(item.href)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                    !isOpen && "justify-center"
-                  )}
-                  title={!isOpen ? item.label : undefined}
-                >
-                  <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
-                  {isOpen && <span>{item.label}</span>}
-                </a>
-              )
+              <a
+                key={item.id}
+                href={item.href}
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  !isOpen && "justify-center"
+                )}
+                title={!isOpen ? item.label : undefined}
+              >
+                <Icon className={cn("h-5 w-5", isOpen && "mr-3")} />
+                {isOpen && <span>{item.label}</span>}
+              </a>
             );
           })}
         </div>

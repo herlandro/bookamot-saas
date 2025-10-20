@@ -1,162 +1,168 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { GarageLayout } from '@/components/layout/garage-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
-import { ArrowLeft, Car, Calendar, ChevronDown, ChevronRight, TrendingUp, Fuel, Palette, Wrench } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ArrowLeft, Mail, Phone } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-interface Vehicle {
+interface VehicleDetail {
   id: string;
   registration: string;
   make: string;
   model: string;
   year: number;
+  color: string;
   fuelType: string;
-  color?: string;
-  engineSize?: number;
-  vin?: string;
-}
-
-interface MOTRecord {
-  id: string;
-  testDate: string;
-  expiryDate: string;
-  result: 'PASS' | 'FAIL' | 'ADVISORY';
-  mileage: number;
-  testNumber: string;
-  defects: {
-    dangerous: number;
-    major: number;
-    minor: number;
-    advisory: number;
+  engineSize: string;
+  mileage: string;
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
   };
-  details: string[];
+  totalBookings: number;
+  totalRevenue: number;
+  completedBookings: number;
+  motStatus: string;
+  daysUntilExpiry: number | null;
+  latestMot: {
+    testDate: string;
+    result: string;
+    certificateNumber: string;
+    expiryDate: string | null;
+    mileage: number;
+    testLocation: string;
+    defects: {
+      dangerous: number;
+      major: number;
+      minor: number;
+      advisory: number;
+    };
+  } | null;
+  bookings: Array<{
+    id: string;
+    reference: string;
+    date: string;
+    timeSlot: string;
+    status: string;
+    totalPrice: number;
+    customer: {
+      name: string;
+      email: string;
+    };
+    createdAt: string;
+  }>;
+  motHistory: Array<{
+    id: string;
+    testDate: string;
+    result: string;
+    certificateNumber: string;
+    expiryDate: string | null;
+    mileage: number;
+    testLocation: string;
+    defects: {
+      dangerous: number;
+      major: number;
+      minor: number;
+      advisory: number;
+    };
+  }>;
 }
 
-interface MileageData {
-  year: number;
-  mileage: number;
-  date: string;
-}
-
-export default function VehicleDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function VehicleDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const vehicleId = React.use(params).id;
-  
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [motHistory, setMotHistory] = useState<MOTRecord[]>([]);
-  const [mileageData, setMileageData] = useState<MileageData[]>([]);
+  const params = useParams();
+  const vehicleId = params.id as string;
+
+  const [vehicle, setVehicle] = useState<VehicleDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (status === 'loading') return;
+
     if (!session) {
       router.push('/signin');
       return;
     }
-    fetchVehicleData();
-  }, [session, status, vehicleId]);
 
-  const fetchVehicleData = async () => {
+    if (session.user.role !== 'GARAGE_OWNER') {
+      router.push('/dashboard');
+      return;
+    }
+
+    fetchVehicleDetails();
+  }, [session, status, router, vehicleId]);
+
+  const fetchVehicleDetails = async () => {
     try {
       setLoading(true);
-      
-      // Fetch vehicle details
-      const vehicleResponse = await fetch(`/api/garage-admin/vehicles/${vehicleId}`);
-      if (vehicleResponse.ok) {
-        const vehicleData = await vehicleResponse.json();
-        setVehicle(vehicleData);
-      }
-      
-      // Fetch MOT history
-      const motResponse = await fetch(`/api/garage-admin/vehicles/${vehicleId}/mot-history`);
-      if (motResponse.ok) {
-        const motData = await motResponse.json();
-
-        setMotHistory(motData);
-        
-        // Extract mileage data for chart - remove duplicates and keep only one entry per year
-        const mileageMap = new Map();
-        motData.forEach((record: MOTRecord) => {
-          const year = new Date(record.testDate).getFullYear();
-          const existingRecord = mileageMap.get(year);
-          
-          // Keep the record with the latest date for each year
-          if (!existingRecord || new Date(record.testDate) > new Date(existingRecord.date)) {
-            mileageMap.set(year, {
-              year,
-              mileage: record.mileage,
-              date: record.testDate
-            });
-          }
-        });
-        
-        const mileageChartData = Array.from(mileageMap.values())
-          .sort((a: MileageData, b: MileageData) => a.year - b.year);
-        
-        setMileageData(mileageChartData);
+      const response = await fetch(`/api/garage-admin/vehicles/${vehicleId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setVehicle(data.vehicle);
+      } else {
+        console.error('Failed to fetch vehicle details');
       }
     } catch (error) {
-      console.error('Error fetching vehicle data:', error);
+      console.error('Error fetching vehicle details:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleYear = (year: number) => {
-    const newExpanded = new Set(expandedYears);
-    if (newExpanded.has(year)) {
-      newExpanded.delete(year);
-    } else {
-      newExpanded.add(year);
-    }
-    setExpandedYears(newExpanded);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
 
-  const getResultBadge = (result: string) => {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'GBP',
+    }).format(value);
+  };
+
+  const getMotStatusBadge = (status: string) => {
+    switch (status) {
+      case 'valid':
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Valid</Badge>;
+      case 'expiring_soon':
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Expiring Soon</Badge>;
+      case 'expired':
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Expired</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Failed</Badge>;
+      default:
+        return <Badge variant="secondary">Unknown</Badge>;
+    }
+  };
+
+  const getMotResultBadge = (result: string) => {
     switch (result) {
       case 'PASS':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Aprovado</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Passed</Badge>;
       case 'FAIL':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Reprovado</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Failed</Badge>;
       case 'ADVISORY':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Observações</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Advisory</Badge>;
       default:
         return <Badge variant="secondary">{result}</Badge>;
     }
-  };
-
-  const groupMotByYear = (motRecords: MOTRecord[]) => {
-    const grouped = motRecords.reduce((acc, record) => {
-      const year = new Date(record.testDate).getFullYear();
-      if (!acc[year]) {
-        acc[year] = [];
-      }
-      acc[year].push(record);
-      return acc;
-    }, {} as Record<number, MOTRecord[]>);
-    
-    return Object.entries(grouped)
-      .sort(([a], [b]) => parseInt(b) - parseInt(a))
-      .map(([year, records]) => ({
-        year: parseInt(year),
-        records: records.sort((a, b) => new Date(b.testDate).getTime() - new Date(a.testDate).getTime())
-      }));
   };
 
   if (status === 'loading' || loading) {
     return (
       <GarageLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <p className="text-muted-foreground">Carregando detalhes do veículo...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
       </GarageLayout>
     );
@@ -165,14 +171,26 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
   if (!vehicle) {
     return (
       <GarageLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-muted-foreground">Veículo não encontrado</p>
+        <div className="min-h-screen bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Button
+              onClick={() => router.push('/garage-admin/vehicles')}
+              variant="outline"
+              className="flex items-center gap-2 mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">Vehicle not found</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </GarageLayout>
     );
   }
-
-  const groupedMotHistory = groupMotByYear(motHistory);
 
   return (
     <GarageLayout>
@@ -181,262 +199,237 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Detalhes do Veículo</h1>
-                <p className="text-muted-foreground text-sm">
-                  {vehicle.make} {vehicle.model} - {vehicle.registration}
-                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <Button
+                    onClick={() => router.push('/garage-admin/vehicles')}
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <h1 className="text-2xl font-bold text-foreground">{vehicle.registration}</h1>
+                </div>
+                <p className="text-muted-foreground text-sm">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
               </div>
-              <Button
-                onClick={() => router.back()}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Button>
+              <div>
+                {getMotStatusBadge(vehicle.motStatus)}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Vehicle Information */}
-            <div className="lg:col-span-1 space-y-6">
-              <Card className="shadow-xl rounded-lg border border-border bg-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Car className="h-5 w-5" />
-                    Informações do Veículo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Placa</h3>
-                    <p className="mt-1 font-bold text-lg">{vehicle.registration}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Car className="h-4 w-4" />
-                      Fabricante
-                    </h3>
-                    <p className="mt-1 font-medium">{vehicle.make}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Modelo</h3>
-                    <p className="mt-1 font-medium">{vehicle.model}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Ano
-                    </h3>
-                    <p className="mt-1 font-medium">{vehicle.year}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Fuel className="h-4 w-4" />
-                      Tipo de Combustível
-                    </h3>
-                    <p className="mt-1 font-medium">{vehicle.fuelType}</p>
-                  </div>
-                  
-                  {vehicle.color && (
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Palette className="h-4 w-4" />
-                        Cor
-                      </h3>
-                      <p className="mt-1 font-medium">{vehicle.color}</p>
-                    </div>
-                  )}
-                  
-                  {vehicle.engineSize && (
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Wrench className="h-4 w-4" />
-                        Cilindrada (L)
-                      </h3>
-                      <p className="mt-1 font-medium">{vehicle.engineSize}L</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+          {/* Vehicle Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Vehicle Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Color:</span>
+                  <span className="font-medium">{vehicle.color}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fuel Type:</span>
+                  <span className="font-medium">{vehicle.fuelType}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Engine Size:</span>
+                  <span className="font-medium">{vehicle.engineSize}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mileage:</span>
+                  <span className="font-medium">{vehicle.mileage} km</span>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* MOT History and Mileage Chart */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Mileage Chart */}
-              {mileageData.length > 0 && (
-                <Card className="shadow-xl rounded-lg border border-border bg-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Evolução da Quilometragem
-                    </CardTitle>
-                    <CardDescription>
-                      Gráfico mostrando a evolução da quilometragem ao longo dos anos
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={mileageData}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis 
-                            dataKey="year" 
-                            className="text-muted-foreground"
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis 
-                            className="text-muted-foreground"
-                            tick={{ fontSize: 12 }}
-                            label={{ value: 'Quilometragem', angle: -90, position: 'insideLeft' }}
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))', 
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '6px'
-                            }}
-                            formatter={(value: any) => [`${value} km`, 'Quilometragem']}
-                            labelFormatter={(label: any) => `Ano: ${label}`}
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="mileage" 
-                            stroke="hsl(var(--primary))" 
-                            strokeWidth={2}
-                            dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* MOT History */}
-              <Card className="shadow-xl rounded-lg border border-border bg-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Histórico de MOT
-                  </CardTitle>
-                  <CardDescription>
-                    Histórico completo de inspeções MOT organizadas por ano
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {groupedMotHistory.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      Nenhum histórico de MOT encontrado
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {groupedMotHistory.map(({ year, records }) => (
-                        <Collapsible key={year}>
-                          <CollapsibleTrigger
-                            className="flex items-center justify-between w-full p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                            onClick={() => toggleYear(year)}
-                          >
-                            <div className="flex items-center gap-3">
-                              {expandedYears.has(year) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                              <span className="font-semibold">{year}</span>
-                              <Badge variant="secondary">{records.length} teste(s)</Badge>
-                            </div>
-                            <div className="flex gap-2">
-                              {records.map((record, index) => (
-                                <div key={index} className="text-xs">
-                                  {getResultBadge(record.result)}
-                                </div>
-                              ))}
-                            </div>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="mt-2">
-                            <div className="space-y-3 pl-7">
-                              {records.map((record) => (
-                                <div key={record.id} className="border border-border rounded-lg p-4 bg-card">
-                                  <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                      <p className="font-medium">
-                                        Teste: {new Date(record.testDate).toLocaleDateString('pt-BR')}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">
-                                        Número: {record.testNumber}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">
-                                        Quilometragem: {record.mileage.toLocaleString()} km
-                                      </p>
-                                    </div>
-                                    {getResultBadge(record.result)}
-                                  </div>
-                                  
-                                  {(record.defects.dangerous > 0 || record.defects.major > 0 || 
-                                    record.defects.minor > 0 || record.defects.advisory > 0) && (
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-                                      {record.defects.dangerous > 0 && (
-                                        <div className="text-center p-2 bg-red-50 rounded border border-red-200">
-                                          <p className="text-xs text-red-600 font-medium">Perigosos</p>
-                                          <p className="text-lg font-bold text-red-700">{record.defects.dangerous}</p>
-                                        </div>
-                                      )}
-                                      {record.defects.major > 0 && (
-                                        <div className="text-center p-2 bg-orange-50 rounded border border-orange-200">
-                                          <p className="text-xs text-orange-600 font-medium">Graves</p>
-                                          <p className="text-lg font-bold text-orange-700">{record.defects.major}</p>
-                                        </div>
-                                      )}
-                                      {record.defects.minor > 0 && (
-                                        <div className="text-center p-2 bg-yellow-50 rounded border border-yellow-200">
-                                          <p className="text-xs text-yellow-600 font-medium">Menores</p>
-                                          <p className="text-lg font-bold text-yellow-700">{record.defects.minor}</p>
-                                        </div>
-                                      )}
-                                      {record.defects.advisory > 0 && (
-                                        <div className="text-center p-2 bg-blue-50 rounded border border-blue-200">
-                                          <p className="text-xs text-blue-600 font-medium">Observações</p>
-                                          <p className="text-lg font-bold text-blue-700">{record.defects.advisory}</p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {record.details.length > 0 && (
-                                    <div>
-                                      <h4 className="text-sm font-medium mb-2">Detalhes:</h4>
-                                      <ul className="text-sm text-muted-foreground space-y-1">
-                                        {record.details.map((detail, index) => (
-                                          <li key={index} className="flex items-start gap-2">
-                                            <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0"></span>
-                                            {detail}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Owner</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-muted-foreground text-sm">Name</p>
+                  <p className="font-medium">{vehicle.owner.name}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{vehicle.owner.email}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{vehicle.owner.phone}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={() => router.push(`/garage-admin/customers/${vehicle.owner.id}`)}
+                >
+                  View Customer Profile
+                </Button>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* MOT Status */}
+          {vehicle.latestMot && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Latest MOT</span>
+                  {getMotResultBadge(vehicle.latestMot.result)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Test Date</p>
+                    <p className="font-medium">{formatDate(vehicle.latestMot.testDate)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-sm">Expiry Date</p>
+                    <p className="font-medium">{vehicle.latestMot.expiryDate ? formatDate(vehicle.latestMot.expiryDate) : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-sm">Days Until Expiry</p>
+                    <p className={`font-medium ${vehicle.daysUntilExpiry && vehicle.daysUntilExpiry <= 30 ? 'text-red-600' : ''}`}>
+                      {vehicle.daysUntilExpiry !== null ? `${vehicle.daysUntilExpiry} days` : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Dangerous Defects</p>
+                    <p className="text-2xl font-bold text-red-600">{vehicle.latestMot.defects.dangerous}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-sm">Major Defects</p>
+                    <p className="text-2xl font-bold text-orange-600">{vehicle.latestMot.defects.major}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-sm">Minor Defects</p>
+                    <p className="text-2xl font-bold text-yellow-600">{vehicle.latestMot.defects.minor}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-sm">Advisory</p>
+                    <p className="text-2xl font-bold text-blue-600">{vehicle.latestMot.defects.advisory}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Total Bookings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{vehicle.totalBookings}</p>
+                <p className="text-sm text-muted-foreground mt-1">{vehicle.completedBookings} completed</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Total Revenue</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{formatCurrency(vehicle.totalRevenue)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Completion Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">
+                  {vehicle.totalBookings > 0 ? ((vehicle.completedBookings / vehicle.totalBookings) * 100).toFixed(1) : 0}%
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Bookings History */}
+          {vehicle.bookings.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Booking History</CardTitle>
+                <CardDescription>All bookings for this vehicle at this garage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-medium">Reference</th>
+                        <th className="text-left py-3 px-4 font-medium">Customer</th>
+                        <th className="text-left py-3 px-4 font-medium">Date</th>
+                        <th className="text-left py-3 px-4 font-medium">Status</th>
+                        <th className="text-left py-3 px-4 font-medium">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vehicle.bookings.map((booking) => (
+                        <tr key={booking.id} className="border-b border-border hover:bg-muted/50">
+                          <td className="py-3 px-4 font-medium">{booking.reference}</td>
+                          <td className="py-3 px-4">{booking.customer.name}</td>
+                          <td className="py-3 px-4">{formatDate(booking.date)}</td>
+                          <td className="py-3 px-4">
+                            <Badge variant="outline">{booking.status}</Badge>
+                          </td>
+                          <td className="py-3 px-4">{formatCurrency(booking.totalPrice)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* MOT History */}
+          {vehicle.motHistory.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>MOT History</CardTitle>
+                <CardDescription>All MOT tests for this vehicle</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {vehicle.motHistory.map((mot) => (
+                    <div key={mot.id} className="p-4 border border-border rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium">{formatDate(mot.testDate)}</p>
+                          <p className="text-sm text-muted-foreground">{mot.testLocation}</p>
+                        </div>
+                        {getMotResultBadge(mot.result)}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Certificate:</span> {mot.certificateNumber}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Expiry:</span> {mot.expiryDate ? formatDate(mot.expiryDate) : 'N/A'}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Mileage:</span> {mot.mileage} km
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </GarageLayout>
   );
 }
+

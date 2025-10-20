@@ -83,7 +83,7 @@ export default function BookingsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implementar busca
+    // Implement search
     console.log('Searching for:', searchTerm);
   };
 
@@ -99,13 +99,13 @@ export default function BookingsPage() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Confirmado</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Confirmed</Badge>;
       case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Concluído</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Completed</Badge>;
       case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</Badge>;
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Cancelled</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pending</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">{status}</Badge>;
     }
@@ -126,17 +126,9 @@ export default function BookingsPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Gerenciamento de Reservas</h1>
-                <p className="text-muted-foreground text-sm">Visualize e gerencie todas as reservas da sua oficina</p>
+                <h1 className="text-2xl font-bold text-foreground">Bookings Management</h1>
+                <p className="text-muted-foreground text-sm">View and manage all bookings for your garage</p>
               </div>
-              <Button
-                onClick={() => router.push('/garage-admin')}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar ao Painel
-              </Button>
             </div>
           </div>
         </div>
@@ -148,10 +140,10 @@ export default function BookingsPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Reservas
+                    Bookings
                   </CardTitle>
                   <CardDescription>
-                    Gerencie todas as reservas dos seus clientes
+                    Manage all bookings from your customers
                   </CardDescription>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -159,7 +151,7 @@ export default function BookingsPage() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="Buscar por cliente ou veículo..."
+                      placeholder="Search by customer or vehicle..."
                       className="pl-9 w-full sm:w-64"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -167,11 +159,11 @@ export default function BookingsPage() {
                   </form>
                   <Button variant="outline" className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
-                    Filtrar
+                    Filter
                   </Button>
                   <Button variant="outline" className="flex items-center gap-2">
                     <Download className="h-4 w-4" />
-                    Exportar
+                    Export
                   </Button>
                 </div>
               </div>
@@ -179,23 +171,23 @@ export default function BookingsPage() {
             <CardContent>
               <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-6">
-                  <TabsTrigger value="all">Todas</TabsTrigger>
-                  <TabsTrigger value="pending">Pendentes</TabsTrigger>
-                  <TabsTrigger value="confirmed">Confirmadas</TabsTrigger>
-                  <TabsTrigger value="completed">Concluídas</TabsTrigger>
-                  <TabsTrigger value="cancelled">Canceladas</TabsTrigger>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+                  <TabsTrigger value="completed">Completed</TabsTrigger>
+                  <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value={activeTab} className="space-y-4">
                   {bookings.length === 0 ? (
                     <div className="text-center py-12">
-                      <p className="text-muted-foreground">Nenhuma reserva encontrada</p>
+                      <p className="text-muted-foreground">No bookings found</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {bookings.map((booking) => (
-                        <div 
-                          key={booking.id} 
+                        <div
+                          key={booking.id}
                           className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={() => handleViewBooking(booking.id)}
                         >
@@ -212,7 +204,7 @@ export default function BookingsPage() {
                                 <span>{booking.timeSlot}</span>
                               </div>
                             </div>
-                            
+
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground" />
@@ -223,9 +215,9 @@ export default function BookingsPage() {
                                 <span>{booking.vehicle.make} {booking.vehicle.model} ({booking.vehicle.registration})</span>
                               </div>
                             </div>
-                            
+
                             <Button variant="outline" size="sm" className="md:self-center">
-                              Ver detalhes
+                              View Details
                             </Button>
                           </div>
                         </div>
@@ -237,22 +229,22 @@ export default function BookingsPage() {
             </CardContent>
             <CardFooter className="flex justify-between border-t pt-6">
               <div className="text-sm text-muted-foreground">
-                Mostrando página {currentPage} de {totalPages}
+                Showing page {currentPage} of {totalPages}
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage <= 1}
                 >
-                  Anterior
+                  Previous
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setCurrentPage(prev => prev + 1)}
                   disabled={currentPage >= totalPages}
                 >
-                  Próxima
+                  Next
                 </Button>
               </div>
             </CardFooter>

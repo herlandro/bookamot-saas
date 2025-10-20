@@ -239,6 +239,11 @@ export async function GET(request: NextRequest) {
             model: true,
             year: true
           }
+        },
+        reviews: {
+          select: {
+            id: true
+          }
         }
       },
       orderBy: {
@@ -261,7 +266,8 @@ export async function GET(request: NextRequest) {
       status: booking.status,
       garage: booking.garage,
       vehicle: booking.vehicle,
-      createdAt: booking.createdAt
+      createdAt: booking.createdAt,
+      hasReview: booking.reviews && booking.reviews.length > 0
     }))
 
     return NextResponse.json({

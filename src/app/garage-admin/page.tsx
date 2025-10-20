@@ -43,7 +43,7 @@ export default function GarageAdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<GarageStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState('2025-09-15'); // Data com agendamentos existentes
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Data atual
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -135,16 +135,16 @@ export default function GarageAdminPage() {
 
   const handleSlotClick = (date: string, timeSlot: string) => {
     if (isEditMode) {
-      // Verificar se a data é passada
+      // Check if the date is in the past
       const slotDate = new Date(date);
       const now = new Date();
       const [hours, minutes] = timeSlot.split(':').map(Number);
       const slotDateTime = new Date(slotDate);
       slotDateTime.setHours(hours, minutes, 0, 0);
-      
-      // Impedir bloqueio/desbloqueio de slots passados
+
+      // Prevent blocking/unblocking of past slots
       if (slotDateTime < now) {
-        alert('Não é possível bloquear/desbloquear slots que já passaram.');
+        alert('Cannot block/unblock slots that have already passed.');
         return;
       }
       
@@ -171,31 +171,22 @@ export default function GarageAdminPage() {
   };
 
   const handleSaveChanges = async () => {
-    console.log('🔥 FUNÇÃO HANDLEAVECHANGES CHAMADA!');
-    console.log('🔥 Estado atual - isEditMode:', isEditMode);
-    console.log('🔥 Estado atual - loading:', loading);
-    console.log('🔥 Data selecionada atual:', selectedDate);
     try {
       setLoading(true);
-      
-      console.log('Iniciando salvamento. Alterações pendentes:', pendingChanges);
-      
+
       if (Object.keys(pendingChanges).length === 0) {
-        console.log('Nenhuma alteração pendente para salvar');
         setIsEditMode(false);
         setLoading(false);
         return;
       }
-      
+
       // Apply all pending changes using the new API
       const promises = Object.entries(pendingChanges).map(async ([slotKey, shouldBlock]) => {
         // Split correctly: slotKey format is "YYYY-MM-DD-HH:MM"
         const lastDashIndex = slotKey.lastIndexOf('-');
         const date = slotKey.substring(0, lastDashIndex);
         const timeSlot = slotKey.substring(lastDashIndex + 1);
-        
-        console.log(`Processando slot: ${date} ${timeSlot}, bloquear: ${shouldBlock}`);
-        
+
         try {
           const response = await fetch('/api/garage-admin/slots', {
             method: 'POST',
@@ -206,39 +197,35 @@ export default function GarageAdminPage() {
               date: date,
               timeSlot: timeSlot,
               action: shouldBlock ? 'block' : 'unblock',
-              reason: shouldBlock ? 'Bloqueado pelo administrador' : undefined
+              reason: shouldBlock ? 'Blocked by administrator' : undefined
             }),
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro ao processar slot');
+            throw new Error(errorData.error || 'Error processing slot');
           }
-          
-          console.log(`Slot ${date} ${timeSlot} ${shouldBlock ? 'bloqueado' : 'desbloqueado'} com sucesso`);
         } catch (error) {
-          console.error(`Erro ao processar slot ${date} ${timeSlot}:`, error);
+          console.error(`Error processing slot ${date} ${timeSlot}:`, error);
           throw error;
         }
       });
-      
+
       await Promise.all(promises);
-      
-      console.log('Todas as alterações foram processadas com sucesso');
-      
+
       // Exit edit mode and refresh data
       setIsEditMode(false);
       setPendingChanges({});
       await fetchBookings();
       await fetchStats();
-      
+
       // Force calendar to refresh by incrementing key
       setCalendarKey(prev => prev + 1);
-      
-      alert('Alterações salvas com sucesso!');
+
+      alert('Changes saved successfully!');
     } catch (error) {
       console.error('Error saving changes:', error);
-      alert('Erro ao salvar alterações. Tente novamente.');
+      alert('Error saving changes. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -267,8 +254,8 @@ export default function GarageAdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Painel de Administração</h1>
-              <p className="text-muted-foreground text-sm">Gerencie suas reservas e agenda</p>
+              <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
+              <p className="text-muted-foreground text-sm">Manage your bookings and schedule</p>
             </div>
             <div className="flex gap-3">
               {!isEditMode ? (
@@ -277,20 +264,17 @@ export default function GarageAdminPage() {
                   className="flex items-center gap-2"
                 >
                   <Edit className="h-4 w-4" />
-                  Editar Calendário
+                  Edit Calendar
                 </Button>
               ) : (
                 <>
                   <Button
-                    onClick={() => {
-                      console.log('🔥 BOTÃO SALVAR CLICADO!');
-                      handleSaveChanges();
-                    }}
+                    onClick={handleSaveChanges}
                     className="flex items-center gap-2"
                     disabled={loading}
                   >
                     <Save className="h-4 w-4" />
-                    {loading ? 'Salvando...' : 'Salvar'}
+                    {loading ? 'Saving...' : 'Save'}
                   </Button>
                   <Button
                     onClick={handleCancelEdit}
@@ -298,7 +282,7 @@ export default function GarageAdminPage() {
                     className="flex items-center gap-2"
                   >
                     <X className="h-4 w-4" />
-                    Cancelar
+                    Cancel
                   </Button>
                 </>
               )}
@@ -308,55 +292,6 @@ export default function GarageAdminPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card className="border border-border bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-foreground">Total Bookings</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stats.totalBookings}</div>
-                <p className="text-xs text-muted-foreground">All time</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-foreground">Today's Bookings</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stats.todayBookings}</div>
-                <p className="text-xs text-muted-foreground">Scheduled for today</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-foreground">This Week</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stats.weeklyBookings}</div>
-                <p className="text-xs text-muted-foreground">Bookings this week</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-foreground">Monthly Revenue</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">£{stats.monthlyRevenue}</div>
-                <p className="text-xs text-muted-foreground">This month</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {/* Interactive Calendar */}
         <GarageCalendar
           key={calendarKey}

@@ -6,9 +6,10 @@ import { useSession, signOut } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Shield, User, LogOut } from 'lucide-react'
+import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Shield, User, LogOut, Star } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
+import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal'
 
 interface Booking {
   id: string
@@ -31,6 +32,7 @@ interface Booking {
     year: number
   }
   createdAt: string
+  hasReview?: boolean
 }
 
 interface Vehicle {
@@ -62,6 +64,8 @@ export default function Dashboard() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -263,6 +267,21 @@ export default function Dashboard() {
                           {booking.garage.name}, {booking.garage.city}
                         </div>
                       </div>
+                      {booking.status === 'completed' && (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedBookingForReview(booking)
+                            setShowReviewModal(true)
+                          }}
+                          variant={booking.hasReview ? "outline" : "default"}
+                          size="sm"
+                          className="w-full mt-3 flex items-center justify-center gap-2"
+                        >
+                          <Star className={`h-4 w-4 ${booking.hasReview ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                          {booking.hasReview ? 'Review Submitted' : 'Write Review'}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -347,6 +366,24 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {selectedBookingForReview && (
+        <ReviewSubmissionModal
+          isOpen={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false)
+            setSelectedBookingForReview(null)
+          }}
+          bookingId={selectedBookingForReview.id}
+          reviewerType="CUSTOMER"
+          revieweeName={selectedBookingForReview.garage.name}
+          onSuccess={() => {
+            // Refresh bookings to show updated review status
+            fetchDashboardData()
+          }}
+        />
+      )}
     </MainLayout>
   )
 }

@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Calendar, Car, MapPin, Clock, Plus, Filter } from 'lucide-react'
+import { Calendar, Car, MapPin, Clock, Plus, Filter, Star } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
+import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal'
 
 interface Booking {
   id: string
@@ -33,6 +34,7 @@ interface Booking {
     year: number
   }
   createdAt: string
+  hasReview?: boolean
 }
 
 export default function BookingsPage() {
@@ -43,6 +45,8 @@ export default function BookingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -375,11 +379,25 @@ export default function BookingsPage() {
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="pt-3 border-t border-border">
+
+                          <div className="pt-3 border-t border-border space-y-3">
                             <p className="text-xs text-muted-foreground">
                               Booked on {formatDate(new Date(booking.createdAt))}
                             </p>
+                            {booking.status === 'COMPLETED' && (
+                              <Button
+                                onClick={() => {
+                                  setSelectedBookingForReview(booking)
+                                  setShowReviewModal(true)
+                                }}
+                                variant={booking.hasReview ? "outline" : "default"}
+                                size="sm"
+                                className="w-full flex items-center justify-center gap-2"
+                              >
+                                <Star className={`h-4 w-4 ${booking.hasReview ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                                {booking.hasReview ? 'Review Submitted' : 'Write Review'}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -389,6 +407,24 @@ export default function BookingsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Review Modal */}
+      {selectedBookingForReview && (
+        <ReviewSubmissionModal
+          isOpen={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false)
+            setSelectedBookingForReview(null)
+          }}
+          bookingId={selectedBookingForReview.id}
+          reviewerType="CUSTOMER"
+          revieweeName={selectedBookingForReview.garage.name}
+          onSuccess={() => {
+            // Refresh bookings to show updated review status
+            fetchBookings()
+          }}
+        />
       )}
     </div>
     </MainLayout>
