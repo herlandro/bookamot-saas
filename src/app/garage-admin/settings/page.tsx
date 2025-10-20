@@ -183,7 +183,7 @@ export default function SettingsPage() {
                   <Label htmlFor="name">Garage Name</Label>
                   <Input
                     id="name"
-                    value={settings.name}
+                    value={settings.name || ''}
                     onChange={(e) => setSettings({ ...settings, name: e.target.value })}
                   />
                 </div>
@@ -192,7 +192,7 @@ export default function SettingsPage() {
                   <Input
                     id="email"
                     type="email"
-                    value={settings.email}
+                    value={settings.email || ''}
                     onChange={(e) => setSettings({ ...settings, email: e.target.value })}
                   />
                 </div>
@@ -200,7 +200,7 @@ export default function SettingsPage() {
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
-                    value={settings.phone}
+                    value={settings.phone || ''}
                     onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
                   />
                 </div>
@@ -219,7 +219,7 @@ export default function SettingsPage() {
                 <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
-                  value={settings.address}
+                  value={settings.address || ''}
                   onChange={(e) => setSettings({ ...settings, address: e.target.value })}
                 />
               </div>
@@ -229,7 +229,7 @@ export default function SettingsPage() {
                   <Label htmlFor="city">City</Label>
                   <Input
                     id="city"
-                    value={settings.city}
+                    value={settings.city || ''}
                     onChange={(e) => setSettings({ ...settings, city: e.target.value })}
                   />
                 </div>
@@ -237,7 +237,7 @@ export default function SettingsPage() {
                   <Label htmlFor="postcode">Postcode</Label>
                   <Input
                     id="postcode"
-                    value={settings.postcode}
+                    value={settings.postcode || ''}
                     onChange={(e) => setSettings({ ...settings, postcode: e.target.value })}
                   />
                 </div>
@@ -273,7 +273,7 @@ export default function SettingsPage() {
                     id="motPrice"
                     type="number"
                     step="0.01"
-                    value={settings.motPrice}
+                    value={settings.motPrice?.toString() || ''}
                     onChange={(e) => setSettings({ ...settings, motPrice: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                     id="retestPrice"
                     type="number"
                     step="0.01"
-                    value={settings.retestPrice}
+                    value={settings.retestPrice?.toString() || ''}
                     onChange={(e) => setSettings({ ...settings, retestPrice: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -322,14 +322,14 @@ export default function SettingsPage() {
                       <>
                         <Input
                           type="time"
-                          value={hours.open}
+                          value={hours.open || ''}
                           onChange={(e) => updateOpeningHours(day, 'open', e.target.value)}
                           className="w-32"
                         />
                         <span className="text-sm">to</span>
                         <Input
                           type="time"
-                          value={hours.close}
+                          value={hours.close || ''}
                           onChange={(e) => updateOpeningHours(day, 'close', e.target.value)}
                           className="w-32"
                         />
