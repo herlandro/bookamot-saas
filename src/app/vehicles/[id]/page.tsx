@@ -209,7 +209,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        <div className="bg-card shadow-sm border-b border-border">
+        <div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div>

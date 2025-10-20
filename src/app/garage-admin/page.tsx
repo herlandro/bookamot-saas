@@ -250,7 +250,7 @@ export default function GarageAdminPage() {
   return (
     <GarageLayout>
       <div className="min-h-screen">
-      <div className="bg-card shadow-sm border-b border-border">
+      <div>
         <div className="px-6">
           <div className="flex justify-between items-center py-6">
             <div>
