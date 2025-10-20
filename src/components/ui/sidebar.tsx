@@ -42,16 +42,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        <div
+          className="fixed inset-0 bg-black/30 z-40 md:hidden"
           onClick={onToggle}
         />
       )}
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed top-0 left-0 h-full bg-background border-r border-border z-50 transition-all duration-300 ease-in-out flex flex-col",
-        isOpen ? "w-64" : "w-0 lg:w-16"
+        "fixed top-0 left-0 h-full bg-background border-r border-border z-50 transition-all duration-300 ease-in-out flex flex-col overflow-hidden",
+        "md:relative md:z-auto",
+        isOpen ? "w-64" : "w-0 md:w-16"
       )}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
@@ -63,12 +64,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               <span className="text-foreground font-semibold">BookaMOT</span>
             </div>
           )}
-          
+
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggle}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted p-2"
+            className="hidden md:flex text-muted-foreground hover:text-foreground hover:bg-muted p-2"
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
