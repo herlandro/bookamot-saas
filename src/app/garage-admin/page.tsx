@@ -11,6 +11,7 @@ import { Calendar, Clock, Users, Settings, BarChart3, Plus, Edit, Save, X } from
 import { formatDate } from '@/lib/utils';
 import { GarageCalendar } from '@/components/garage/garage-calendar';
 import { BookingModal } from '@/components/garage/booking-modal';
+import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal';
 import { GarageLayout } from '@/components/layout/garage-layout';
 
 interface Booking {
@@ -49,6 +50,8 @@ export default function GarageAdminPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<{[key: string]: boolean}>({});
   const [calendarKey, setCalendarKey] = useState(0);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -120,6 +123,15 @@ export default function GarageAdminPage() {
         // Refresh bookings and stats
         fetchBookings();
         fetchStats();
+
+        // Show review modal if status changed to COMPLETED
+        if (newStatus === 'COMPLETED') {
+          const booking = bookings.find(b => b.id === bookingId);
+          if (booking) {
+            setSelectedBookingForReview(booking);
+            setShowReviewModal(true);
+          }
+        }
       } else {
         console.error('Failed to update booking status:', response.status, response.statusText);
       }
@@ -314,6 +326,24 @@ export default function GarageAdminPage() {
           }}
           onStatusUpdate={updateBookingStatus}
         />
+
+        {/* Review Modal */}
+        {selectedBookingForReview && (
+          <ReviewSubmissionModal
+            isOpen={showReviewModal}
+            onClose={() => {
+              setShowReviewModal(false);
+              setSelectedBookingForReview(null);
+            }}
+            bookingId={selectedBookingForReview.id}
+            reviewerType="GARAGE"
+            revieweeName={selectedBookingForReview.user.name || 'Customer'}
+            onSuccess={() => {
+              // Refresh bookings to show updated review status
+              fetchBookings();
+            }}
+          />
+        )}
       </div>
     </div>
     </GarageLayout>

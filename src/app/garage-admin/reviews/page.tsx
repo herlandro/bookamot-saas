@@ -17,6 +17,7 @@ interface Review {
   rating: number;
   comment?: string;
   createdAt: string;
+  reviewerType?: 'CUSTOMER' | 'GARAGE';
   customer?: {
     id: string;
     name: string;
@@ -50,6 +51,9 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterType, setFilterType] = useState<'all' | 'sent' | 'received'>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'rating' | 'title'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -66,23 +70,73 @@ export default function ReviewsPage() {
 
     fetchReviews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, status, router, currentPage, searchTerm]);
+  }, [session, status, router, currentPage, searchTerm, filterType, sortBy, sortOrder]);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      let url = `/api/reviews/received?page=${currentPage}&limit=10&userType=GARAGE`;
 
+      // Fetch both sent and received reviews
+      const [sentResponse, receivedResponse] = await Promise.all([
+        fetch(`/api/reviews/sent?page=1&limit=100&userType=GARAGE`),
+        fetch(`/api/reviews/received?page=1&limit=100&userType=GARAGE`)
+      ]);
+
+      let allReviews: Review[] = [];
+
+      if (sentResponse.ok) {
+        const sentData = await sentResponse.json();
+        allReviews = [...(sentData.reviews || [])];
+      }
+
+      if (receivedResponse.ok) {
+        const receivedData = await receivedResponse.json();
+        allReviews = [...allReviews, ...(receivedData.reviews || [])];
+      }
+
+      // Filter reviews
+      let filteredReviews = allReviews;
+      if (filterType === 'sent') {
+        filteredReviews = allReviews.filter(r => r.reviewerType === 'GARAGE');
+      } else if (filterType === 'received') {
+        filteredReviews = allReviews.filter(r => r.reviewerType === 'CUSTOMER');
+      }
+
+      // Search filter
       if (searchTerm) {
-        url += `&search=${encodeURIComponent(searchTerm)}`;
+        filteredReviews = filteredReviews.filter(r => {
+          const customerName = r.customer?.name || '';
+          const searchLower = searchTerm.toLowerCase();
+          return customerName.toLowerCase().includes(searchLower);
+        });
       }
 
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setReviews(data.reviews || []);
-        setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 });
-      }
+      // Sort reviews
+      filteredReviews.sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === 'date') {
+          comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        } else if (sortBy === 'rating') {
+          comparison = b.rating - a.rating;
+        } else if (sortBy === 'title') {
+          const aName = (a.customer?.name || '').toLowerCase();
+          const bName = (b.customer?.name || '').toLowerCase();
+          comparison = aName.localeCompare(bName);
+        }
+        return sortOrder === 'desc' ? comparison : -comparison;
+      });
+
+      // Paginate
+      const startIndex = (currentPage - 1) * 10;
+      const paginatedReviews = filteredReviews.slice(startIndex, startIndex + 10);
+
+      setReviews(paginatedReviews);
+      setPagination({
+        page: currentPage,
+        limit: 10,
+        total: filteredReviews.length,
+        totalPages: Math.ceil(filteredReviews.length / 10),
+      });
     } catch (error) {
       console.error('Error fetching reviews:', error);
     } finally {
@@ -137,44 +191,87 @@ export default function ReviewsPage() {
   return (
     <GarageLayout>
       <div className="min-h-screen bg-background">
-        <div>
+        <div className="">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Reviews Management</h1>
-                <p className="text-muted-foreground text-sm">View all reviews from customers about your garage</p>
+                <p className="text-muted-foreground text-sm">View all reviews (sent and received)</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+
           <Card className="shadow-xl rounded-lg border border-border bg-card">
             <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5" />
-                    Customer Reviews
-                  </CardTitle>
-                  <CardDescription>
-                    Manage all reviews from customers
-                  </CardDescription>
-                </div>
-                <form onSubmit={handleSearch} className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search by customer name..."
-                    className="pl-9 w-full sm:w-64"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </form>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  All Reviews
+                </CardTitle>
+                <CardDescription>
+                  Manage all reviews sent and received
+                </CardDescription>
               </div>
             </CardHeader>
 
             <CardContent>
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                <div className="flex-1 min-w-[240px] relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by customer name..."
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={filterType === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('all')}
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant={filterType === 'sent' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('sent')}
+                  >
+                    Sent
+                  </Button>
+                  <Button
+                    variant={filterType === 'received' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('received')}
+                  >
+                    Received
+                  </Button>
+                </div>
+                <div className="flex gap-2 ml-auto">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'date' | 'rating' | 'title')}
+                    className="px-3 py-1 rounded-md border border-border bg-background text-sm"
+                  >
+                    <option value="date">Sort by Date</option>
+                    <option value="rating">Sort by Rating</option>
+                    <option value="title">Sort by Name</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                  >
+                    {sortOrder === 'desc' ? '↓' : '↑'}
+                  </Button>
+                </div>
+              </div>
               {reviews.length === 0 ? (
                 <div className="text-center py-12">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
