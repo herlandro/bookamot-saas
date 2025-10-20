@@ -162,17 +162,19 @@ export default function BookingsPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
-          <p className="text-muted-foreground mt-2">View and manage your MOT test appointments</p>
+      <div className="min-h-screen bg-background">
+        <div className="bg-card shadow-sm border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">My Bookings</h1>
+                <p className="text-muted-foreground text-sm">View and manage your MOT test appointments</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <Button onClick={() => router.push('/search')} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Book New MOT
-        </Button>
-      </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
@@ -409,24 +411,25 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* Review Modal */}
-      {selectedBookingForReview && (
-        <ReviewSubmissionModal
-          isOpen={showReviewModal}
-          onClose={() => {
-            setShowReviewModal(false)
-            setSelectedBookingForReview(null)
-          }}
-          bookingId={selectedBookingForReview.id}
-          reviewerType="CUSTOMER"
-          revieweeName={selectedBookingForReview.garage.name}
-          onSuccess={() => {
-            // Refresh bookings to show updated review status
-            fetchBookings()
-          }}
-        />
-      )}
-    </div>
+          {/* Review Modal */}
+          {selectedBookingForReview && (
+            <ReviewSubmissionModal
+              isOpen={showReviewModal}
+              onClose={() => {
+                setShowReviewModal(false)
+                setSelectedBookingForReview(null)
+              }}
+              bookingId={selectedBookingForReview.id}
+              reviewerType="CUSTOMER"
+              revieweeName={selectedBookingForReview.garage.name}
+              onSuccess={() => {
+                // Refresh bookings to show updated review status
+                fetchBookings()
+              }}
+            />
+          )}
+        </div>
+      </div>
     </MainLayout>
   )
 }

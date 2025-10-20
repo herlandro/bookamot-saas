@@ -28,16 +28,24 @@ export default function SettingsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your account settings and preferences
-          </p>
+      <div className="min-h-screen bg-background">
+        <div className="bg-card shadow-sm border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+                <p className="text-muted-foreground text-sm">
+                  Manage your account settings and preferences
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Theme Settings */}
-        <ThemeSettingsCard />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Theme Settings */}
+          <ThemeSettingsCard />
+        </div>
       </div>
     </MainLayout>
   )

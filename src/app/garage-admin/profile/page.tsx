@@ -7,7 +7,7 @@ import { User, Mail, Phone, Calendar, Shield, Building } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui'
-import { MainLayout } from '@/components/layout/main-layout'
+import { GarageLayout } from '@/components/layout/garage-layout'
 
 interface UserProfile {
   id: string
@@ -26,7 +26,7 @@ interface UserProfile {
   }
 }
 
-export default function ProfilePage() {
+export default function GarageProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -37,6 +37,11 @@ export default function ProfilePage() {
     if (status === 'loading') return
     if (!session?.user?.id) {
       router.push('/signin')
+      return
+    }
+
+    if (session.user.role !== 'GARAGE_OWNER') {
+      router.push('/profile')
       return
     }
 
@@ -79,7 +84,7 @@ export default function ProfilePage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <MainLayout>
+      <GarageLayout>
         <div className="min-h-screen bg-background">
           <div className="bg-card shadow-sm border-b border-border">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,13 +112,13 @@ export default function ProfilePage() {
             </Card>
           </div>
         </div>
-      </MainLayout>
+      </GarageLayout>
     )
   }
 
   if (error) {
     return (
-      <MainLayout>
+      <GarageLayout>
         <div className="min-h-screen bg-background">
           <div className="bg-card shadow-sm border-b border-border">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -137,12 +142,12 @@ export default function ProfilePage() {
             </Card>
           </div>
         </div>
-      </MainLayout>
+      </GarageLayout>
     )
   }
 
   return (
-    <MainLayout>
+    <GarageLayout>
       <div className="min-h-screen bg-background">
         <div className="bg-card shadow-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -173,7 +178,7 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium text-muted-foreground mb-1">Nome</p>
                     <p className="text-lg font-medium">{userProfile?.name || session?.user?.name || 'N/A'}</p>
                   </div>
-
+                  
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
                     <div className="flex items-center gap-2">
@@ -181,7 +186,7 @@ export default function ProfilePage() {
                       <p className="text-lg">{session?.user?.email}</p>
                     </div>
                   </div>
-
+                  
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">Telefone</p>
                     <div className="flex items-center gap-2">
@@ -189,19 +194,15 @@ export default function ProfilePage() {
                       <p className="text-lg">{userProfile?.phone || 'Não informado'}</p>
                     </div>
                   </div>
-
+                  
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">Tipo de Conta</p>
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-lg text-foreground">
-                        {session?.user?.role === 'CUSTOMER' ? 'Cliente' :
-                         session?.user?.role === 'GARAGE_OWNER' ? 'Proprietário de Oficina' :
-                         session?.user?.role}
-                      </p>
+                      <p className="text-lg text-foreground">Proprietário de Oficina</p>
                     </div>
                   </div>
-
+                  
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">Membro desde</p>
                     <div className="flex items-center gap-2">
@@ -223,7 +224,7 @@ export default function ProfilePage() {
                 </Button>
               </CardFooter>
             </Card>
-
+            
             {userProfile?.garage && (
               <Card className="shadow-xl rounded-lg border border-border">
                 <CardHeader>
@@ -241,12 +242,12 @@ export default function ProfilePage() {
                       <p className="text-sm font-medium text-muted-foreground mb-1">Nome da Oficina</p>
                       <p className="text-lg font-medium">{userProfile.garage.name}</p>
                     </div>
-
+                    
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1">Endereço</p>
                       <p className="text-lg">{userProfile.garage.address}</p>
                     </div>
-
+                    
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1">Telefone</p>
                       <div className="flex items-center gap-2">
@@ -254,7 +255,7 @@ export default function ProfilePage() {
                         <p className="text-lg">{userProfile.garage.phone || 'Não informado'}</p>
                       </div>
                     </div>
-
+                    
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1">Status</p>
                       <div className="flex items-center gap-2">
@@ -262,7 +263,7 @@ export default function ProfilePage() {
                         <p className="text-lg">{userProfile.garage.isActive ? 'Ativa' : 'Inativa'}</p>
                       </div>
                     </div>
-
+                    
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1">Aprovação DVLA</p>
                       <div className="flex items-center gap-2">
@@ -282,6 +283,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </GarageLayout>
   )
 }
+

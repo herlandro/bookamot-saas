@@ -190,11 +190,19 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground">My Dashboard</h2>
-          <p className="text-muted-foreground mt-2">Welcome, {session.user?.name || session.user?.email}</p>
+      <div className="min-h-screen bg-background">
+        <div className="bg-card shadow-sm border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
+                <p className="text-muted-foreground text-sm">Welcome, {session.user?.name || session.user?.email}</p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
@@ -202,7 +210,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Container de Bookings */}
           <Card className="shadow-lg border border-border">
             <CardHeader className="pb-3">
@@ -364,26 +372,27 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          </div>
+
+          {/* Review Modal */}
+          {selectedBookingForReview && (
+            <ReviewSubmissionModal
+              isOpen={showReviewModal}
+              onClose={() => {
+                setShowReviewModal(false)
+                setSelectedBookingForReview(null)
+              }}
+              bookingId={selectedBookingForReview.id}
+              reviewerType="CUSTOMER"
+              revieweeName={selectedBookingForReview.garage.name}
+              onSuccess={() => {
+                // Refresh bookings to show updated review status
+                fetchDashboardData()
+              }}
+            />
+          )}
         </div>
       </div>
-
-      {/* Review Modal */}
-      {selectedBookingForReview && (
-        <ReviewSubmissionModal
-          isOpen={showReviewModal}
-          onClose={() => {
-            setShowReviewModal(false)
-            setSelectedBookingForReview(null)
-          }}
-          bookingId={selectedBookingForReview.id}
-          reviewerType="CUSTOMER"
-          revieweeName={selectedBookingForReview.garage.name}
-          onSuccess={() => {
-            // Refresh bookings to show updated review status
-            fetchDashboardData()
-          }}
-        />
-      )}
     </MainLayout>
   )
 }

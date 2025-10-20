@@ -251,7 +251,7 @@ export default function GarageAdminPage() {
     <GarageLayout>
       <div className="min-h-screen">
       <div className="bg-card shadow-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-6">
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
@@ -291,7 +291,7 @@ export default function GarageAdminPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-6 py-6">
         {/* Interactive Calendar */}
         <GarageCalendar
           key={calendarKey}
