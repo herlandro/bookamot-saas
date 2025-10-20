@@ -40,7 +40,7 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
 
   const bottomItems = [
     { id: 'settings', label: 'Settings', icon: Settings, href: '/garage-admin/settings' },
-    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
+    { id: 'profile', label: 'Profile', icon: User, href: '/garage-admin/profile' },
   ];
 
   const isActive = (href: string) => {
