@@ -228,7 +228,15 @@ export async function GET(request: NextRequest) {
             address: true,
             city: true,
             postcode: true,
-            phone: true
+            phone: true,
+            reviews: {
+              where: {
+                reviewerType: 'CUSTOMER'
+              },
+              select: {
+                rating: true
+              }
+            }
           }
         },
         vehicle: {
@@ -258,17 +266,30 @@ export async function GET(request: NextRequest) {
     })
 
     // Map database fields to frontend expected format
-    const formattedBookings = bookings.map(booking => ({
-      id: booking.id,
-      reference: booking.bookingRef,
-      date: booking.date,
-      timeSlot: booking.timeSlot,
-      status: booking.status,
-      garage: booking.garage,
-      vehicle: booking.vehicle,
-      createdAt: booking.createdAt,
-      hasReview: booking.reviews && booking.reviews.length > 0
-    }))
+    const formattedBookings = bookings.map(booking => {
+      // Calculate average rating for garage
+      const garageReviews = booking.garage.reviews || []
+      const averageRating = garageReviews.length > 0 
+        ? garageReviews.reduce((sum, review) => sum + review.rating, 0) / garageReviews.length 
+        : 0
+      
+      return {
+        id: booking.id,
+        reference: booking.bookingRef,
+        date: booking.date,
+        timeSlot: booking.timeSlot,
+        status: booking.status,
+        garage: {
+          ...booking.garage,
+          averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+          reviewCount: garageReviews.length,
+          reviews: undefined // Remove reviews from response
+        },
+        vehicle: booking.vehicle,
+        createdAt: booking.createdAt,
+        hasReview: booking.reviews && booking.reviews.length > 0
+      }
+    })
 
     return NextResponse.json({
       bookings: formattedBookings,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,6 +29,16 @@ export function ReviewSubmissionModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // Reset form when modal is closed or booking changes
+  useEffect(() => {
+    if (!isOpen) {
+      setRating(0);
+      setComment('');
+      setError('');
+      setSuccess(false);
+    }
+  }, [isOpen, bookingId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

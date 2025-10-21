@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Calendar, Car, MapPin, Clock, Plus, Filter, Star } from 'lucide-react'
+import { Calendar, Car, MapPin, Clock, Plus, Filter, Star, Search, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal'
@@ -25,6 +27,8 @@ interface Booking {
     city: string
     postcode: string
     phone?: string
+    averageRating?: number
+    reviewCount?: number
   }
   vehicle: {
     id: string
@@ -41,12 +45,16 @@ export default function BookingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState('')
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [lastCheckedBookings, setLastCheckedBookings] = useState<string[]>([])
+  const itemsPerPage = 10
 
   useEffect(() => {
     if (status === 'loading') return
@@ -56,28 +64,80 @@ export default function BookingsPage() {
     }
 
     fetchBookings()
-  }, [session, status, router])
+  }, [session, status, router, currentPage, statusFilter, searchTerm])
 
+  // Reset to first page when filters change
   useEffect(() => {
-    filterBookings()
-  }, [bookings, statusFilter])
+    setCurrentPage(1)
+  }, [statusFilter, searchTerm])
+
+  // Check for newly completed bookings and auto-open review modal
+  useEffect(() => {
+    if (bookings.length === 0) return
+
+    const completedBookings = bookings.filter(booking => 
+      booking.status === 'COMPLETED' && !booking.hasReview
+    )
+
+    const completedBookingIds = completedBookings.map(booking => booking.id)
+
+    // Find newly completed bookings (not in lastCheckedBookings)
+    const newlyCompleted = completedBookings.filter(booking => 
+      !lastCheckedBookings.includes(booking.id)
+    )
+
+    if (newlyCompleted.length > 0 && lastCheckedBookings.length > 0 && !showReviewModal) {
+      // Auto-open review modal for the first newly completed booking
+      const bookingToReview = newlyCompleted[0]
+      setSelectedBookingForReview(bookingToReview)
+      setShowReviewModal(true)
+    }
+
+    // Update the list of checked bookings only if it has changed
+    if (JSON.stringify(completedBookingIds.sort()) !== JSON.stringify(lastCheckedBookings.sort())) {
+      setLastCheckedBookings(completedBookingIds)
+    }
+  }, [bookings])
+
+  // Periodic polling to check for booking updates
+  useEffect(() => {
+    if (status === 'loading' || !session?.user?.id) return
+
+    const interval = setInterval(() => {
+      // Only poll if no modal is open to avoid interrupting user interaction
+      if (!showReviewModal) {
+        fetchBookings()
+      }
+    }, 30000) // Poll every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [session, status, showReviewModal])
 
   const fetchBookings = async () => {
     try {
-      console.log('Fetching bookings...')
-      const response = await fetch('/api/bookings', {
+      setIsLoading(true)
+      setError('')
+      
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter.toUpperCase() })
+      })
+      
+      const response = await fetch(`/api/bookings?${params}`, {
         credentials: 'include'
       })
-      console.log('Response status:', response.status)
+      
       if (!response.ok) {
         const errorData = await response.json()
         console.error('Error response:', errorData)
         throw new Error('Failed to fetch bookings')
       }
+      
       const data = await response.json()
-      console.log('Bookings data:', data)
-      console.log('Number of bookings:', data.bookings?.length || 0)
       setBookings(data.bookings || [])
+      setTotalPages(data.pagination?.pages || 1)
     } catch (error) {
       setError('Failed to load bookings')
       console.error('Error fetching bookings:', error)
@@ -86,26 +146,7 @@ export default function BookingsPage() {
     }
   }
 
-  const filterBookings = () => {
-    console.log('Filtering bookings. Total bookings:', bookings.length)
-    console.log('Status filter:', statusFilter)
-    let filtered = bookings
 
-    if (statusFilter !== 'all') {
-      filtered = bookings.filter(booking => {
-        // Convert database status (uppercase) to frontend status (lowercase)
-        const normalizedStatus = booking.status.toLowerCase()
-        console.log(`Booking ${booking.reference}: status=${booking.status}, normalized=${normalizedStatus}, filter=${statusFilter}, match=${normalizedStatus === statusFilter}`)
-        return normalizedStatus === statusFilter
-      })
-    }
-
-    // Sort by date (newest first)
-    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-    console.log('Filtered bookings:', filtered.length)
-    setFilteredBookings(filtered)
-  }
 
   const getStatusBadge = (status: string) => {
     const normalizedStatus = status.toLowerCase()
@@ -144,13 +185,8 @@ export default function BookingsPage() {
   if (status === 'loading' || isLoading) {
     return (
       <MainLayout>
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading bookings...</p>
-            </div>
-          </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
       </MainLayout>
     )
@@ -163,253 +199,166 @@ export default function BookingsPage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        <div>
+        <div className="bg-card shadow-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">My Bookings</h1>
-                <p className="text-muted-foreground text-sm">View and manage your MOT test appointments</p>
+                <p className="text-muted-foreground text-sm">View and manage all your bookings</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
-          <p className="text-destructive">{error}</p>
-        </div>
-      )}
-
-      {/* Filter Controls */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">Filter by status:</span>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={statusFilter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('all')}
-          >
-            All
-          </Button>
-          <Button
-            variant={statusFilter === 'confirmed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('confirmed')}
-          >
-            Confirmed
-          </Button>
-          <Button
-            variant={statusFilter === 'completed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('completed')}
-          >
-            Completed
-          </Button>
-          <Button
-            variant={statusFilter === 'cancelled' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('cancelled')}
-          >
-            Cancelled
-          </Button>
-          <Button
-            variant={statusFilter === 'pending' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('pending')}
-          >
-            Pending
-          </Button>
-        </div>
-      </div>
-
-      {filteredBookings.length === 0 ? (
-        <div className="text-center py-12">
-          <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            {statusFilter === 'all' ? 'No bookings found' : `No ${statusFilter} bookings found`}
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            {statusFilter === 'all'
-              ? 'Book your first MOT test to get started'
-              : `You don't have any ${statusFilter} bookings`
-            }
-          </p>
-          <Button onClick={() => router.push('/search')} className="flex items-center gap-2 mx-auto">
-            <Plus className="h-4 w-4" />
-            Book MOT Test
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {(() => {
-            const upcomingCount = filteredBookings.filter(isUpcoming).length
-            const pastCount = filteredBookings.filter(isPast).length
-            console.log(`Upcoming bookings: ${upcomingCount}, Past bookings: ${pastCount}`)
-            return null
-          })()}
-
-          {/* Upcoming Bookings */}
-          {filteredBookings.some(isUpcoming) && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Bookings</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredBookings
-                  .filter(isUpcoming)
-                  .map((booking) => (
-                    <Card key={booking.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">Booking #{booking.reference}</CardTitle>
-                            <CardDescription className="flex items-center gap-1 mt-1">
-                              <Car className="h-4 w-4" />
-                              {booking.vehicle.registration}
-                            </CardDescription>
-                          </div>
-                          {getStatusBadge(booking.status)}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
-                            </p>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              {formatDate(new Date(booking.date))}
-                            </div>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              {booking.timeSlot}
-                            </div>
-                            <div className="flex items-start gap-2 text-muted-foreground">
-                              <MapPin className="h-4 w-4 mt-0.5" />
-                              <div>
-                                <p className="font-medium">{booking.garage.name}</p>
-                                <p>{booking.garage.address}</p>
-                                <p>{booking.garage.city}, {booking.garage.postcode}</p>
-                                {booking.garage.phone && (
-                                  <p className="mt-1">📞 {booking.garage.phone}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="pt-3 border-t border-border flex justify-between items-center">
-                            <p className="text-xs text-muted-foreground">
-                              Booked on {formatDate(new Date(booking.createdAt))}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => router.push(`/bookings/${booking.id}`)}
-                              >
-                                View Details
-                              </Button>
-                              {(booking.status === 'CONFIRMED') && (
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => router.push(`/bookings/edit/${booking.id}`)}
-                                >
-                                  Edit
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+          <Card className="shadow-xl rounded-lg border border-border bg-card">
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Bookings
+                  </CardTitle>
+                  <CardDescription>
+                    Manage and view all your bookings
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <form onSubmit={(e) => { e.preventDefault(); }} className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search by garage or vehicle..."
+                      className="pl-9 w-full sm:w-64"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </form>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            </CardHeader>
+            <CardContent>
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+                  <p className="text-destructive">{error}</p>
+                </div>
+              )}
 
-          {/* Past Bookings */}
-          {filteredBookings.some(isPast) && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Past Bookings</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredBookings
-                  .filter(isPast)
-                  .map((booking) => (
-                    <Card key={booking.id} className="hover:shadow-lg transition-shadow opacity-90">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">Booking #{booking.reference}</CardTitle>
-                            <CardDescription className="flex items-center gap-1 mt-1">
-                              <Car className="h-4 w-4" />
-                              {booking.vehicle.registration}
-                            </CardDescription>
-                          </div>
-                          {getStatusBadge(booking.status)}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
-                            </p>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              {formatDate(new Date(booking.date))}
-                            </div>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              {booking.timeSlot}
-                            </div>
-                            <div className="flex items-start gap-2 text-muted-foreground">
-                              <MapPin className="h-4 w-4 mt-0.5" />
-                              <div>
-                                <p className="font-medium">{booking.garage.name}</p>
-                                <p>{booking.garage.address}</p>
-                                <p>{booking.garage.city}, {booking.garage.postcode}</p>
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <TabsList className="mb-6">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+                  <TabsTrigger value="completed">Completed</TabsTrigger>
+                  <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value={statusFilter} className="space-y-4">
+                  {bookings.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
+                        {statusFilter === 'all' ? 'No bookings found' : `No ${statusFilter} bookings found`}
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        {statusFilter === 'all'
+                          ? 'Book your first MOT test to get started'
+                          : `You don't have any ${statusFilter} bookings`
+                        }
+                      </p>
+                      <Button onClick={() => router.push('/search')} className="flex items-center gap-2 mx-auto">
+                        <Plus className="h-4 w-4" />
+                        Book MOT Test
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {bookings.map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => router.push(`/bookings/${booking.id}`)}
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-foreground">{booking.reference}</span>
+                                {getStatusBadge(booking.status)}
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>{formatDate(new Date(booking.date))}</span>
+                                <Clock className="h-4 w-4 ml-2" />
+                                <span>{booking.timeSlot}</span>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="pt-3 border-t border-border space-y-3">
-                            <p className="text-xs text-muted-foreground">
-                              Booked on {formatDate(new Date(booking.createdAt))}
-                            </p>
-                            {booking.status === 'COMPLETED' && (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <span>{booking.garage.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Car className="h-4 w-4 text-muted-foreground" />
+                                <span>{booking.vehicle.make} {booking.vehicle.model} ({booking.vehicle.registration})</span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
                               <Button
-                                onClick={() => {
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setSelectedBookingForReview(booking)
                                   setShowReviewModal(true)
                                 }}
-                                variant={booking.hasReview ? "outline" : "default"}
-                                size="sm"
-                                className="w-full flex items-center justify-center gap-2"
+                                className="flex items-center gap-1"
                               >
-                                <Star className={`h-4 w-4 ${booking.hasReview ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                                {booking.hasReview ? 'Review Submitted' : 'Write Review'}
+                                <Star className={`h-4 w-4 ${booking.hasReview ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
                               </Button>
-                            )}
+                              <Button variant="outline" size="sm" className="md:self-center">
+                                View Details
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            <CardFooter className="flex justify-between border-t pt-6">
+              <div className="text-sm text-muted-foreground">
+                Showing page {currentPage} of {totalPages}
               </div>
-            </div>
-          )}
-        </div>
-      )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
 
           {/* Review Modal */}
           {selectedBookingForReview && (
@@ -423,7 +372,6 @@ export default function BookingsPage() {
               reviewerType="CUSTOMER"
               revieweeName={selectedBookingForReview.garage.name}
               onSuccess={() => {
-                // Refresh bookings to show updated review status
                 fetchBookings()
               }}
             />
