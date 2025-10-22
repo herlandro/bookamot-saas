@@ -222,21 +222,6 @@ export default function ReviewsPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-background">
-        <div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
-                <p className="text-muted-foreground text-sm">
-                  {userType === 'CUSTOMER'
-                    ? 'All your reviews (sent and received)'
-                    : 'All your reviews (sent and received)'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* User Type Toggle */}
           {isGarageOwner && (

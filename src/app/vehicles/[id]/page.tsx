@@ -209,24 +209,16 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        <div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Detalhes do Veículo</h1>
-                <p className="text-muted-foreground text-sm">
-                  {vehicle.make} {vehicle.model} - {vehicle.registration}
-                </p>
-              </div>
-              <Button
-                onClick={() => router.back()}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Button>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex justify-end">
+            <Button
+              onClick={() => router.back()}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Button>
           </div>
         </div>
 

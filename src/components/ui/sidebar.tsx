@@ -5,18 +5,12 @@ import { Button } from '@/components/ui/button';
 import {
   Menu,
   X,
-  Home,
-  Search,
   Calendar,
-  Settings,
-  User,
-  MessageSquare,
-  LogOut,
   Car,
-  Star
+  Star,
+  LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,16 +21,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [activeItem, setActiveItem] = useState('home');
 
   const menuItems = [
-    { id: 'home', label: 'Home', icon: Home, href: '/' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/vehicles' },
     { id: 'reviews', label: 'Reviews', icon: Star, href: '/reviews' },
   ];
 
-  const bottomItems = [
-    { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
-    { id: 'profile', label: 'Profile', icon: User, href: '/profile' },
-  ];
+  const bottomItems: { id: string; label: string; icon: any; href?: string; action?: () => void }[] = [];
 
   return (
     <>

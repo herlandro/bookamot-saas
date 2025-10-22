@@ -166,17 +166,6 @@ export default function AnalyticsDashboardPage() {
   return (
     <GarageLayout>
       <div className="min-h-screen bg-background">
-        <div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Dashboard & Reports</h1>
-                <p className="text-muted-foreground text-sm">View statistics and trends for your garage</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="shadow-xl rounded-lg border border-border bg-card">
             <CardHeader>

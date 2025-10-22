@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Sidebar } from '@/components/ui/sidebar';
+import { Header } from '@/components/ui/header';
 import { cn } from '@/lib/utils';
 
 interface MainLayoutProps {
@@ -16,31 +17,20 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      {/* Header */}
+      <Header onMenuClick={toggleSidebar} showMenuButton={true} />
 
       {/* Main Content */}
-      <div className={cn(
-        "flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-hidden",
-        sidebarOpen ? "md:ml-64" : "md:ml-16"
-      )}>
-        {/* Top Bar for Mobile */}
-        <div className="md:hidden bg-background border-b border-border p-4 flex items-center justify-between">
-          <button
-            onClick={toggleSidebar}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Toggle sidebar"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <span className="text-sm font-semibold text-foreground">BookaMOT</span>
-        </div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto">
+        <main className={cn(
+          "flex-1 overflow-auto transition-all duration-300 ease-in-out",
+          sidebarOpen ? "md:ml-0" : "md:ml-0"
+        )}>
           {children}
         </main>
       </div>

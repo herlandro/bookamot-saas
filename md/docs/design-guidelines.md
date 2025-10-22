@@ -1,8 +1,10 @@
-# Design Guidelines - Version: 1.0.0
+# Design Guidelines - Version: 2.0.0
 
 ## Purpose & Scope
 
 Standards for building consistent, maintainable, and visually appealing user interfaces for the **BookaMOT** platform. Covers component architecture, styling conventions, color systems, typography, responsive design, accessibility, and performance using Shadcn UI, Tailwind CSS, and modern Next.js/React best practices.
+
+**Updated**: October 21, 2025 - Keen Themes Standardization implemented
 
 ## Core Principles
 
@@ -305,6 +307,77 @@ const { register, formState: { errors } } = useForm();
 - Use consistent formatting for all code examples and file paths
 - Organize Tailwind classes by category (layout, typography, colors) for readability
 - Follow project naming conventions for components and utilities
+
+## Keen Themes Standardization (v2.0.0)
+
+### Overview
+BookaMOT has been standardized to follow the Keen Themes design pattern, providing a professional, consistent, and accessible user interface.
+
+### Color Palette - Light Mode
+```css
+--primary: #3b82f6 (azul-500)
+--secondary: #6366f1 (índigo-500)
+--success: #10b981 (verde-500)
+--warning: #f59e0b (âmbar-500)
+--danger: #ef4444 (vermelho-500)
+--info: #0ea5e9 (ciano-500)
+```
+
+### Color Palette - Dark Mode
+```css
+--primary: #60a5fa (azul-400)
+--secondary: #818cf8 (índigo-400)
+--success: #34d399 (verde-400)
+--warning: #fbbf24 (âmbar-400)
+--danger: #f87171 (vermelho-400)
+--info: #38bdf8 (ciano-400)
+```
+
+### New Components
+- **Header** (`src/components/ui/header.tsx`) - Top navigation with logo, search, notifications, profile
+- **Breadcrumbs** (`src/components/ui/breadcrumbs.tsx`) - Navigation breadcrumbs
+- **Footer** (`src/components/ui/footer.tsx`) - Footer with links and information
+- **Avatar** (`src/components/ui/avatar.tsx`) - User avatar with fallback
+- **Dropdown Menu** (`src/components/ui/dropdown-menu.tsx`) - Radix UI-based dropdown
+
+### Updated Layouts
+- **MainLayout** - Now includes Header and Footer
+- **GarageLayout** - Now includes Header and Footer
+
+### Typography Scale
+```
+h1: 2.25rem (36px), font-weight: 700
+h2: 1.875rem (30px), font-weight: 700
+h3: 1.5rem (24px), font-weight: 600
+h4: 1.25rem (20px), font-weight: 600
+h5: 1.125rem (18px), font-weight: 600
+h6: 1rem (16px), font-weight: 600
+p: 1rem (16px), font-weight: 400
+small: 0.875rem (14px), font-weight: 400
+```
+
+### Spacing Scale
+```
+xs: 0.25rem (4px)
+sm: 0.5rem (8px)
+md: 0.75rem (12px)
+lg: 1rem (16px)
+xl: 1.5rem (24px)
+2xl: 2rem (32px)
+```
+
+### Accessibility
+- WCAG AA contrast ratios validated
+- Keyboard navigation support
+- Focus states on all interactive elements
+- Semantic HTML structure
+
+### Related Documentation
+- `KEEN_THEMES_ANALYSIS.md` - Detailed analysis
+- `KEEN_THEMES_COMPARISON.md` - Comparison with previous design
+- `KEEN_THEMES_IMPLEMENTATION_GUIDE.md` - Technical specifications
+- `KEEN_THEMES_COLOR_PALETTE.md` - Complete color reference
+- `KEEN_THEMES_IMPLEMENTATION_SUMMARY.md` - Implementation summary
 
 ## Related Rules
 

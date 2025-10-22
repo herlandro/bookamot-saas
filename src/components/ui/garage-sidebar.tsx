@@ -1,24 +1,17 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Menu,
   X,
   LayoutDashboard,
   Calendar,
-  Settings,
-  User,
-  LogOut,
   Car,
   CalendarCheck,
-  BarChart2,
-  Clock,
   Users,
   Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 interface GarageSidebarProps {
@@ -30,24 +23,17 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
   const pathname = usePathname();
   
   const menuItems = [
-    { id: 'analytics', label: 'Dashboard', icon: LayoutDashboard, href: '/garage-admin/analytics' },
-    { id: 'calendar', label: 'Calendar', icon: Calendar, href: '/garage-admin' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/garage-admin/dashboard' },
+    { id: 'calendar', label: 'Calendar', icon: Calendar, href: '/garage-admin/calendar' },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, href: '/garage-admin/bookings' },
     { id: 'customers', label: 'Customers', icon: Users, href: '/garage-admin/customers' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/garage-admin/vehicles' },
     { id: 'reviews', label: 'Reviews', icon: Star, href: '/garage-admin/reviews' },
   ];
 
-  const bottomItems = [
-    { id: 'settings', label: 'Settings', icon: Settings, href: '/garage-admin/settings' },
-    { id: 'profile', label: 'Profile', icon: User, href: '/garage-admin/profile' },
-  ];
+  const bottomItems: { id: string; label: string; icon: any; href: string }[] = [];
 
   const isActive = (href: string) => {
-    // Exact match for the main garage-admin page (calendar)
-    if (href === '/garage-admin') {
-      return pathname === '/garage-admin';
-    }
     // For other pages, check exact match or if it's a sub-page
     return pathname === href || pathname.startsWith(`${href}/`);
   };

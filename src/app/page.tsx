@@ -12,7 +12,7 @@ import { CalendarIcon, Clock, MapPin, Search } from 'lucide-react';
 import { MainLayout } from '@/components/layout/main-layout';
 
 // Importar o componente da página de administração de garagem
-import GarageAdminPage from './garage-admin/page';
+import GarageAdminPage from './garage-admin/calendar/page';
 
 // Importar o componente Dashboard
 import Dashboard from './dashboard/page';

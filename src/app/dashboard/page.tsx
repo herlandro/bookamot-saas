@@ -76,7 +76,7 @@ export default function Dashboard() {
 
     // Redirect garage owners to their admin dashboard
     if (session.user?.role === 'GARAGE_OWNER') {
-      router.push('/garage-admin')
+      router.push('/')
       return
     }
 
@@ -191,17 +191,6 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        <div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
-                <p className="text-muted-foreground text-sm">Welcome, {session.user?.name || session.user?.email}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {error && (

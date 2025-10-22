@@ -86,17 +86,6 @@ export default function GarageProfilePage() {
     return (
       <GarageLayout>
         <div className="min-h-screen bg-background">
-          <div>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Perfil do Usuário</h1>
-                  <p className="text-muted-foreground text-sm">Suas informações pessoais e de conta</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Card className="shadow-xl rounded-lg border border-border">
               <CardHeader>
@@ -120,17 +109,6 @@ export default function GarageProfilePage() {
     return (
       <GarageLayout>
         <div className="min-h-screen bg-background">
-          <div>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Perfil do Usuário</h1>
-                  <p className="text-muted-foreground text-sm">Suas informações pessoais e de conta</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Card className="shadow-xl rounded-lg border border-border">
               <CardContent className="py-8">
@@ -149,17 +127,6 @@ export default function GarageProfilePage() {
   return (
     <GarageLayout>
       <div className="min-h-screen bg-background">
-        <div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Perfil do Usuário</h1>
-                <p className="text-muted-foreground text-sm">Suas informações pessoais e de conta</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-6">
             <Card className="shadow-xl rounded-lg border border-border">

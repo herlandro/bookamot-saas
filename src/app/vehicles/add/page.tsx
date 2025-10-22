@@ -245,20 +245,11 @@ export default function AddVehiclePage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex justify-start mb-6">
             <Button variant="outline" size="sm" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Car className="h-6 w-6" />
-                Add Vehicle
-              </h1>
-              <p className="text-muted-foreground">
-                Add your vehicle details to book MOT tests
-              </p>
-            </div>
           </div>
 
           {/* Booking Flow Info */}

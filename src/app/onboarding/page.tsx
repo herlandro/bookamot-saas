@@ -70,7 +70,7 @@ export default function OnboardingPage() {
 
     // Redirect garage owners to their dashboard
     if (session?.user?.role === 'GARAGE_OWNER') {
-      router.push('/garage-admin')
+      router.push('/')
       return
     }
   }, [status, session, router])

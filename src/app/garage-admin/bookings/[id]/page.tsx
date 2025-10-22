@@ -171,10 +171,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         <div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Booking Details</h1>
-                <p className="text-muted-foreground text-sm">View and manage booking details</p>
-              </div>
+              <div></div>
               <Button
                 onClick={() => router.push('/garage-admin/bookings')}
                 variant="outline"
