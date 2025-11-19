@@ -167,58 +167,61 @@ export default function AnalyticsDashboardPage() {
     <GarageLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="shadow-xl rounded-lg border border-border bg-card">
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Analytics Dashboard
-                  </CardTitle>
-                  <CardDescription>
-                    View statistics and trends for your garage
-                  </CardDescription>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex flex-col sm:flex-row gap-2 items-end">
-                    <div className="flex-1">
-                      <label className="text-sm font-medium mb-1 block">From</label>
-                      <Input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-full sm:w-40"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-sm font-medium mb-1 block">To</label>
-                      <Input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
-                        className="w-full sm:w-40"
-                      />
-                    </div>
-                    <Button onClick={handleDateFilter} className="flex items-center gap-2">
-                      <RefreshCw className="h-4 w-4" />
-                      Apply
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setDateFrom('');
-                        setDateTo('');
-                        setLoading(true);
-                        fetchAnalytics();
-                      }}
-                    >
-                      Clear
-                    </Button>
+          {/* Header Section - Outside Card */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+                  <TrendingUp className="h-6 w-6" />
+                  Analytics Dashboard
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  View statistics and trends for your garage
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-1 block">From</label>
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full sm:w-40"
+                    />
                   </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-1 block">To</label>
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full sm:w-40"
+                    />
+                  </div>
+                  <Button onClick={handleDateFilter} className="flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Apply
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDateFrom('');
+                      setDateTo('');
+                      setLoading(true);
+                      fetchAnalytics();
+                    }}
+                  >
+                    Clear
+                  </Button>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-8">
+            </div>
+          </div>
+
+          {/* Main Content Card */}
+          <Card className="shadow-xl rounded-lg border border-border bg-card">
+            <CardContent className="space-y-8 pt-6">
 
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">

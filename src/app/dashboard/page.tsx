@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useSession } from 'next-auth/react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Shield, User, LogOut, Star } from 'lucide-react'
+import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Star } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal'
@@ -200,21 +200,23 @@ export default function Dashboard() {
         )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Container de Bookings */}
-          <Card className="shadow-lg border border-border">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
+            {/* Bookings Section */}
+            <div>
+              {/* Header - Outside Card */}
+              <div className="flex justify-between items-center mb-4">
                 <div>
-                  <CardTitle className="text-xl font-bold">Minhas Reservas</CardTitle>
-                  <CardDescription>Gerencie suas reservas de MOT</CardDescription>
+                  <h2 className="text-2xl font-bold text-foreground">Minhas Reservas</h2>
+                  <p className="text-muted-foreground text-sm mt-1">Gerencie suas reservas de MOT</p>
                 </div>
                 <Button onClick={() => router.push('/search')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                   Adicionar Booking
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
+
+              {/* Main Content Card */}
+              <Card className="shadow-lg border border-border">
+                <CardContent className="pt-6">
               {bookings.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
@@ -284,23 +286,26 @@ export default function Dashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+              </Card>
+            </div>
 
-          {/* Container de Vehicles */}
-          <Card className="shadow-lg border border-border">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
+            {/* Vehicles Section */}
+            <div>
+              {/* Header - Outside Card */}
+              <div className="flex justify-between items-center mb-4">
                 <div>
-                  <CardTitle className="text-xl font-bold">Meus Veículos</CardTitle>
-                  <CardDescription>Gerencie seus veículos e datas de MOT</CardDescription>
+                  <h2 className="text-2xl font-bold text-foreground">Meus Veículos</h2>
+                  <p className="text-muted-foreground text-sm mt-1">Gerencie seus veículos e datas de MOT</p>
                 </div>
                 <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                   Adicionar Veículo
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
+
+              {/* Main Content Card */}
+              <Card className="shadow-lg border border-border">
+                <CardContent className="pt-6">
               {vehicles.length === 0 ? (
                 <div className="text-center py-8">
                   <Car className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
@@ -360,7 +365,8 @@ export default function Dashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+              </Card>
+            </div>
           </div>
 
           {/* Review Modal */}
