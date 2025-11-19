@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GarageLayout } from '@/components/layout/garage-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { AdvancedFilterPanel, FilterConfig } from '@/components/ui/advanced-filter-panel';
 import { exportVehiclesToCSV } from '@/lib/export/csv-export';
-import { ArrowLeft, Search, Filter, Download, Car, User, Calendar, AlertCircle } from 'lucide-react';
+import { Search, Filter, Download, Car, User, Calendar, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -33,6 +33,7 @@ export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<FilterConfig>({
@@ -47,6 +48,15 @@ export default function VehiclesPage() {
     sortBy: 'registration',
     sortOrder: 'asc',
   });
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -63,15 +73,15 @@ export default function VehiclesPage() {
 
     fetchVehicles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, status, router, currentPage, searchTerm, filters]);
+  }, [session, status, router, currentPage, debouncedSearchTerm, filters]);
 
   const fetchVehicles = async () => {
     try {
       setLoading(true);
       let url = `/api/garage-admin/vehicles?page=${currentPage}&limit=10&sortBy=${filters.sortBy || 'registration'}&sortOrder=${filters.sortOrder || 'asc'}`;
 
-      if (searchTerm) {
-        url += `&search=${encodeURIComponent(searchTerm)}`;
+      if (debouncedSearchTerm) {
+        url += `&search=${encodeURIComponent(debouncedSearchTerm)}`;
       }
 
       if (filters.motStatus) {
@@ -157,58 +167,61 @@ export default function VehiclesPage() {
     <GarageLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="shadow-xl rounded-lg border border-border bg-card">
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Car className="h-5 w-5" />
-                    Vehicles
-                  </CardTitle>
-                  <CardDescription>
-                    Manage all vehicles that have made bookings
-                  </CardDescription>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <form onSubmit={handleSearch} className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search by registration, make or model..."
-                      className="pl-9 w-full sm:w-64"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </form>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    Filter
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2"
-                    onClick={() => {
-                      const exportData = vehicles.map(v => ({
-                        registration: v.registration,
-                        make: v.make,
-                        model: v.model,
-                        year: v.year,
-                        ownerName: v.ownerName,
-                        totalBookings: v.totalBookings,
-                        lastBookingDate: v.lastBookingDate,
-                        motStatus: v.motStatus,
-                        lastMotDate: v.lastMotDate,
-                      }));
-                      exportVehiclesToCSV(exportData);
-                    }}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
-                </div>
+          {/* Header Section - Outside Card */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+                  <Car className="h-6 w-6" />
+                  Vehicles
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage all vehicles that have made bookings
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleSearch} className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by registration, make or model..."
+                    className="pl-9 w-full sm:w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </form>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={() => {
+                    const exportData = vehicles.map(v => ({
+                      registration: v.registration,
+                      make: v.make,
+                      model: v.model,
+                      year: v.year,
+                      ownerName: v.ownerName,
+                      totalBookings: v.totalBookings,
+                      lastBookingDate: v.lastBookingDate,
+                      motStatus: v.motStatus,
+                      lastMotDate: v.lastMotDate,
+                    }));
+                    exportVehiclesToCSV(exportData);
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Card */}
+          <Card className="shadow-xl rounded-lg border border-border bg-card">
+            <CardContent className="space-y-6 pt-6">
               <AdvancedFilterPanel
                 type="vehicles"
                 filters={filters}

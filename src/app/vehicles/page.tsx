@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import useAuth from '@/hooks/useAuth'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Car, Calendar, AlertTriangle, CheckCircle, ArrowUpDown, Trash2 } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -255,22 +254,40 @@ export default function VehiclesPage() {
     <MainLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Section - Outside Card */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+                  <Car className="h-6 w-6" />
+                  Vehicles
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage and view all your vehicles
+                </p>
+              </div>
+              <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
+                <Plus className="h-4 w-4" />
+                Add Vehicle
+              </Button>
+            </div>
+          </div>
 
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 mb-6">
-          <p>{error}</p>
-        </div>
-      )}
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 mb-6">
+              <p>{error}</p>
+            </div>
+          )}
 
-      {vehicles.length === 0 ? (
-        <div className="text-center py-12">
-          <Car className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h3 className="mt-4 text-xl font-semibold text-foreground">No vehicles found</h3>
-        </div>
-      ) : (
-        <>
-        {/* Sort and Selection Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg border border-border">
+          {vehicles.length === 0 ? (
+            <div className="text-center py-12">
+              <Car className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-xl font-semibold text-foreground">No vehicles found</h3>
+            </div>
+          ) : (
+            <>
+              {/* Sort and Selection Controls */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg border border-border">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Checkbox
