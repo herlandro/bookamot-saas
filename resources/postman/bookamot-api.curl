@@ -1,0 +1,370 @@
+# BookaMOT API - cURL Collection
+# Importe este arquivo no Postman para testar todas as APIs
+# Base URL: http://localhost:3000 (desenvolvimento) ou https://seu-dominio.com (produção)
+
+# =============================================================================
+# 🔐 AUTENTICAÇÃO
+# =============================================================================
+
+# 1. Registrar usuário (Customer)
+curl -X POST "http://localhost:3000/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "password": "123456",
+    "role": "CUSTOMER"
+  }'
+
+# 2. Registrar usuário (Garage Owner)
+curl -X POST "http://localhost:3000/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Maria Santos",
+    "email": "maria@garage.com",
+    "password": "123456",
+    "role": "GARAGE_OWNER",
+    "garageName": "Santos MOT Centre",
+    "address": "123 High Street, London, SW1A 1AA",
+    "phone": "020 7123 4567"
+  }'
+
+# 3. Login (NextAuth - via credentials)
+# Note: NextAuth uses form data, not JSON for credentials login
+curl -X POST "http://localhost:3000/api/auth/callback/credentials" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "email=joao@example.com&password=123456&csrfToken=your-csrf-token&callbackUrl=http://localhost:3000"
+
+# Alternative: Get CSRF token first, then login
+# Step 1: Get CSRF token
+curl -X GET "http://localhost:3000/api/auth/csrf"
+
+# Step 2: Login with CSRF token (replace YOUR_CSRF_TOKEN with actual token)
+curl -X POST "http://localhost:3000/api/auth/callback/credentials" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "email=joao@example.com&password=123456&csrfToken=YOUR_CSRF_TOKEN&callbackUrl=http://localhost:3000"
+
+# 3.1. Get current session
+curl -X GET "http://localhost:3000/api/auth/session" \
+  -H "Cookie: next-auth.session-token=your-session-token"
+
+# 3.2. Get available providers
+curl -X GET "http://localhost:3000/api/auth/providers"
+
+# 3.3. Signout
+curl -X POST "http://localhost:3000/api/auth/signout" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -H "Cookie: next-auth.session-token=your-session-token" \
+  -d "csrfToken=YOUR_CSRF_TOKEN&callbackUrl=http://localhost:3000"
+
+# 4. Esqueci a senha
+curl -X POST "http://localhost:3000/api/auth/forgot-password" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "joao@example.com"
+  }'
+
+# 5. Reset de senha
+curl -X POST "http://localhost:3000/api/auth/reset-password" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "reset-token-aqui",
+    "password": "nova-senha-123"
+  }'
+
+# 6. Validar token de reset
+curl -X POST "http://localhost:3000/api/auth/validate-reset-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "reset-token-aqui"
+  }'
+
+# =============================================================================
+# 🏢 GARAGENS
+# =============================================================================
+
+# 7. Buscar garagens por localização
+curl -X GET "http://localhost:3000/api/garages/search?postcode=SW1A1AA&radius=10&date=2024-02-15&time=10:00" \
+  -H "Content-Type: application/json"
+
+# 8. Buscar garagens por coordenadas
+curl -X GET "http://localhost:3000/api/garages/search?lat=51.5074&lng=-0.1278&radius=5" \
+  -H "Content-Type: application/json"
+
+# 9. Detalhes de uma garagem específica
+curl -X GET "http://localhost:3000/api/garages/garage-id-123" \
+  -H "Content-Type: application/json"
+
+# 10. Disponibilidade de uma garagem
+curl -X GET "http://localhost:3000/api/garages/garage-id-123/availability?date=2024-02-15" \
+  -H "Content-Type: application/json"
+
+# =============================================================================
+# 📅 BOOKINGS
+# =============================================================================
+
+# 11. Criar novo booking
+curl -X POST "http://localhost:3000/api/bookings" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "garageId": "garage-id-123",
+    "vehicleId": "vehicle-id-456",
+    "date": "2024-02-15",
+    "timeSlot": "10:00",
+    "notes": "Primeira inspeção MOT"
+  }'
+
+# 12. Listar bookings do usuário
+curl -X GET "http://localhost:3000/api/bookings" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 13. Detalhes de um booking específico
+curl -X GET "http://localhost:3000/api/bookings/booking-id-789" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 14. Cancelar booking
+curl -X POST "http://localhost:3000/api/bookings/booking-id-789/cancel" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "reason": "Mudança de planos"
+  }'
+
+# =============================================================================
+# 🚗 VEÍCULOS
+# =============================================================================
+
+# 15. Buscar veículo por matrícula (DVLA lookup)
+curl -X GET "http://localhost:3000/api/vehicles/lookup?registration=AB12CDE" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 16. Adicionar veículo ao usuário
+curl -X POST "http://localhost:3000/api/vehicles" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "registration": "AB12CDE",
+    "make": "Ford",
+    "model": "Focus",
+    "year": 2020,
+    "color": "Blue",
+    "fuelType": "Petrol"
+  }'
+
+# 17. Listar veículos do usuário
+curl -X GET "http://localhost:3000/api/vehicles" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 18. Detalhes de um veículo específico
+curl -X GET "http://localhost:3000/api/vehicles/vehicle-id-456" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 19. Histórico MOT de um veículo
+curl -X GET "http://localhost:3000/api/vehicles/vehicle-id-456/mot-history" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 20. Relatório MOT de um veículo
+curl -X GET "http://localhost:3000/api/vehicles/vehicle-id-456/mot-report" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# =============================================================================
+# ⭐ REVIEWS
+# =============================================================================
+
+# 21. Criar review
+curl -X POST "http://localhost:3000/api/reviews" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "bookingId": "booking-id-789",
+    "garageId": "garage-id-123",
+    "rating": 5,
+    "comment": "Excelente serviço, muito profissional!",
+    "serviceQuality": 5,
+    "valueForMoney": 4,
+    "timeliness": 5
+  }'
+
+# 22. Listar reviews de uma garagem
+curl -X GET "http://localhost:3000/api/reviews/garage/garage-id-123" \
+  -H "Content-Type: application/json"
+
+# 23. Listar reviews de um cliente
+curl -X GET "http://localhost:3000/api/reviews/customer/customer-id-456" \
+  -H "Content-Type: application/json"
+
+# 24. Reviews recebidas (para garage owners)
+curl -X GET "http://localhost:3000/api/reviews/received" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 25. Detalhes de uma review específica
+curl -X GET "http://localhost:3000/api/reviews/review-id-999" \
+  -H "Content-Type: application/json"
+
+# =============================================================================
+# 🏢 GARAGE ADMIN (Para proprietários de garagem)
+# =============================================================================
+
+# 26. Dashboard analytics
+curl -X GET "http://localhost:3000/api/garage-admin/analytics" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 27. Estatísticas da garagem
+curl -X GET "http://localhost:3000/api/garage-admin/stats" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 28. Listar bookings da garagem
+curl -X GET "http://localhost:3000/api/garage-admin/bookings" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 29. Atualizar status de um booking
+curl -X PUT "http://localhost:3000/api/garage-admin/bookings/booking-id-789" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "status": "COMPLETED",
+    "motResult": "PASS",
+    "notes": "Veículo aprovado sem problemas"
+  }'
+
+# 30. Listar clientes da garagem
+curl -X GET "http://localhost:3000/api/garage-admin/customers" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 31. Detalhes de um cliente específico
+curl -X GET "http://localhost:3000/api/garage-admin/customers/customer-id-456" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 32. Configurações da garagem
+curl -X GET "http://localhost:3000/api/garage-admin/settings" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 33. Atualizar configurações da garagem
+curl -X PUT "http://localhost:3000/api/garage-admin/settings" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "motPrice": 54.85,
+    "openingHours": {
+      "monday": {"open": "08:00", "close": "18:00"},
+      "tuesday": {"open": "08:00", "close": "18:00"}
+    },
+    "slotDuration": 60,
+    "maxAdvanceBookingDays": 30
+  }'
+
+# 34. Gerenciar slots de tempo
+curl -X POST "http://localhost:3000/api/garage-admin/slots" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "date": "2024-02-15",
+    "timeSlot": "14:00",
+    "action": "block",
+    "reason": "Manutenção do equipamento"
+  }'
+
+# 35. Listar veículos atendidos
+curl -X GET "http://localhost:3000/api/garage-admin/vehicles" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# =============================================================================
+# 👤 USUÁRIOS
+# =============================================================================
+
+# 36. Perfil do usuário
+curl -X GET "http://localhost:3000/api/users/user-id-123" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# 37. Atualizar perfil
+curl -X PUT "http://localhost:3000/api/users/user-id-123" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "name": "João Silva Santos",
+    "phone": "11 99999-9999",
+    "address": "Rua das Flores, 123"
+  }'
+
+# 38. Garagens do usuário (se for garage owner)
+curl -X GET "http://localhost:3000/api/user/garages" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# =============================================================================
+# 🔔 NOTIFICAÇÕES
+# =============================================================================
+
+# 39. Verificar alertas MOT
+curl -X POST "http://localhost:3000/api/alerts/check-mot" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token" \
+  -d '{
+    "vehicleId": "vehicle-id-456"
+  }'
+
+# 40. Notificações MOT
+curl -X GET "http://localhost:3000/api/notifications/mot" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-session-token"
+
+# =============================================================================
+# 🛡️ ADMIN (Para administradores do sistema)
+# =============================================================================
+
+# 41. Listar todos os usuários
+curl -X GET "http://localhost:3000/api/admin/users" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-admin-token"
+
+# 42. Aprovar garagem
+curl -X PUT "http://localhost:3000/api/admin/users/garage-owner-id" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=seu-admin-token" \
+  -d '{
+    "action": "approve_garage",
+    "dvlaApproved": true
+  }'
+
+# =============================================================================
+# 📝 NOTAS IMPORTANTES
+# =============================================================================
+
+# 1. Substitua "http://localhost:3000" pela URL do seu ambiente
+# 2. Para autenticação, use o session token do NextAuth
+# 3. Alguns endpoints requerem autenticação (Cookie header)
+# 4. IDs devem ser substituídos pelos IDs reais do seu banco
+# 5. Datas devem estar no formato YYYY-MM-DD
+# 6. Horários devem estar no formato HH:MM
+
+# =============================================================================
+# 🔧 VARIÁVEIS DE AMBIENTE PARA POSTMAN
+# =============================================================================
+
+# Crie estas variáveis no Postman:
+# - baseUrl: http://localhost:3000 (ou sua URL de produção)
+# - sessionToken: seu-session-token-aqui
+# - garageId: garage-id-exemplo
+# - vehicleId: vehicle-id-exemplo
+# - bookingId: booking-id-exemplo
+# - userId: user-id-exemplo
+
+# Exemplo de uso com variáveis:
+# {{baseUrl}}/api/bookings/{{bookingId}}

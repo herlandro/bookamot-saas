@@ -1,0 +1,1241 @@
+{
+	"info": {
+		"_postman_id": "bookamot-api-collection",
+		"name": "BookaMOT API Collection",
+		"description": "Coleção completa de APIs do BookaMOT - Sistema de agendamento MOT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "bookamot-api"
+	},
+	"item": [
+		{
+			"name": "🔐 Autenticação",
+			"item": [
+				{
+					"name": "Registrar Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"password\": \"123456\",\n  \"role\": \"CUSTOMER\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Registrar Garage Owner",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Maria Santos\",\n  \"email\": \"maria@garage.com\",\n  \"password\": \"123456\",\n  \"role\": \"GARAGE_OWNER\",\n  \"garageName\": \"Santos MOT Centre\",\n  \"address\": \"123 High Street, London, SW1A 1AA\",\n  \"phone\": \"020 7123 4567\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get CSRF Token",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/csrf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"csrf"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login (Credentials)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "email",
+									"value": "joao@example.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								},
+								{
+									"key": "csrfToken",
+									"value": "{{csrfToken}}",
+									"type": "text"
+								},
+								{
+									"key": "callbackUrl",
+									"value": "{{baseUrl}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/callback/credentials",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"callback",
+								"credentials"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Session",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"session"
+							]
+						}
+					}
+				},
+				{
+					"name": "Signout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "csrfToken",
+									"value": "{{csrfToken}}",
+									"type": "text"
+								},
+								{
+									"key": "callbackUrl",
+									"value": "{{baseUrl}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signout"
+							]
+						}
+					}
+				},
+				{
+					"name": "Esqueci a Senha",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"forgot-password"
+							]
+						}
+					}
+				},
+				{
+					"name": "Reset de Senha",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"password\": \"nova-senha-123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"reset-password"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏢 Garagens",
+			"item": [
+				{
+					"name": "Buscar por Localização",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/garages/search?postcode=SW1A1AA&radius=10&date=2024-02-15&time=10:00",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garages",
+								"search"
+							],
+							"query": [
+								{
+									"key": "postcode",
+									"value": "SW1A1AA"
+								},
+								{
+									"key": "radius",
+									"value": "10"
+								},
+								{
+									"key": "date",
+									"value": "2024-02-15"
+								},
+								{
+									"key": "time",
+									"value": "10:00"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Buscar por Coordenadas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/garages/search?lat=51.5074&lng=-0.1278&radius=5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garages",
+								"search"
+							],
+							"query": [
+								{
+									"key": "lat",
+									"value": "51.5074"
+								},
+								{
+									"key": "lng",
+									"value": "-0.1278"
+								},
+								{
+									"key": "radius",
+									"value": "5"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Detalhes da Garagem",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/garages/{{garageId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garages",
+								"{{garageId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Verificar Disponibilidade",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/garages/{{garageId}}/availability?date=2024-02-15",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garages",
+								"{{garageId}}",
+								"availability"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-02-15"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📅 Agendamentos (Bookings)",
+			"item": [
+				{
+					"name": "Criar Agendamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"garageId\": \"{{garageId}}\",\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"date\": \"2024-02-15\",\n  \"time\": \"10:00\",\n  \"serviceType\": \"MOT\",\n  \"notes\": \"Primeira inspeção MOT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						}
+					}
+				},
+				{
+					"name": "Listar Meus Agendamentos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						}
+					}
+				},
+				{
+					"name": "Detalhes do Agendamento",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"{{bookingId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Agendamento",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"date\": \"2024-02-16\",\n  \"time\": \"14:00\",\n  \"notes\": \"Reagendado para tarde\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"{{bookingId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Cancelar Agendamento",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"{{bookingId}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🚗 Veículos",
+			"item": [
+				{
+					"name": "Adicionar Veículo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"make\": \"Ford\",\n  \"model\": \"Focus\",\n  \"year\": 2020,\n  \"registrationNumber\": \"AB12 CDE\",\n  \"color\": \"Blue\",\n  \"fuelType\": \"PETROL\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						}
+					}
+				},
+				{
+					"name": "Listar Meus Veículos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						}
+					}
+				},
+				{
+					"name": "Detalhes do Veículo",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								"{{vehicleId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Veículo",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"color\": \"Red\",\n  \"mileage\": 50000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								"{{vehicleId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Remover Veículo",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								"{{vehicleId}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "⭐ Reviews",
+			"item": [
+				{
+					"name": "Criar Review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"garageId\": \"{{garageId}}\",\n  \"bookingId\": \"{{bookingId}}\",\n  \"rating\": 5,\n  \"comment\": \"Excelente serviço, muito profissional!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reviews"
+							]
+						}
+					}
+				},
+				{
+					"name": "Reviews da Garagem",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/garages/{{garageId}}/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garages",
+								"{{garageId}}",
+								"reviews"
+							]
+						}
+					}
+				},
+				{
+					"name": "Meus Reviews",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reviews"
+							]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Review",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rating\": 4,\n  \"comment\": \"Bom serviço, mas poderia ser mais rápido\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/reviews/{{reviewId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reviews",
+								"{{reviewId}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔧 Administração de Garagem",
+			"item": [
+				{
+					"name": "Dashboard da Garagem",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/garage-admin/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garage-admin",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Agendamentos da Garagem",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/garage-admin/bookings?date=2024-02-15",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garage-admin",
+								"bookings"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-02-15"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Status do Agendamento",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"COMPLETED\",\n  \"notes\": \"MOT aprovado, certificado emitido\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/garage-admin/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garage-admin",
+								"bookings",
+								"{{bookingId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Configurar Horários",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"openingHours\": {\n    \"monday\": { \"open\": \"08:00\", \"close\": \"18:00\" },\n    \"tuesday\": { \"open\": \"08:00\", \"close\": \"18:00\" },\n    \"wednesday\": { \"open\": \"08:00\", \"close\": \"18:00\" },\n    \"thursday\": { \"open\": \"08:00\", \"close\": \"18:00\" },\n    \"friday\": { \"open\": \"08:00\", \"close\": \"18:00\" },\n    \"saturday\": { \"open\": \"09:00\", \"close\": \"16:00\" },\n    \"sunday\": { \"closed\": true }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/garage-admin/settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garage-admin",
+								"settings"
+							]
+						}
+					}
+				},
+				{
+					"name": "Bloquear Horários",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"date\": \"2024-02-20\",\n  \"startTime\": \"12:00\",\n  \"endTime\": \"13:00\",\n  \"reason\": \"Almoço\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/garage-admin/time-blocks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"garage-admin",
+								"time-blocks"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👤 Usuários",
+			"item": [
+				{
+					"name": "Meu Perfil",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Perfil",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"João Silva Santos\",\n  \"phone\": \"11 99999-9999\",\n  \"address\": \"Rua das Flores, 123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						}
+					}
+				},
+				{
+					"name": "Alterar Senha",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"senha-atual\",\n  \"newPassword\": \"nova-senha-123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"change-password"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔔 Notificações",
+			"item": [
+				{
+					"name": "Minhas Notificações",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications"
+							]
+						}
+					}
+				},
+				{
+					"name": "Marcar como Lida",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"{{notificationId}}",
+								"read"
+							]
+						}
+					}
+				},
+				{
+					"name": "Marcar Todas como Lidas",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/mark-all-read",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"mark-all-read"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "⚙️ Administração",
+			"item": [
+				{
+					"name": "Dashboard Admin",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Listar Usuários",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Aprovar Garagem",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"approved\": true,\n  \"notes\": \"Documentação verificada e aprovada\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/garages/{{garageId}}/approve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"garages",
+								"{{garageId}}",
+								"approve"
+							]
+						}
+					}
+				},
+				{
+					"name": "Suspender Usuário",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "next-auth.session-token={{sessionToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"suspended\": true,\n  \"reason\": \"Violação dos termos de uso\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users/{{userId}}/suspend",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								"{{userId}}",
+								"suspend"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "sessionToken",
+			"value": "your-session-token-here",
+			"type": "string"
+		},
+		{
+			"key": "csrfToken",
+			"value": "your-csrf-token-here",
+			"type": "string"
+		},
+		{
+			"key": "garageId",
+			"value": "garage-id-example",
+			"type": "string"
+		},
+		{
+			"key": "vehicleId",
+			"value": "vehicle-id-example",
+			"type": "string"
+		},
+		{
+			"key": "bookingId",
+			"value": "booking-id-example",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "user-id-example",
+			"type": "string"
+		},
+		{
+			"key": "resetToken",
+			"value": "reset-token-example",
+			"type": "string"
+		},
+		{
+			"key": "reviewId",
+			"value": "review-id-example",
+			"type": "string"
+		},
+		{
+			"key": "notificationId",
+			"value": "notification-id-example",
+			"type": "string"
+		}
+	]
+}
