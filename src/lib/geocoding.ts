@@ -89,11 +89,18 @@ async function geocodeFromNominatim(address: string): Promise<Coordinates | null
     const searchQuery = `${address}, UK`
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&countrycodes=gb`
     
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+    
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'BookAMOT-SaaS/1.0' // Nominatim requires a User-Agent
-      }
+      },
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
     
     if (!response.ok) {
       console.error('Nominatim API error:', response.status, response.statusText)
@@ -113,7 +120,11 @@ async function geocodeFromNominatim(address: string): Promise<Coordinates | null
     
     return null
   } catch (error) {
-    console.error('Nominatim geocoding error:', error)
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Nominatim geocoding timeout:', address)
+    } else {
+      console.error('Nominatim geocoding error:', error)
+    }
     return null
   }
 }
