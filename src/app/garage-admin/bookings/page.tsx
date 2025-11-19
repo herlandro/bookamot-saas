@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GarageLayout } from '@/components/layout/garage-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Search, Filter, Download, Clock, User, Car } from 'lucide-react';
+import { Calendar, Search, Filter, Download, Clock, User, Car } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -123,41 +123,44 @@ export default function BookingsPage() {
     <GarageLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="shadow-xl rounded-lg border border-border bg-card">
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Bookings
-                  </CardTitle>
-                  <CardDescription>
-                    Manage all bookings from your customers
-                  </CardDescription>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <form onSubmit={handleSearch} className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search by customer or vehicle..."
-                      className="pl-9 w-full sm:w-64"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </form>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    Filter
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
+          {/* Header Section - Outside Card */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+                  <Calendar className="h-6 w-6" />
+                  Bookings
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage all bookings from your customers
+                </p>
               </div>
-            </CardHeader>
-            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleSearch} className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by customer or vehicle..."
+                    className="pl-9 w-full sm:w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </form>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Card */}
+          <Card className="shadow-xl rounded-lg border border-border bg-card">
+            <CardContent className="pt-6">
               <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-6">
                   <TabsTrigger value="all">All</TabsTrigger>
