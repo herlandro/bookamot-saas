@@ -33,31 +33,21 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (status === 'loading') return
-    if (!session?.user?.id) {
-      router.push('/signin')
-      return
-    }
-
-    fetchUserProfile()
-  }, [session, status, router])
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (userId: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/users/${session?.user?.id}`, {
+      const response = await fetch(`/api/users/${userId}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch user profile')
       }
-      
+
       const data = await response.json()
       setUserProfile(data)
     } catch (err) {
@@ -67,6 +57,16 @@ export default function ProfilePage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session?.user?.id) {
+      router.push('/signin')
+      return
+    }
+
+    fetchUserProfile(session.user.id)
+  }, [session?.user?.id, status, router])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

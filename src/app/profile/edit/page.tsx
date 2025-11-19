@@ -31,25 +31,15 @@ export default function EditProfilePage() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
 
-  useEffect(() => {
-    if (status === 'loading') return
-    if (!session?.user?.id) {
-      router.push('/signin')
-      return
-    }
-
-    fetchUserProfile()
-  }, [session, status, router])
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (userId: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/users/${session?.user?.id}`)
-      
+      const response = await fetch(`/api/users/${userId}`)
+
       if (!response.ok) {
         throw new Error('Failed to fetch user profile')
       }
-      
+
       const data = await response.json()
       setUserProfile(data)
       setName(data.name || '')
@@ -61,6 +51,16 @@ export default function EditProfilePage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session?.user?.id) {
+      router.push('/signin')
+      return
+    }
+
+    fetchUserProfile(session.user.id)
+  }, [session?.user?.id, status, router])
 
   const handleSave = async () => {
     try {

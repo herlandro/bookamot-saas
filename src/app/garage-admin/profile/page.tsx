@@ -33,6 +33,31 @@ export default function GarageProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`/api/users/${userId}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile')
+      }
+
+      const data = await response.json()
+      setUserProfile(data)
+    } catch (err) {
+      console.error('Error fetching user profile:', err)
+      setError('Failed to load user profile. Please try again later.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (status === 'loading') return
     if (!session?.user?.id) {
@@ -45,33 +70,8 @@ export default function GarageProfilePage() {
       return
     }
 
-    fetchUserProfile()
-  }, [session, status, router])
-
-  const fetchUserProfile = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch(`/api/users/${session?.user?.id}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile')
-      }
-      
-      const data = await response.json()
-      setUserProfile(data)
-    } catch (err) {
-      console.error('Error fetching user profile:', err)
-      setError('Failed to load user profile. Please try again later.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    fetchUserProfile(session.user.id)
+  }, [session?.user?.id, session?.user?.role, status, router])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
