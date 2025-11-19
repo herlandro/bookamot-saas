@@ -5,14 +5,13 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
 import { GarageLayout } from '@/components/layout/garage-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { StarRating } from '@/components/ui/star-rating';
 import { format } from 'date-fns';
-import { enUS, ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Star, Search, Filter, MessageSquare, Calendar } from 'lucide-react';
+import { ptBR } from 'date-fns/locale';
+import { Star, Search, Filter, MessageSquare, Calendar } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -241,27 +240,26 @@ export default function ReviewsPage() {
             </div>
           )}
 
-          {/* Filters and Search */}
-
-
-          <Card className="shadow-xl rounded-lg border border-border bg-card">
-            <CardHeader>
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
+          {/* Header Section with Controls */}
+          <div className="mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              {/* Title and Subtitle */}
+              <div className="flex-shrink-0">
+                <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+                  <Star className="h-6 w-6" />
                   All Reviews
-                </CardTitle>
-                <CardDescription>
+                </h1>
+                <p className="text-muted-foreground mt-1">
                   {userType === 'CUSTOMER'
                     ? 'All your reviews (sent and received)'
                     : 'All your reviews (sent and received)'}
-                </CardDescription>
+                </p>
               </div>
-            </CardHeader>
 
-            <CardContent>
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <div className="flex-1 min-w-[240px] relative">
+              {/* Controls Section */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:items-end">
+                {/* Search Input */}
+                <div className="w-full sm:w-auto min-w-[240px] relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
@@ -271,6 +269,8 @@ export default function ReviewsPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+
+                {/* Filter Buttons */}
                 <div className="flex gap-2">
                   <Button
                     variant={filterType === 'all' ? 'default' : 'outline'}
@@ -294,7 +294,9 @@ export default function ReviewsPage() {
                     Received
                   </Button>
                 </div>
-                <div className="flex gap-2 ml-auto">
+
+                {/* Sort Dropdown */}
+                <div className="flex gap-2">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'date' | 'rating' | 'title')}
@@ -313,6 +315,12 @@ export default function ReviewsPage() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Main Content Card */}
+          <Card className="shadow-xl rounded-lg border border-border bg-card">
+            <CardContent className="pt-6">
               {reviews.length === 0 ? (
                 <div className="text-center py-12">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

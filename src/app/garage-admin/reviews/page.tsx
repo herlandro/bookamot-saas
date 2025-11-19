@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GarageLayout } from '@/components/layout/garage-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Search, Star, MessageSquare, User, Calendar } from 'lucide-react';
+import { Search, Star, MessageSquare, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -192,22 +192,20 @@ export default function ReviewsPage() {
     <GarageLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Section - Outside Card */}
+          <div className="mb-6">
+            <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+              <Star className="h-6 w-6" />
+              All Reviews
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage all reviews sent and received
+            </p>
+          </div>
 
-
+          {/* Main Content Card */}
           <Card className="shadow-xl rounded-lg border border-border bg-card">
-            <CardHeader>
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  All Reviews
-                </CardTitle>
-                <CardDescription>
-                  Manage all reviews sent and received
-                </CardDescription>
-              </div>
-            </CardHeader>
-
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 <div className="flex-1 min-w-[240px] relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
