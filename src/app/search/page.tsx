@@ -96,10 +96,16 @@ export default function SearchPage() {
   
   // Auto search when debounced search term changes
   useEffect(() => {
+    const abortController = new AbortController()
+    
     if (debouncedSearchTerm.trim()) {
-      searchGarages()
+      searchGarages(abortController)
     } else {
       setGarages([])
+    }
+    
+    return () => {
+      abortController.abort()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, selectedDate])
@@ -119,7 +125,7 @@ export default function SearchPage() {
     }
   }
 
-  const searchGarages = async () => {
+  const searchGarages = async (abortController?: AbortController) => {
     if (!debouncedSearchTerm.trim()) {
       setGarages([])
       return
@@ -134,7 +140,10 @@ export default function SearchPage() {
 
       console.log('🔍 Searching garages with params:', { location: debouncedSearchTerm, date: selectedDate })
 
-      const response = await fetch(`/api/garages/search?${params}`)
+      const response = await fetch(`/api/garages/search?${params}`, {
+        signal: abortController?.signal
+      })
+      
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Search results:', data)
@@ -148,7 +157,11 @@ export default function SearchPage() {
         console.error('❌ Search failed:', response.status, response.statusText)
       }
     } catch (error) {
-      console.error('Error searching garages:', error)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('🚫 Search request cancelled')
+      } else {
+        console.error('Error searching garages:', error)
+      }
     } finally {
       setLoading(false)
     }
@@ -268,7 +281,7 @@ export default function SearchPage() {
                     Clear
                   </Button>
                 )}
-                <Button onClick={searchGarages} disabled={loading || !searchLocation.trim()}>
+                <Button onClick={() => searchGarages()} disabled={loading || !searchLocation.trim()}>
                   {loading ? 'Searching...' : 'Search'}
                 </Button>
               </div>
