@@ -1,4 +1,15 @@
-import { prisma } from '@/lib/prisma'
+#!/usr/bin/env tsx
+/**
+ * BookaMOT Booking Management Utility
+ * Utilities for testing and managing bookings
+ * 
+ * Usage:
+ *   npm run booking:complete - Mark first non-completed booking as completed
+ */
+
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 async function updateBookingToCompleted() {
   try {
@@ -48,7 +59,7 @@ async function updateBookingToCompleted() {
       where: { id: booking.id },
       data: {
         status: 'COMPLETED',
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Set to 7 days ago so it appears in Past Bookings
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Set to 7 days ago
       }
     })
 
@@ -69,5 +80,23 @@ async function updateBookingToCompleted() {
   }
 }
 
-updateBookingToCompleted()
+async function main() {
+  const command = process.argv[2]
+
+  try {
+    switch (command) {
+      case 'complete':
+        await updateBookingToCompleted()
+        break
+      default:
+        console.log('Usage: npm run booking <command>')
+        console.log('Commands:')
+        console.log('  complete - Mark first non-completed booking as completed')
+    }
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+main().catch(console.error)
 
