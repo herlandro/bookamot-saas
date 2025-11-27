@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate --schema=resources/prisma/schema.prisma && next build",
-    "postinstall": "prisma generate --schema=resources/prisma/schema.prisma",
+    "build": "prisma generate --schema=prisma/schema.prisma && next build",
+    "postinstall": "prisma generate --schema=prisma/schema.prisma",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
     "db": "tsx scripts/db.ts",
