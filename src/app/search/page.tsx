@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,7 +36,7 @@ interface Vehicle {
   year: number
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -90,20 +90,20 @@ export default function SearchPage() {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchLocation)
     }, 500) // 500ms delay
-    
+
     return () => clearTimeout(timer)
   }, [searchLocation])
-  
+
   // Auto search when debounced search term changes
   useEffect(() => {
     const abortController = new AbortController()
-    
+
     if (debouncedSearchTerm.trim()) {
       searchGarages(abortController)
     } else {
       setGarages([])
     }
-    
+
     return () => {
       abortController.abort()
     }
@@ -143,7 +143,7 @@ export default function SearchPage() {
       const response = await fetch(`/api/garages/search?${params}`, {
         signal: abortController?.signal
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Search results:', data)
@@ -172,9 +172,9 @@ export default function SearchPage() {
       alert('Please select a vehicle first')
       return
     }
-    
+
     const selectedTimeSlot = selectedTimeSlots[garage.id]
-    
+
     // Store booking data in session storage for the booking flow
     sessionStorage.setItem('bookingData', JSON.stringify({
       garage,
@@ -182,10 +182,10 @@ export default function SearchPage() {
       date: selectedDate,
       timeSlot: selectedTimeSlot
     }))
-    
+
     router.push(`/booking/${garage.id}`)
   }
-  
+
   const handleTimeSlotSelect = (garageId: string, timeSlot: string) => {
     setSelectedTimeSlots(prev => ({
       ...prev,
@@ -285,7 +285,7 @@ export default function SearchPage() {
                   {loading ? 'Searching...' : 'Search'}
                 </Button>
               </div>
-              
+
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -305,7 +305,7 @@ export default function SearchPage() {
                     min={new Date().toISOString().split('T')[0]} // Can't select dates in the past
                   />
                 </div>
-                
+
                 <div className="border rounded-lg p-4">
                   <div className="text-sm font-medium mb-3">Select date for available slots:</div>
                   <div className="flex flex-wrap gap-2">
@@ -315,20 +315,20 @@ export default function SearchPage() {
                       const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
                       const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3);
                       const dateString = date.toISOString().split('T')[0];
-                      
+
                       return (
                         <div
                           key={dateString}
                           onClick={() => {
                             // Não atualiza o campo de data superior, apenas busca com a nova data
                             setSelectedGridDate(dateString); // Atualiza a data selecionada no grid
-                            
+
                             if (searchLocation.trim()) {
                               const params = new URLSearchParams({
                                 location: searchLocation,
                                 date: dateString // Usa a data clicada diretamente
                               });
-                              
+
                               setLoading(true);
                               fetch(`/api/garages/search?${params}`)
                                 .then(response => {
@@ -351,8 +351,8 @@ export default function SearchPage() {
                             px-3 py-2 rounded-md text-sm cursor-pointer transition-colors
                             border hover:border-primary flex flex-col items-center
                             ${loading && searchLocation.trim() ? 'opacity-50 pointer-events-none' : ''}
-                            ${selectedGridDate === dateString 
-                              ? 'bg-primary text-primary-foreground border-primary' 
+                            ${selectedGridDate === dateString
+                              ? 'bg-primary text-primary-foreground border-primary'
                               : 'bg-background hover:bg-primary/5 border-border'}
                           `}
                         >
@@ -373,18 +373,18 @@ export default function SearchPage() {
           <div className="space-y-4">
             {/* Filter out garages with no available slots */}
             {(() => {
-              const garagesWithSlots = garages.filter(garage => 
-                'availableSlots' in garage && 
-                garage.availableSlots && 
+              const garagesWithSlots = garages.filter(garage =>
+                'availableSlots' in garage &&
+                garage.availableSlots &&
                 garage.availableSlots.length > 0
               );
-              
+
               return (
                 <>
                   <h2 className="text-2xl font-semibold">
                     Found {garagesWithSlots.length} MOT Test Centers
                   </h2>
-                  
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {garagesWithSlots.map((garage) => (
                 <Card key={garage.id} className="hover:shadow-lg transition-shadow shadow-xl rounded-lg border border-border">
@@ -404,7 +404,7 @@ export default function SearchPage() {
                       )}
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function SearchPage() {
                         <span className="truncate">{garage.email}</span>
                       </div>
                     </div>
-                    
+
                     {garage.rating && (
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
@@ -428,21 +428,21 @@ export default function SearchPage() {
                         </span>
                       </div>
                     )}
-                    
+
                     {/* Available Time Slots */}
                     {'availableSlots' in garage && garage.availableSlots && garage.availableSlots.length > 0 ? (
                       <div className="pt-4 border-t">
                         <div className="text-sm font-medium mb-2">Available Time Slots:</div>
                         <div className="flex flex-wrap gap-2 mb-4">
                           {garage.availableSlots.map((slot: string) => (
-                            <div 
+                            <div
                               key={slot}
                               onClick={() => handleTimeSlotSelect(garage.id, slot)}
                               className={`
                                 px-3 py-1 rounded-md text-sm cursor-pointer transition-colors
                                 border border-border hover:border-primary
-                                ${selectedTimeSlots[garage.id] === slot 
-                                  ? 'bg-primary text-primary-foreground' 
+                                ${selectedTimeSlots[garage.id] === slot
+                                  ? 'bg-primary text-primary-foreground'
                                   : 'bg-background hover:bg-primary/5'}
                               `}
                             >
@@ -456,7 +456,7 @@ export default function SearchPage() {
                         No available slots for today. Try another date.
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between pt-4 border-t">
                       <div>
                         <div className="text-2xl font-bold text-primary">
@@ -464,8 +464,8 @@ export default function SearchPage() {
                         </div>
                         <div className="text-sm text-muted-foreground">MOT Test</div>
                       </div>
-                      
-                      <Button 
+
+                      <Button
                         onClick={() => handleBooking(garage)}
                         disabled={!selectedVehicle || !selectedTimeSlots[garage.id]}
                         className="flex items-center gap-2"
@@ -511,8 +511,8 @@ export default function SearchPage() {
               <p className="text-yellow-700 mt-2">
                 You need to add a vehicle before you can book an MOT test.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="mt-4 border-yellow-300 text-yellow-800 hover:bg-yellow-100"
                 onClick={() => router.push('/vehicles/add')}
               >
@@ -525,4 +525,20 @@ export default function SearchPage() {
       </div>
     </MainLayout>
   )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <MainLayout>
+          <div className="flex justify-center items-center min-h-screen">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        </MainLayout>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
+  );
 }

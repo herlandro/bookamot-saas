@@ -14,7 +14,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials: Record<string, string> | undefined) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -41,7 +41,7 @@ export const authOptions: NextAuthOptions = {
         return {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: user.name ?? undefined,
           role: user.role,
         }
       }
@@ -54,7 +54,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/signin',
     error: '/error',
-    signUp: '/signup'
   },
   callbacks: {
     async jwt({ token, user }: { token: any; user: any }) {

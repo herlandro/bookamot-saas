@@ -45,7 +45,7 @@ interface MileageData {
   mileage: number
   date: string
 }
-export default function VehicleDetailsPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+export default function VehicleDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
 

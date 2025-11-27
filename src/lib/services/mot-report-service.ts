@@ -111,7 +111,7 @@ export async function generateMotReport(vehicleId: string): Promise<MotReportDat
         model: vehicle.model,
         year: vehicle.year,
         fuelType: vehicle.fuelType,
-        engineSize: vehicle.engineSize
+        engineSize: vehicle.engineSize ?? undefined,
       },
       motHistory,
       summary: {

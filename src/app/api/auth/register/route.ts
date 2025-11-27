@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
       // Extract city and postcode from address (simple extraction)
       // Format expected: "123 Street Name, City, Postcode" or similar
-      const addressParts = address.split(',').map(part => part.trim())
+      const addressParts = address.split(',').map((part: string) => part.trim())
       let city = 'Unknown'
       let postcode = 'N/A'
 

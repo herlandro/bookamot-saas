@@ -33,9 +33,14 @@ export interface VehicleFilters {
 
 // Create a new vehicle
 export async function createVehicle(data: CreateVehicleData) {
-  // Check if registration already exists
+  // Check if this user has already registered a vehicle with the same registration
   const existingVehicle = await prisma.vehicle.findUnique({
-    where: { registration: data.registration.toUpperCase() }
+    where: {
+      unique_vehicle_per_user: {
+        registration: data.registration.toUpperCase(),
+        ownerId: data.ownerId,
+      },
+    },
   })
 
   if (existingVehicle) {
@@ -111,7 +116,7 @@ export async function getVehicleById(id: string) {
 
 // Get vehicle by registration
 export async function getVehicleByRegistration(registration: string) {
-  return await prisma.vehicle.findUnique({
+  return await prisma.vehicle.findFirst({
     where: { registration: registration.toUpperCase() },
     include: {
       owner: {

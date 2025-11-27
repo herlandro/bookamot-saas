@@ -36,7 +36,7 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
   const [validatingReg, setValidatingReg] = useState(false)
   const [lookupSuccess, setLookupSuccess] = useState(false)
 
-  const formRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
   const successMessageRef = useRef<HTMLParagraphElement>(null)
   const carIconRef = useRef<HTMLDivElement>(null)
   const carContainerRef = useRef<HTMLDivElement>(null)

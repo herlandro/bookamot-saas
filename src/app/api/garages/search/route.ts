@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch garages with related data
-    let garages = await prisma.garage.findMany({
+    const garages = await prisma.garage.findMany({
       where: searchConditions,
       include: {
         schedules: true,

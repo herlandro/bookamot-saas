@@ -8,9 +8,17 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:clean": "tsx scripts/db-clean.ts",
-    "db:reset": "tsx scripts/db-reset.ts"
+    "db": "tsx scripts/db.ts",
+    "db:clean": "tsx scripts/db.ts clean",
+    "db:reset": "tsx scripts/db.ts reset",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:list": "tsx scripts/db.ts list",
+    "booking:complete": "tsx scripts/booking.ts complete",
+    "query:users": "tsx scripts/query.ts users",
+    "query:garages": "tsx scripts/query.ts garages",
+    "query:slots": "tsx scripts/query.ts slots",
+    "verify:deployment": "bash scripts/verify-deployment.sh",
+    "setup:test-data": "bash scripts/setup-test-data.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

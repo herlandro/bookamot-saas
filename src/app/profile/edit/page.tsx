@@ -135,7 +135,9 @@ export default function EditProfilePage() {
             <CardContent className="py-8">
               <div className="text-center">
                 <p className="text-red-500 mb-4">{error}</p>
-                <Button onClick={fetchUserProfile}>Tentar Novamente</Button>
+                <Button onClick={() => session?.user?.id && fetchUserProfile(session.user.id)}>
+                  Tentar Novamente
+                </Button>
               </div>
             </CardContent>
           </Card>

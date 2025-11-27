@@ -45,10 +45,10 @@ async function listAllUsers() {
       console.log('=== GARAGE OWNERS ===')
       usersWithGarage.forEach((user, i) => {
         console.log(`${i + 1}. ${user.name} (${user.email})`)
-        console.log(`   Garage: ${user.garage.name}`)
+        console.log(`   Garage: ${user.garage?.name ?? 'N/A'}`)
       })
     }
-    
+
     if (usersWithoutGarage.length > 0) {
       console.log('\n=== REGULAR USERS ===')
       usersWithoutGarage.forEach((user, i) => {
@@ -91,18 +91,18 @@ async function listGarageOwners() {
     if (garageOwners.length > 0) {
       garageOwners.forEach((user, i) => {
         console.log(`${i + 1}. ${user.name} (${user.email})`)
-        console.log(`   Garage: ${user.garage.name}`)
-        console.log(`   Email: ${user.garage.email}`)
-        console.log(`   Phone: ${user.garage.phone}`)
-        console.log(`   City: ${user.garage.city}`)
-        console.log(`   MOT License: ${user.garage.motLicenseNumber}`)
-        console.log(`   Active: ${user.garage.isActive ? 'Yes' : 'No'}`)
+        console.log(`   Garage: ${user.garage?.name ?? 'N/A'}`)
+        console.log(`   Email: ${user.garage?.email ?? 'N/A'}`)
+        console.log(`   Phone: ${user.garage?.phone ?? 'N/A'}`)
+        console.log(`   City: ${user.garage?.city ?? 'N/A'}`)
+        console.log(`   MOT License: ${user.garage?.motLicenseNumber ?? 'N/A'}`)
+        console.log(`   Active: ${user.garage?.isActive ? 'Yes' : 'No'}`)
         console.log('')
       })
     } else {
       console.log('❌ No garage owners found.')
     }
-    
+
   } catch (error) {
     console.error('❌ Error fetching garage owners:', error)
   }
@@ -112,10 +112,10 @@ async function checkSlots() {
   try {
     console.log('🔍 Checking availability slots...\n')
     
-    const count = await prisma.garageAvailability.count()
+    const count = await (prisma as any).garageAvailability.count()
     console.log(`📊 Total slots: ${count}\n`)
     
-    const sampleSlots = await prisma.garageAvailability.findMany({
+    const sampleSlots = await (prisma as any).garageAvailability.findMany({
       take: 5,
       select: {
         id: true,
@@ -127,7 +127,7 @@ async function checkSlots() {
     })
     
     console.log('Sample slots:')
-    sampleSlots.forEach((slot, i) => {
+    sampleSlots.forEach((slot: any, i: number) => {
       const date = slot.date.toISOString().split('T')[0]
       console.log(`${i + 1}. ${date} ${slot.timeSlot}`)
       console.log(`   Booked: ${slot.isBooked ? 'Yes' : 'No'}, Blocked: ${slot.isBlocked ? 'Yes' : 'No'}`)

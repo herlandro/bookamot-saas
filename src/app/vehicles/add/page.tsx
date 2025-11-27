@@ -32,6 +32,7 @@ export default function AddVehiclePage() {
   const [loading, setLoading] = useState(false)
   const [validatingReg, setValidatingReg] = useState(false)
   const [lookupError, setLookupError] = useState<string | null>(null)
+  const [lastValidatedReg, setLastValidatedReg] = useState<string>('')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -123,8 +124,7 @@ export default function AddVehiclePage() {
   }
   
   // Armazenar o último valor de registro validado
-  const [lastValidatedReg, setLastValidatedReg] = useState<string>('')
-  
+
   // Manipulador para quando o campo de registro perde o foco
   const handleRegistrationBlur = () => {
     if (formData.registration && formData.registration !== lastValidatedReg) {

@@ -39,7 +39,7 @@ interface Booking {
   paymentStatus: string
 }
 
-export default function BookingDetailsPage({ params }: { params: { id: string } }) {
+export default function BookingDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const id = React.use(params).id
   const { data: session, status } = useSession()
   const router = useRouter()

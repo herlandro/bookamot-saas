@@ -82,11 +82,6 @@ export async function getGarageById(id: string) {
           phone: true,
         }
       },
-      availability: {
-        orderBy: {
-          date: 'asc'
-        }
-      },
       bookings: {
         where: {
           status: {
@@ -129,11 +124,6 @@ export async function getGarageByOwnerId(ownerId: string) {
   return await prisma.garage.findUnique({
     where: { ownerId },
     include: {
-      availability: {
-        orderBy: {
-          date: 'asc'
-        }
-      },
       bookings: {
         include: {
           customer: {

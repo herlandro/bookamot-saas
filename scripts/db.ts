@@ -63,7 +63,7 @@ async function cleanDatabase() {
 
     for (const table of tables) {
       console.log(`   Deleting ${table.name}...`)
-      const result = await table.model.deleteMany()
+      const result = await (table.model as any).deleteMany()
       console.log(`   ✅ Deleted ${result.count} ${table.name}`)
     }
 
@@ -86,7 +86,7 @@ async function resetDatabase() {
   
   try {
     // Run the seed script
-    execSync('tsx prisma/seed.ts', { stdio: 'inherit' })
+    execSync('tsx resources/prisma/seed.ts', { stdio: 'inherit' })
     
     console.log('\n✨ Database reset completed successfully!')
     console.log('\n🎉 Your database is now clean and seeded with fresh data!')
@@ -129,10 +129,10 @@ async function listUsers() {
     if (usersWithGarage.length > 0) {
       console.log('=== GARAGE OWNERS ===')
       usersWithGarage.forEach((user, i) => {
-        console.log(`${i + 1}. ${user.name} (${user.email}) - ${user.garage.name}`)
+        console.log(`${i + 1}. ${user.name} (${user.email}) - ${user.garage?.name ?? 'N/A'}`)
       })
     }
-    
+
     if (usersWithoutGarage.length > 0) {
       console.log('\n=== REGULAR USERS ===')
       usersWithoutGarage.forEach((user, i) => {

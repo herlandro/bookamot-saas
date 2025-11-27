@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
     });
 
     const vehicleYearData = Object.entries(vehiclesByYear)
-      .sort((a, b) => a[0] - b[0])
+      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
       .map(([year, count]) => ({ year: parseInt(year), count }));
 
     // MOT status distribution

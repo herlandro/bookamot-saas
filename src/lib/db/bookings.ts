@@ -79,26 +79,9 @@ export async function createBooking(data: CreateBookingData) {
     }
   })
 
-  // Update garage availability
-  await prisma.garageAvailability.upsert({
-    where: {
-      garageId_date_timeSlot: {
-        garageId: data.garageId,
-        date: data.date,
-        timeSlot: data.timeSlot
-      }
-    },
-    update: {
-      isBooked: true
-    },
-    create: {
-      garageId: data.garageId,
-      date: data.date,
-      timeSlot: data.timeSlot,
-      isBooked: true
-    }
-  })
-
+  // With the optimized availability system, availability is derived
+  // from existing bookings and time slot blocks, so we don't need to
+  // maintain a separate GarageAvailability table here.
   return booking
 }
 
@@ -128,7 +111,7 @@ export async function getBookingById(id: string) {
       },
       vehicle: true,
       motResult: true,
-      review: {
+      reviews: {
         include: {
           customer: {
             select: {
@@ -322,18 +305,10 @@ export async function cancelBooking(id: string, reason?: string) {
     }
   })
 
-  // Free up the time slot
-  await prisma.garageAvailability.updateMany({
-    where: {
-      garageId: booking.garageId,
-      date: booking.date,
-      timeSlot: booking.timeSlot
-    },
-    data: {
-      isBooked: false
-    }
-  })
-
+  // With the optimized availability system, freeing up the slot is
+  // handled implicitly because availability is derived from bookings
+  // and time slot blocks, so there's no GarageAvailability table to
+  // update here.
   return updatedBooking
 }
 
