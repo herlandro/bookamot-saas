@@ -111,7 +111,8 @@ export async function GET(request: NextRequest) {
 
     // Build search conditions
     const searchConditions: any = {
-      dvlaApproved: true // Only show approved garages
+      dvlaApproved: true, // Only show approved garages
+      isActive: true // Only show active garages (not pending or deactivated)
     }
 
     // If location is provided but couldn't be geocoded, search by text (name, city, postcode)

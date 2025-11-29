@@ -12,7 +12,7 @@ interface AnalyticsOverviewCardProps {
     value: number;
     isPositive: boolean;
   };
-  color?: 'blue' | 'green' | 'purple' | 'orange' | 'red';
+  color?: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'yellow';
 }
 
 export function AnalyticsOverviewCard({
@@ -29,6 +29,7 @@ export function AnalyticsOverviewCard({
     purple: 'bg-purple-50 text-purple-600',
     orange: 'bg-orange-50 text-orange-600',
     red: 'bg-red-50 text-red-600',
+    yellow: 'bg-yellow-50 text-yellow-600',
   };
 
   const trendColorClass = trend?.isPositive 
