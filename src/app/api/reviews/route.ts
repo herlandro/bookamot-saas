@@ -56,14 +56,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if review already exists
+    // Check if review already exists for this booking and reviewer type
     const existingReview = await prisma.review.findUnique({
-      where: { bookingId },
+      where: {
+        bookingId_reviewerType: {
+          bookingId,
+          reviewerType
+        }
+      },
     });
 
     if (existingReview) {
       return NextResponse.json(
-        { error: 'Review already exists for this booking' },
+        { error: `You have already reviewed this booking` },
         { status: 400 }
       );
     }

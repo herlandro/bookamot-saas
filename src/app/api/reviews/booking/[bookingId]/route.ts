@@ -8,7 +8,8 @@ export async function GET(
   try {
     const { bookingId } = await params;
 
-    const review = await prisma.review.findUnique({
+    // Find all reviews for this booking (can be 0, 1, or 2 - customer and/or garage review)
+    const reviews = await prisma.review.findMany({
       where: { bookingId },
       include: {
         customer: {
@@ -28,16 +29,19 @@ export async function GET(
       },
     });
 
-    if (!review) {
-      return NextResponse.json(
-        { error: 'Review not found' },
-        { status: 404 }
-      );
-    }
+    // Separate reviews by type for easier frontend consumption
+    const customerReview = reviews.find(r => r.reviewerType === 'CUSTOMER') || null;
+    const garageReview = reviews.find(r => r.reviewerType === 'GARAGE') || null;
 
-    return NextResponse.json({ review });
+    return NextResponse.json({
+      reviews,
+      customerReview,
+      garageReview,
+      // Keep backward compatibility - return first review as 'review'
+      review: reviews[0] || null
+    });
   } catch (error) {
-    console.error('Error fetching review:', error);
+    console.error('Error fetching reviews:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

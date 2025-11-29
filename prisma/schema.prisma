@@ -234,8 +234,11 @@ model Review {
   customer   User    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   garageId   String
   garage     Garage  @relation(fields: [garageId], references: [id], onDelete: Cascade)
-  bookingId  String  @unique
+  bookingId  String
   booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // Ensure only one review per booking per reviewer type (allows both customer AND garage to review same booking)
+  @@unique([bookingId, reviewerType])
 }
 
 model MotNotification {
