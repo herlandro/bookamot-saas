@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -26,14 +26,20 @@ export default function CustomersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true);
+  const fetchCustomers = useCallback(async (isInitial = false) => {
+    if (isInitial) {
+      setInitialLoading(true);
+    } else {
+      setSearching(true);
+    }
     try {
       const params = new URLSearchParams({ page: page.toString(), limit: '10', search });
       const response = await fetch(`/api/admin/customers?${params}`);
@@ -46,7 +52,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setSearching(false);
     }
   }, [page, search]);
 
@@ -56,10 +63,12 @@ export default function CustomersPage() {
       router.push('/admin/login');
       return;
     }
-    fetchCustomers();
+    // Only show initial loading spinner on first load
+    const isInitial = initialLoading && customers.length === 0;
+    fetchCustomers(isInitial);
   }, [session, status, router, fetchCustomers]);
 
-  if (status === 'loading' || (loading && customers.length === 0)) {
+  if (status === 'loading' || initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-red-600" />
@@ -83,8 +92,13 @@ export default function CustomersPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle>All Customers ({total})</CardTitle>
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {searching ? (
+                  <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                )}
                 <Input
+                  ref={searchInputRef}
                   placeholder="Search customers..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -106,34 +120,44 @@ export default function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      <p className="font-medium">{customer.name}</p>
-                      <p className="text-sm text-muted-foreground">{customer.email}</p>
-                    </TableCell>
-                    <TableCell>{customer.phone || '-'}</TableCell>
-                    <TableCell>{format(new Date(customer.createdAt), 'dd MMM yyyy')}</TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-1">
-                        <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-                        {customer._count.bookings}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-1">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        {customer._count.vehicles}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-muted-foreground" />
-                        {customer._count.writtenReviews}
-                      </span>
+                {customers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {search
+                        ? 'No customers found matching your search criteria.'
+                        : 'No customers registered yet.'}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  customers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell>
+                        <p className="font-medium">{customer.name}</p>
+                        <p className="text-sm text-muted-foreground">{customer.email}</p>
+                      </TableCell>
+                      <TableCell>{customer.phone || '-'}</TableCell>
+                      <TableCell>{format(new Date(customer.createdAt), 'dd MMM yyyy')}</TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1">
+                          <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+                          {customer._count.bookings}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1">
+                          <Car className="h-4 w-4 text-muted-foreground" />
+                          {customer._count.vehicles}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-muted-foreground" />
+                          {customer._count.writtenReviews}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
 

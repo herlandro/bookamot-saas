@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -35,15 +35,21 @@ export default function PendingGaragesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [garages, setGarages] = useState<Garage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [actionGarage, setActionGarage] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
   const [processing, setProcessing] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchGarages = useCallback(async () => {
-    setLoading(true);
+  const fetchGarages = useCallback(async (isInitial = false) => {
+    if (isInitial) {
+      setInitialLoading(true);
+    } else {
+      setSearching(true);
+    }
     try {
       const params = new URLSearchParams({ page: page.toString(), limit: '10', search });
       const response = await fetch(`/api/admin/garages/pending?${params}`);
@@ -55,7 +61,8 @@ export default function PendingGaragesPage() {
     } catch (error) {
       console.error('Error fetching garages:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setSearching(false);
     }
   }, [page, search]);
 
@@ -65,7 +72,9 @@ export default function PendingGaragesPage() {
       router.push('/admin/login');
       return;
     }
-    fetchGarages();
+    // Only show initial loading spinner on first load
+    const isInitial = initialLoading && garages.length === 0;
+    fetchGarages(isInitial);
   }, [session, status, router, fetchGarages]);
 
   const handleAction = async () => {
@@ -90,7 +99,7 @@ export default function PendingGaragesPage() {
     }
   };
 
-  if (status === 'loading' || (loading && garages.length === 0)) {
+  if (status === 'loading' || initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-red-600" />
@@ -114,8 +123,13 @@ export default function PendingGaragesPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Pending Garages ({garages.length})</CardTitle>
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {searching ? (
+                  <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                )}
                 <Input
+                  ref={searchInputRef}
                   placeholder="Search garages..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -128,7 +142,7 @@ export default function PendingGaragesPage() {
             {garages.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No pending garages</p>
+                <p>{search ? 'No pending garages found matching your search criteria.' : 'No pending garages'}</p>
               </div>
             ) : (
               <Table>

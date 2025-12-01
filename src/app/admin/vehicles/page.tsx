@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -32,14 +32,20 @@ export default function VehiclesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchVehicles = useCallback(async () => {
-    setLoading(true);
+  const fetchVehicles = useCallback(async (isInitial = false) => {
+    if (isInitial) {
+      setInitialLoading(true);
+    } else {
+      setSearching(true);
+    }
     try {
       const params = new URLSearchParams({ page: page.toString(), limit: '10', search });
       const response = await fetch(`/api/admin/vehicles?${params}`);
@@ -52,7 +58,8 @@ export default function VehiclesPage() {
     } catch (error) {
       console.error('Error fetching vehicles:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setSearching(false);
     }
   }, [page, search]);
 
@@ -62,7 +69,9 @@ export default function VehiclesPage() {
       router.push('/admin/login');
       return;
     }
-    fetchVehicles();
+    // Only show initial loading spinner on first load
+    const isInitial = initialLoading && vehicles.length === 0;
+    fetchVehicles(isInitial);
   }, [session, status, router, fetchVehicles]);
 
   const getMotStatus = (expiry: string | null) => {
@@ -75,7 +84,7 @@ export default function VehiclesPage() {
     return { label: 'Valid', variant: 'default' as const };
   };
 
-  if (status === 'loading' || (loading && vehicles.length === 0)) {
+  if (status === 'loading' || initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-red-600" />
@@ -99,8 +108,13 @@ export default function VehiclesPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle>All Vehicles ({total})</CardTitle>
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {searching ? (
+                  <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                )}
                 <Input
+                  ref={searchInputRef}
                   placeholder="Search vehicles..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -122,35 +136,45 @@ export default function VehiclesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vehicles.map((vehicle) => {
-                  const motStatus = getMotStatus(vehicle.motExpiry);
-                  return (
-                    <TableRow key={vehicle.id}>
-                      <TableCell className="font-mono font-bold">{vehicle.registration}</TableCell>
-                      <TableCell>
-                        <p className="font-medium">{vehicle.make} {vehicle.model}</p>
-                        <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.color} • {vehicle.fuelType}</p>
-                      </TableCell>
-                      <TableCell>
-                        <p>{vehicle.owner.name}</p>
-                        <p className="text-sm text-muted-foreground">{vehicle.owner.email}</p>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Badge variant={motStatus.variant}>{motStatus.label}</Badge>
-                          {vehicle.motExpiry && <span className="text-xs text-muted-foreground">{format(new Date(vehicle.motExpiry), 'dd MMM yyyy')}</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="flex items-center gap-1">
-                          <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-                          {vehicle._count.bookings}
-                        </span>
-                      </TableCell>
-                      <TableCell>{format(new Date(vehicle.createdAt), 'dd MMM yyyy')}</TableCell>
-                    </TableRow>
-                  );
-                })}
+                {vehicles.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {search
+                        ? 'No vehicles found matching your search criteria.'
+                        : 'No vehicles registered yet.'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  vehicles.map((vehicle) => {
+                    const motStatus = getMotStatus(vehicle.motExpiry);
+                    return (
+                      <TableRow key={vehicle.id}>
+                        <TableCell className="font-mono font-bold">{vehicle.registration}</TableCell>
+                        <TableCell>
+                          <p className="font-medium">{vehicle.make} {vehicle.model}</p>
+                          <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.color} • {vehicle.fuelType}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p>{vehicle.owner.name}</p>
+                          <p className="text-sm text-muted-foreground">{vehicle.owner.email}</p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant={motStatus.variant}>{motStatus.label}</Badge>
+                            {vehicle.motExpiry && <span className="text-xs text-muted-foreground">{format(new Date(vehicle.motExpiry), 'dd MMM yyyy')}</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="flex items-center gap-1">
+                            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+                            {vehicle._count.bookings}
+                          </span>
+                        </TableCell>
+                        <TableCell>{format(new Date(vehicle.createdAt), 'dd MMM yyyy')}</TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
 
