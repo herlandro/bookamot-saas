@@ -221,6 +221,25 @@ async function main() {
   await prisma.user.deleteMany()
   console.log('✅ Existing data cleaned\n')
 
+  // Create admin user first
+  console.log('👤 Creating admin user...')
+  const adminPassword = await hashPassword('admin123!')
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@bookamot.co.uk' },
+    update: {
+      name: 'Admin',
+      password: adminPassword,
+      role: UserRole.ADMIN
+    },
+    create: {
+      name: 'Admin',
+      email: 'admin@bookamot.co.uk',
+      password: adminPassword,
+      role: UserRole.ADMIN
+    }
+  })
+  console.log(`✅ Admin user created: ${adminUser.email}\n`)
+
   // Create customer users with vehicles
   console.log('👥 Creating 30 customer users...')
   const customerPassword = await hashPassword('password123')
@@ -565,34 +584,20 @@ async function main() {
   }
   console.log(`✅ Updated ratings for ${garageRatings.size} garages and ${customerRatings.size} customers\n`)
 
-  // Create admin user
-  console.log('👤 Creating admin user...')
-  const adminPassword = await hashPassword('admin123')
-  await prisma.user.create({
-    data: {
-      name: 'Admin User',
-      email: 'herlandroh@gmail.com',
-      password: adminPassword,
-      role: UserRole.ADMIN,
-      phone: '07000000000'
-    }
-  })
-  console.log('✅ Admin user created\n')
-
   console.log('✨ Database seeding completed successfully!\n')
   console.log('📊 Summary:')
+  console.log(`   - 1 admin user`)
   console.log(`   - ${customers.length} customer users`)
   console.log(`   - ${garages.length} garage owners`)
-  console.log(`   - 1 admin user`)
   console.log(`   - ${allVehicles.length} vehicles`)
   console.log(`   - ${garages.length} garages`)
   console.log(`   - ${exceptionCount} schedule exceptions`)
   console.log(`   - ${bookingCount} bookings`)
   console.log(`   - ${customerReviewCount + garageReviewCount} reviews (${customerReviewCount} from customers, ${garageReviewCount} from garages)`)
   console.log('\n🔑 Test Credentials:')
+  console.log('   Admin: admin@bookamot.co.uk / password: admin123!')
   console.log('   Customer: any email from SEED_DATA_CREDENTIALS.md / password: password123')
   console.log('   Garage: any garage email from SEED_DATA_CREDENTIALS.md / password: garage123')
-  console.log('   Admin: herlandroh@gmail.com / password: admin123')
 }
 
 main()
