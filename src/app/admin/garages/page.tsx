@@ -26,6 +26,7 @@ interface Garage {
   postcode: string;
   motPrice: number;
   isActive: boolean;
+  dvlaApproved: boolean;
   rating: number;
   createdAt: string;
   owner: { name: string; email: string };
@@ -156,6 +157,7 @@ export default function GaragesPage() {
                   <TableHead>Location</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Stats</TableHead>
+                  <TableHead>DVLA Status</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Active</TableHead>
                 </TableRow>
@@ -163,7 +165,7 @@ export default function GaragesPage() {
               <TableBody>
                 {garages.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       {search || statusFilter !== 'all'
                         ? 'No garages found matching your search criteria.'
                         : 'No garages registered yet.'}
@@ -187,6 +189,11 @@ export default function GaragesPage() {
                           <p>{garage._count.bookings} bookings</p>
                           <p className="flex items-center gap-1">{garage._count.reviews} reviews</p>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={garage.dvlaApproved ? 'default' : 'destructive'}>
+                          {garage.dvlaApproved ? 'Approved' : 'Pending'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={garage.isActive ? 'default' : 'secondary'}>

@@ -202,35 +202,51 @@ export default function BookingsPage() {
           {/* Header Section - Outside Card */}
           <div className="mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
-                  <Calendar className="h-6 w-6" />
-                  Bookings
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Manage and view all your bookings
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <form onSubmit={(e) => { e.preventDefault(); }} className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search by garage or vehicle..."
-                    className="pl-9 w-full sm:w-64"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </form>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filter
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Export
+              <div className="flex items-center justify-between w-full md:w-auto">
+                <div>
+                  <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+                    <Calendar className="h-6 w-6" />
+                    Bookings
+                  </h1>
+                  <p className="text-muted-foreground mt-1">
+                    Manage and view all your bookings
+                  </p>
+                </div>
+                <Button
+                  onClick={() => router.push('/search')}
+                  className="flex items-center gap-2 md:hidden"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Booking
                 </Button>
               </div>
+              <Button
+                onClick={() => router.push('/search')}
+                className="hidden md:flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Booking
+              </Button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+              <form onSubmit={(e) => { e.preventDefault(); }} className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by garage or vehicle..."
+                  className="pl-9 w-full sm:w-64"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </form>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filter
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
             </div>
           </div>
 

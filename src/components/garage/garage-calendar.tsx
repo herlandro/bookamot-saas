@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '../ui/checkbox'
-import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit, Filter, Save, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, User, Car, Lock, Edit, Filter, Save, X, Settings } from 'lucide-react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 interface Booking {
@@ -287,14 +288,26 @@ export function GarageCalendar({
             {/* Edit Calendar Controls - Moved to the right */}
             <div className="flex gap-2 ml-4">
               {!isEditMode ? (
-                <Button
-                  onClick={onEditMode}
-                  className="flex items-center gap-2"
-                  size="sm"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit Calendar
-                </Button>
+                <>
+                  <Button
+                    onClick={onEditMode}
+                    className="flex items-center gap-2"
+                    size="sm"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Calendar
+                  </Button>
+                  <Link href="/garage-admin/availability">
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      size="sm"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Manage Availability
+                    </Button>
+                  </Link>
+                </>
               ) : (
                 <>
                   <Button

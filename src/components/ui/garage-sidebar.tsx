@@ -9,7 +9,8 @@ import {
   Car,
   CalendarCheck,
   Users,
-  Star
+  Star,
+  CalendarClock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
@@ -25,6 +26,7 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/garage-admin/dashboard' },
     { id: 'calendar', label: 'Calendar', icon: Calendar, href: '/garage-admin/calendar' },
+    { id: 'availability', label: 'Availability', icon: CalendarClock, href: '/garage-admin/availability' },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, href: '/garage-admin/bookings' },
     { id: 'customers', label: 'Customers', icon: Users, href: '/garage-admin/customers' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/garage-admin/vehicles' },

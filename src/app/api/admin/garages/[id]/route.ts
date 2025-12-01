@@ -16,11 +16,27 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { isActive } = body
+    const { isActive, dvlaApproved } = body
+
+    // Build update data dynamically
+    const updateData: { isActive?: boolean; dvlaApproved?: boolean } = {}
+
+    if (typeof isActive === 'boolean') {
+      updateData.isActive = isActive
+    }
+
+    if (typeof dvlaApproved === 'boolean') {
+      updateData.dvlaApproved = dvlaApproved
+    }
+
+    // If activating a garage, also approve DVLA (unless explicitly set to false)
+    if (isActive === true && dvlaApproved === undefined) {
+      updateData.dvlaApproved = true
+    }
 
     const garage = await prisma.garage.update({
       where: { id },
-      data: { isActive }
+      data: updateData
     })
 
     return NextResponse.json(garage)

@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
       console.log(`📍 Extracted: city="${city}", postcode="${postcode}", coords=${coords ? `(${coords.lat}, ${coords.lng})` : 'null'}`)
 
-      await prisma.garage.create({
+      const garage = await prisma.garage.create({
         data: {
           name: garageName,
           address,
@@ -125,9 +125,30 @@ export async function POST(request: NextRequest) {
           email,
           ownerId: user.id,
           motLicenseNumber: `MOT-${Date.now()}`, // Generate temporary license number
-          dvlaApproved: false, // Garages need approval
+          dvlaApproved: true, // Auto-approved by default
+          isActive: true, // Active by default
         }
       })
+
+      // Create default schedules for the garage (Monday-Friday 09:00-17:30, Saturday 09:00-13:00, Sunday closed)
+      const defaultSchedules = [
+        { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Monday
+        { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Tuesday
+        { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Wednesday
+        { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Thursday
+        { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Friday
+        { dayOfWeek: 6, isOpen: true, openTime: '09:00', closeTime: '13:00', slotDuration: 60 }, // Saturday
+        { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '17:00', slotDuration: 60 }, // Sunday (closed)
+      ]
+
+      await prisma.garageSchedule.createMany({
+        data: defaultSchedules.map(schedule => ({
+          garageId: garage.id,
+          ...schedule
+        }))
+      })
+
+      console.log(`✅ Created garage "${garageName}" with default schedules`)
     }
 
     return NextResponse.json(

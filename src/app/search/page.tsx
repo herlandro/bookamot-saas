@@ -372,22 +372,12 @@ function SearchPageContent() {
         {/* Results */}
         {garages.length > 0 && (
           <div className="space-y-4">
-            {/* Filter out garages with no available slots */}
-            {(() => {
-              const garagesWithSlots = garages.filter(garage =>
-                'availableSlots' in garage &&
-                garage.availableSlots &&
-                garage.availableSlots.length > 0
-              );
+            <h2 className="text-2xl font-semibold">
+              Found {garages.length} MOT Test Centers
+            </h2>
 
-              return (
-                <>
-                  <h2 className="text-2xl font-semibold">
-                    Found {garagesWithSlots.length} MOT Test Centers
-                  </h2>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {garagesWithSlots.map((garage) => (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {garages.map((garage) => (
                 <Card key={garage.id} className="hover:shadow-lg transition-shadow shadow-xl rounded-lg border border-border">
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -476,12 +466,9 @@ function SearchPageContent() {
                       </Button>
                     </div>
                   </CardContent>
-                </Card>
-                    ))}
-                  </div>
-                </>
-              );
-            })()}
+              </Card>
+              ))}
+            </div>
           </div>
         )}
 

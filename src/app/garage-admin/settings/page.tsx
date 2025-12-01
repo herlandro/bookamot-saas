@@ -288,59 +288,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-            {/* Opening Hours */}
-            <Card className="shadow-xl rounded-lg border border-border bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Opening Hours
-              </CardTitle>
-              <CardDescription>
-                Set your garage's operating hours
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(openingHours).map(([day, hours]) => (
-                  <div key={day} className="flex items-center gap-4">
-                    <div className="w-24">
-                      <Label className="capitalize">{day}</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={!hours.closed}
-                        onChange={(e) => updateOpeningHours(day, 'closed', !e.target.checked)}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Open</span>
-                    </div>
-                    {!hours.closed && (
-                      <>
-                        <Input
-                          type="time"
-                          value={hours.open || ''}
-                          onChange={(e) => updateOpeningHours(day, 'open', e.target.value)}
-                          className="w-32"
-                        />
-                        <span className="text-sm">to</span>
-                        <Input
-                          type="time"
-                          value={hours.close || ''}
-                          onChange={(e) => updateOpeningHours(day, 'close', e.target.value)}
-                          className="w-32"
-                        />
-                      </>
-                    )}
-                    {hours.closed && (
-                      <span className="text-sm text-gray-500">Closed</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Theme Settings */}
           <ThemeSettingsCard />
           </div>
