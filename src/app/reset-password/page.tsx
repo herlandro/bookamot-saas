@@ -40,11 +40,11 @@ function ResetPasswordPageContent() {
           setTokenValid(true)
         } else {
           const data = await response.json()
-          setError(data.error || 'Token inválido ou expirado')
+          setError(data.error || 'Invalid or expired token')
           setTokenValid(false)
         }
       } catch (error) {
-        setError('Erro ao validar token')
+        setError('Error validating token')
         setTokenValid(false)
       }
     }
@@ -54,16 +54,16 @@ function ResetPasswordPageContent() {
 
   const validatePassword = (password: string) => {
     if (password.length < 8) {
-      return 'A senha deve ter pelo menos 8 caracteres'
+      return 'Password must be at least 8 characters'
     }
     if (!/(?=.*[a-z])/.test(password)) {
-      return 'A senha deve conter pelo menos uma letra minúscula'
+      return 'Password must contain at least one lowercase letter'
     }
     if (!/(?=.*[A-Z])/.test(password)) {
-      return 'A senha deve conter pelo menos uma letra maiúscula'
+      return 'Password must contain at least one uppercase letter'
     }
     if (!/(?=.*\d)/.test(password)) {
-      return 'A senha deve conter pelo menos um número'
+      return 'Password must contain at least one number'
     }
     return null
   }
@@ -72,7 +72,7 @@ function ResetPasswordPageContent() {
     e.preventDefault()
     setError('')
 
-    // Validações
+    // Validations
     const passwordError = validatePassword(password)
     if (passwordError) {
       setError(passwordError)
@@ -80,7 +80,7 @@ function ResetPasswordPageContent() {
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
+      setError('Passwords do not match')
       return
     }
 
@@ -97,15 +97,15 @@ function ResetPasswordPageContent() {
 
       if (response.ok) {
         setSuccess(true)
-        // Redirecionar para login após 3 segundos
+        // Redirect to login after 3 seconds
         setTimeout(() => {
           router.push('/signin?message=password-reset-success')
         }, 3000)
       } else {
-        setError(data.error || 'Erro ao redefinir senha')
+        setError(data.error || 'Error resetting password')
       }
     } catch (error) {
-      setError('Erro de conexão. Tente novamente.')
+      setError('Connection error. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -118,27 +118,27 @@ function ResetPasswordPageContent() {
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Validando token...</p>
+            <p className="mt-4 text-gray-600">Validating token...</p>
           </div>
         </div>
       </div>
     )
   }
 
-  // Token inválido
+  // Invalid token
   if (!tokenValid) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
           <div className="text-center">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Token Inválido</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Token</h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <Link
               href="/forgot-password"
               className="inline-flex items-center justify-center w-full px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
-              Solicitar Novo Link
+              Request New Link
             </Link>
           </div>
         </div>
@@ -146,19 +146,19 @@ function ResetPasswordPageContent() {
     )
   }
 
-  // Sucesso
+  // Success
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
           <div className="text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Senha Redefinida!</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Reset!</h1>
             <p className="text-gray-600 mb-6">
-              Sua senha foi alterada com sucesso. Você será redirecionado para a página de login.
+              Your password has been changed successfully. You will be redirected to the login page.
             </p>
             <div className="animate-pulse text-blue-600">
-              Redirecionando em 3 segundos...
+              Redirecting in 3 seconds...
             </div>
           </div>
         </div>
@@ -173,9 +173,9 @@ function ResetPasswordPageContent() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
             <Lock className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Nova Senha</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">New Password</h1>
           <p className="text-gray-600">
-            Digite sua nova senha abaixo
+            Enter your new password below
           </p>
         </div>
 
@@ -191,7 +191,7 @@ function ResetPasswordPageContent() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Nova Senha
+              New Password
             </label>
             <div className="relative">
               <input
@@ -200,7 +200,7 @@ function ResetPasswordPageContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors pr-12"
-                placeholder="Digite sua nova senha"
+                placeholder="Enter your new password"
                 required
               />
               <button
@@ -212,13 +212,13 @@ function ResetPasswordPageContent() {
               </button>
             </div>
             <div className="mt-2 text-xs text-gray-500">
-              Mínimo 8 caracteres, incluindo maiúscula, minúscula e número
+              Minimum 8 characters, including uppercase, lowercase and number
             </div>
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Nova Senha
+              Confirm New Password
             </label>
             <div className="relative">
               <input
@@ -227,7 +227,7 @@ function ResetPasswordPageContent() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors pr-12"
-                placeholder="Confirme sua nova senha"
+                placeholder="Confirm your new password"
                 required
               />
               <button
@@ -248,10 +248,10 @@ function ResetPasswordPageContent() {
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Redefinindo...
+                Resetting...
               </div>
             ) : (
-              'Redefinir Senha'
+              'Reset Password'
             )}
           </button>
         </form>
@@ -261,7 +261,7 @@ function ResetPasswordPageContent() {
             href="/signin"
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
-            Voltar para o login
+            Back to login
           </Link>
         </div>
       </div>
@@ -277,7 +277,7 @@ export default function ResetPasswordPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Carregando página...</p>
+              <p className="mt-4 text-gray-600">Loading page...</p>
             </div>
           </div>
         </div>

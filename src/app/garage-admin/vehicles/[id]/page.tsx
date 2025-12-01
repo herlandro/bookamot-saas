@@ -124,7 +124,7 @@ export default function VehicleDetailPage() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
     }).format(value);

@@ -125,7 +125,7 @@ export default function AnalyticsDashboardPage() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
     }).format(value);
@@ -246,11 +246,11 @@ export default function AnalyticsDashboardPage() {
               description={`${analytics.overview.completedBookings} completed`}
             />
             <AnalyticsOverviewCard
-              title="Total de Reviews"
+              title="Total Reviews"
               value={analytics.overview.totalReviews}
               icon={Star}
               color="orange"
-              description={`Média: ${analytics.overview.averageRating.toFixed(1)} ⭐`}
+              description={`Average: ${analytics.overview.averageRating.toFixed(1)} ⭐`}
             />
             <AnalyticsOverviewCard
               title="Retention Rate"

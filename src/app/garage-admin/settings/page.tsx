@@ -155,7 +155,7 @@ export default function SettingsPage() {
                 className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <Save className="h-4 w-4" />
-                {saving ? 'Salvando...' : 'Salvar Alterações'}
+                {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>

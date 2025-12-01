@@ -44,7 +44,7 @@ function SearchPageContent() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]) // Today's date
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<{[garageId: string]: string}>({})
-  const [selectedGridDate, setSelectedGridDate] = useState<string>(new Date().toISOString().split('T')[0]) // Inicializa com a data atual
+  const [selectedGridDate, setSelectedGridDate] = useState<string>(new Date().toISOString().split('T')[0]) // Initialize with current date
   const [garages, setGarages] = useState<Garage[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
@@ -313,34 +313,35 @@ function SearchPageContent() {
                       const date = new Date(selectedDate);
                       date.setDate(date.getDate() + i);
                       const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
-                      const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3);
+                      const dayName = date.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 3);
                       const dateString = date.toISOString().split('T')[0];
 
                       return (
                         <div
                           key={dateString}
                           onClick={() => {
-                            // Não atualiza o campo de data superior, apenas busca com a nova data
-                            setSelectedGridDate(dateString); // Atualiza a data selecionada no grid
+                            // Synchronize both date fields
+                            setSelectedDate(dateString);
+                            setSelectedGridDate(dateString);
 
                             if (searchLocation.trim()) {
                               const params = new URLSearchParams({
                                 location: searchLocation,
-                                date: dateString // Usa a data clicada diretamente
+                                date: dateString
                               });
 
                               setLoading(true);
                               fetch(`/api/garages/search?${params}`)
                                 .then(response => {
                                   if (response.ok) return response.json();
-                                  throw new Error('Falha na busca');
+                                  throw new Error('Search failed');
                                 })
                                 .then(data => {
                                   setGarages(data.garages || []);
                                   setSelectedTimeSlots({});
                                 })
                                 .catch(error => {
-                                  console.error('Erro ao buscar garagens:', error);
+                                  console.error('Error searching garages:', error);
                                 })
                                 .finally(() => {
                                   setLoading(false);

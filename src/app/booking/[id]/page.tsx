@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, CheckCircle, MapPin, Phone, Mail, Calendar, Clock, Car } from 'lucide-react'
 import { MainLayout } from '@/components/layout/main-layout'
 
-// Componente para redirecionamento automático
+// Component for automatic redirect
 interface AutoRedirectProps {
   redirectTo: string;
   delay?: number;
@@ -36,7 +36,7 @@ function AutoRedirect({ redirectTo, delay = 5000 }: AutoRedirectProps) {
   
   return (
     <div className="mt-4 text-center text-sm text-muted-foreground">
-      Redirecionando para {redirectTo} em {countdown} segundos...
+      Redirecting to {redirectTo} in {countdown} seconds...
     </div>
   )
 }
@@ -151,7 +151,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
 
   const handleConfirmBooking = async () => {
     if (!bookingData || !bookingData.date || !bookingData.timeSlot) {
-      alert('Por favor, selecione uma data e horário para a reserva.')
+      alert('Please select a date and time for the booking.')
       return
     }
     
@@ -167,7 +167,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
           vehicleId: bookingData.vehicle.id,
           date: bookingData.date instanceof Date ? bookingData.date.toISOString().split('T')[0] : bookingData.date,
           timeSlot: bookingData.timeSlot,
-          notes: 'Reserva criada através do sistema BookaMOT'
+          notes: 'Booking created through the BookaMOT system'
         })
       })
 
@@ -180,17 +180,17 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
         sessionStorage.removeItem('bookingData')
         
         // Show success message and redirect to dashboard after 3 seconds
-        alert(`Reserva confirmada com sucesso! Referência: ${result.booking.reference}\n\nRedirecionando para o dashboard...`)
+        alert(`Booking pending acceptance! Reference: ${result.booking.reference}\n\nRedirecting to dashboard...`)
         setTimeout(() => {
           router.push('/dashboard')
         }, 3000)
       } else {
         const error = await response.json()
-        alert(`Erro ao confirmar reserva: ${error.error || 'Erro desconhecido'}`)
+        alert(`Error confirming booking: ${error.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error creating booking:', error)
-      alert('Erro ao confirmar reserva. Tente novamente.')
+      alert('Error confirming booking. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -238,20 +238,20 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" size="sm" onClick={handleCancel}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
+            Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Confirmar Reserva</h1>
-            <p className="text-muted-foreground">Revise os detalhes da sua reserva antes de confirmar.</p>
+            <h1 className="text-2xl font-bold">Confirm Booking</h1>
+            <p className="text-muted-foreground">Review your booking details before confirming.</p>
           </div>
         </div>
 
         {/* Booking Summary */}
           <Card className="shadow-lg border border-border">
             <CardHeader>
-              <CardTitle>Resumo da Reserva</CardTitle>
+              <CardTitle>Booking Summary</CardTitle>
               <CardDescription>
-                Por favor, revise os detalhes da sua reserva antes de confirmar.
+                Please review your booking details before confirming.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -260,7 +260,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
                   <div className="bg-muted/50 p-4 rounded-lg border border-border/50">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-primary" />
-                      Informações da Garagem
+                      Garage Information
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div className="font-medium text-base">{bookingData.garage.name}</div>
@@ -280,29 +280,29 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
                   <div className="bg-muted/50 p-4 rounded-lg border border-border/50">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       <Car className="h-4 w-4 text-primary" />
-                      Dados do Veículo
+                      Vehicle Details
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div className="font-medium text-base">{bookingData.vehicle.registration}</div>
                       <div className="text-muted-foreground">{bookingData.vehicle.make} {bookingData.vehicle.model}</div>
-                      <div className="text-muted-foreground">Ano: {bookingData.vehicle.year}</div>
+                      <div className="text-muted-foreground">Year: {bookingData.vehicle.year}</div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="bg-muted/50 p-4 rounded-lg border border-border/50">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-primary" />
-                      Data e Horário
+                      Date and Time
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-3 w-3" />
-                        <span className="font-medium">Data:</span> 
+                        <span className="font-medium">Date:</span>
                         <span className="font-medium">
-                          {bookingData.date && bookingData.date instanceof Date ? 
-                            bookingData.date.toLocaleDateString('pt-BR', {
+                          {bookingData.date && bookingData.date instanceof Date ?
+                            bookingData.date.toLocaleDateString('en-GB', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
@@ -311,28 +311,28 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        <span className="font-medium">Horário:</span> {bookingData.timeSlot || ''}
+                        <span className="font-medium">Time:</span> {bookingData.timeSlot || ''}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                    <h3 className="font-semibold mb-2 text-primary">Valor do Teste MOT</h3>
+                    <h3 className="font-semibold mb-2 text-primary">MOT Test Price</h3>
                     <div className="text-2xl font-bold text-primary">
                       £{bookingData.garage.motPrice.toFixed(2)}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      Pagamento na garagem no dia do teste
+                      Payment at the garage on the test day
                     </div>
                   </div>
-                  
-                  <Button 
+
+                  <Button
                     onClick={handleConfirmBooking}
                     disabled={submitting || !bookingData.date || !bookingData.timeSlot}
                     className="w-full mt-4"
                     size="lg"
                   >
-                    {submitting ? 'Processando...' : 'Confirmar Reserva'}
+                    {submitting ? 'Processing...' : 'Confirm Booking'}
                   </Button>
                 </div>
               </div>

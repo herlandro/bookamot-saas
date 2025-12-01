@@ -43,10 +43,10 @@ export function ColorThemeExample() {
             <h3 className="text-lg font-medium">Status Badges</h3>
             <div className="flex flex-wrap gap-2">
               <StatusBadge variant="default">Default</StatusBadge>
-              <StatusBadge variant="success">Concluído</StatusBadge>
-              <StatusBadge variant="warning">Pendente</StatusBadge>
-              <StatusBadge variant="destructive">Cancelado</StatusBadge>
-              <StatusBadge variant="info">Confirmado</StatusBadge>
+              <StatusBadge variant="success">Completed</StatusBadge>
+              <StatusBadge variant="warning">Pending</StatusBadge>
+              <StatusBadge variant="destructive">Cancelled</StatusBadge>
+              <StatusBadge variant="info">Confirmed</StatusBadge>
               <StatusBadge variant="outline">Outline</StatusBadge>
             </div>
           </div>
@@ -57,69 +57,69 @@ export function ColorThemeExample() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Card Padrão</CardTitle>
-                  <CardDescription>Descrição do card</CardDescription>
+                  <CardTitle>Default Card</CardTitle>
+                  <CardDescription>Card description</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Conteúdo do card</p>
+                  <p>Card content</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-t-4 border-t-success">
                 <CardHeader>
-                  <CardTitle>Card Sucesso</CardTitle>
-                  <CardDescription>Com borda de sucesso</CardDescription>
+                  <CardTitle>Success Card</CardTitle>
+                  <CardDescription>With success border</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Conteúdo do card</p>
+                  <p>Card content</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-t-4 border-t-destructive">
                 <CardHeader>
-                  <CardTitle>Card Erro</CardTitle>
-                  <CardDescription>Com borda de erro</CardDescription>
+                  <CardTitle>Error Card</CardTitle>
+                  <CardDescription>With error border</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Conteúdo do card</p>
+                  <p>Card content</p>
                 </CardContent>
               </Card>
             </div>
           </div>
-          
-          {/* Contornos */}
+
+          {/* Borders */}
           <div className="space-y-2">
-            <h3 className="text-lg font-medium">Contornos</h3>
+            <h3 className="text-lg font-medium">Borders</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 border rounded-md">
-                <p>Contorno padrão (border)</p>
+                <p>Default border</p>
               </div>
               <div className="p-4 border-2 border rounded-md">
-                <p>Contorno mais grosso (border-2)</p>
+                <p>Thicker border (border-2)</p>
               </div>
               <div className="p-4 ring-2 ring-ring rounded-md">
-                <p>Contorno de foco (ring)</p>
+                <p>Focus ring</p>
               </div>
             </div>
           </div>
 
-          {/* Cores de texto */}
+          {/* Text colours */}
           <div className="space-y-2">
-            <h3 className="text-lg font-medium">Cores de Texto</h3>
+            <h3 className="text-lg font-medium">Text Colours</h3>
             <div className="space-y-1">
-              <p className="text-foreground">Texto principal (foreground)</p>
-              <p className="text-muted-foreground">Texto secundário (muted-foreground)</p>
-              <p className="text-primary">Texto primário (primary)</p>
-              <p className="text-success">Texto sucesso (success)</p>
-              <p className="text-warning">Texto alerta (warning)</p>
-              <p className="text-destructive">Texto erro (destructive)</p>
-              <p className="text-info">Texto informativo (info)</p>
+              <p className="text-foreground">Main text (foreground)</p>
+              <p className="text-muted-foreground">Secondary text (muted-foreground)</p>
+              <p className="text-primary">Primary text (primary)</p>
+              <p className="text-success">Success text (success)</p>
+              <p className="text-warning">Warning text (warning)</p>
+              <p className="text-destructive">Error text (destructive)</p>
+              <p className="text-info">Info text (info)</p>
             </div>
           </div>
 
-          {/* Cores de fundo */}
+          {/* Background colours */}
           <div className="space-y-2">
-            <h3 className="text-lg font-medium">Cores de Fundo</h3>
+            <h3 className="text-lg font-medium">Background Colours</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div className="p-4 bg-background border rounded-md">Background</div>
               <div className="p-4 bg-muted border rounded-md">Muted</div>

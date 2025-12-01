@@ -22,7 +22,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-    { id: 'bookings', label: 'My Bookings', icon: Calendar, href: '/bookings' },
+    { id: 'bookings', label: 'Bookings', icon: Calendar, href: '/bookings' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/vehicles' },
     { id: 'reviews', label: 'Reviews', icon: Star, href: '/reviews' },
   ];

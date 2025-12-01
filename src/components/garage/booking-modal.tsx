@@ -40,10 +40,10 @@ const statusColors = {
 }
 
 const statusLabels = {
-  CONFIRMED: 'Confirmado',
-  COMPLETED: 'Concluído',
-  CANCELLED: 'Cancelado',
-  PENDING: 'Pendente'
+  CONFIRMED: 'Confirmed',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  PENDING: 'Pending'
 }
 
 export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: BookingModalProps) {
@@ -65,7 +65,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
+    return date.toLocaleDateString('en-GB', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -77,13 +77,13 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
     switch (booking.status) {
       case 'PENDING':
         return [
-          { label: 'Confirmar', status: 'CONFIRMED', variant: 'default' as const },
-          { label: 'Cancelar', status: 'CANCELLED', variant: 'destructive' as const }
+          { label: 'Confirm', status: 'CONFIRMED', variant: 'default' as const },
+          { label: 'Cancel', status: 'CANCELLED', variant: 'destructive' as const }
         ]
       case 'CONFIRMED':
         return [
-          { label: 'Marcar como Concluído', status: 'COMPLETED', variant: 'default' as const },
-          { label: 'Cancelar', status: 'CANCELLED', variant: 'destructive' as const }
+          { label: 'Mark as Completed', status: 'COMPLETED', variant: 'default' as const },
+          { label: 'Cancel', status: 'CANCELLED', variant: 'destructive' as const }
         ]
       default:
         return []
@@ -111,7 +111,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
                 {booking.vehicle.make} {booking.vehicle.model}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Referência: {booking.reference}
+                Reference: {booking.reference}
               </p>
             </div>
             <Button
@@ -140,7 +140,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Data e Horário</span>
+                    <span className="font-medium">Date & Time</span>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm">{formatDate(booking.date)}</p>
@@ -156,7 +156,7 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Cliente</span>
+                    <span className="font-medium">Customer</span>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{booking.user.name}</p>
@@ -174,15 +174,15 @@ export function BookingModal({ booking, isOpen, onClose, onStatusUpdate }: Booki
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Car className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Veículo</span>
+                  <span className="font-medium">Vehicle</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Marca/Modelo</p>
+                    <p className="text-sm text-muted-foreground">Make/Model</p>
                     <p className="font-medium">{booking.vehicle.make} {booking.vehicle.model}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Placa</p>
+                    <p className="text-sm text-muted-foreground">Registration</p>
                     <p className="font-medium">{booking.vehicle.registration}</p>
                   </div>
                 </div>

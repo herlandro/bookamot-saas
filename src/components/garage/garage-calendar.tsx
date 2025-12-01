@@ -41,7 +41,7 @@ interface GarageCalendarProps {
   onDateChange?: (date: Date) => void
   isEditMode?: boolean
   pendingChanges?: {[key: string]: boolean}
-  initialDate?: string // Nova prop para data inicial
+  initialDate?: string // Initial date prop
   onEditMode?: () => void
   onSaveChanges?: () => void
   onCancelEdit?: () => void
@@ -53,7 +53,7 @@ const timeSlots = [
   '14:00', '15:00', '16:00', '17:00'
 ]
 
-// Usando as variáveis CSS para cores de status
+// Using CSS variables for status colors
 const statusColors = {
   CONFIRMED: 'bg-blue-500 text-white',
   COMPLETED: 'bg-green-500 text-white',
@@ -62,11 +62,11 @@ const statusColors = {
 }
 
 const statusLabels = {
-  CONFIRMED: 'Confirmado',
-  COMPLETED: 'Concluído',
-  CANCELLED: 'Cancelado',
-  PENDING: 'Pendente',
-  BLOCKED: 'Indisponível'
+  CONFIRMED: 'Confirmed',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  PENDING: 'Pending',
+  BLOCKED: 'Unavailable'
 }
 
 export function GarageCalendar({ 
@@ -98,7 +98,7 @@ export function GarageCalendar({
     }
   }, [selectedWeek])
 
-  // Atualizar currentDate quando initialDate mudar
+  // Update currentDate when initialDate changes
   useEffect(() => {
     if (initialDate) {
       setCurrentDate(new Date(initialDate))
@@ -224,11 +224,11 @@ export function GarageCalendar({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Calendário de Agendamentos
+            Booking Calendar
             {isEditMode && (
               <Badge variant="secondary" className="ml-2">
                 <Edit className="h-3 w-3 mr-1" />
-                Modo de Edição
+                Edit Mode
               </Badge>
             )}
           </CardTitle>
@@ -238,15 +238,15 @@ export function GarageCalendar({
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Filtrar por status" />
+                    <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">Todos</SelectItem>
-                    <SelectItem value="PENDING">Pendente</SelectItem>
-                    <SelectItem value="CONFIRMED">Confirmado</SelectItem>
-                    <SelectItem value="COMPLETED">Concluído</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelado</SelectItem>
-                    <SelectItem value="BLOCKED">Indisponível</SelectItem>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    <SelectItem value="BLOCKED">Unavailable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -261,7 +261,7 @@ export function GarageCalendar({
                   htmlFor="show-cancelled"
                   className="text-sm font-medium leading-none cursor-pointer"
                 >
-                  Mostrar cancelados
+                  Show cancelled
                 </label>
               </div>
             </div>
@@ -274,7 +274,7 @@ export function GarageCalendar({
             </Button>
             <span className="text-sm font-medium min-w-[200px] text-center">
               {selectedWeek.length > 0 && (
-                `${selectedWeek[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${selectedWeek[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                `${selectedWeek[0].toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - ${selectedWeek[6].toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
               )}
             </span>
             <Button
@@ -334,7 +334,7 @@ export function GarageCalendar({
               )
             }
             
-            // Definir cores com base no status
+            // Define colors based on status
             let badgeClass = '';
             switch(status) {
               case 'CONFIRMED': badgeClass = 'bg-primary text-primary-foreground border-0'; break;
@@ -353,7 +353,7 @@ export function GarageCalendar({
           })}
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="bg-success/10 border-success/20 text-success">
-              Disponível
+              Available
             </Badge>
           </div>
         </div>
@@ -364,13 +364,13 @@ export function GarageCalendar({
           <div className="min-w-[800px]">
             {/* Header with days */}
             <div className="grid grid-cols-8 gap-1 mb-2">
-              <div className="p-2 text-sm font-medium text-center text-foreground">Horário</div>
+              <div className="p-2 text-sm font-medium text-center text-foreground">Time</div>
               {selectedWeek.map((date, index) => (
                 <div key={index} className={cn(
                   "p-2 text-sm font-medium text-center rounded",
                   isToday(date) ? "bg-primary/20 text-primary" : "bg-card text-foreground"
                 )}>
-                  <div>{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
+                  <div>{date.toLocaleDateString('en-GB', { weekday: 'short' })}</div>
                   <div className="text-xs">{date.getDate()}</div>
                 </div>
               ))}
@@ -401,7 +401,7 @@ export function GarageCalendar({
                       return (
                         <div key={`${dayIndex}-${timeSlot}`} className="p-1 min-h-[60px] border rounded bg-muted/30 opacity-30">
                           <div className="text-xs text-muted-foreground text-center pt-4">
-                            Filtrado
+                            Filtered
                           </div>
                         </div>
                       )
@@ -458,21 +458,21 @@ export function GarageCalendar({
                         {slotBookings.length === 0 && isBlocked && (
                           <div className="text-xs text-muted-foreground font-medium text-center pt-4 flex items-center justify-center gap-1">
                             <Lock className="h-3 w-3" />
-                            <span>Indisponível</span>
+                            <span>Unavailable</span>
                             {hasPendingChange && (
-                              <span className="text-primary font-semibold">(Alterando)</span>
+                              <span className="text-primary font-semibold">(Changing)</span>
                             )}
                           </div>
                         )}
-                        
+
                         {slotBookings.length === 0 && !isPast && !isBlocked && (
                           <div className="text-xs text-success font-medium text-center pt-4">
-                            <span>Disponível</span>
+                            <span>Available</span>
                             {hasPendingChange && (
-                              <div className="text-primary font-semibold">(Bloqueando)</div>
+                              <div className="text-primary font-semibold">(Blocking)</div>
                             )}
                             {isEditMode && !hasPendingChange && (
-                              <div className="text-primary text-xs font-medium mt-1">Clique para bloquear</div>
+                              <div className="text-primary text-xs font-medium mt-1">Click to block</div>
                             )}
                           </div>
                         )}

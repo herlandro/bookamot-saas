@@ -59,20 +59,20 @@ export default function AddVehiclePage() {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
     
-    // Limpar mensagem de erro de lookup quando o usuário edita o campo de registro
+    // Clear lookup error message when user edits the registration field
     if (field === 'registration' && lookupError) {
       setLookupError(null)
     }
   }
-  
-  // Função para validar o número de registro do veículo
+
+  // Function to validate the vehicle registration number
   const validateRegistration = async (registration: string) => {
     if (!registration || registration.trim() === '') return
     
     setValidatingReg(true)
     setLookupError(null)
     
-    // Número máximo de tentativas
+    // Maximum number of retries
     const maxRetries = 3
     let currentRetry = 0
     let success = false
@@ -101,23 +101,23 @@ export default function AddVehiclePage() {
           currentRetry++
           
           if (currentRetry < maxRetries) {
-            // Esperar um pouco antes de tentar novamente (backoff exponencial)
+            // Wait a bit before retrying (exponential backoff)
             await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
           }
         }
       } catch (error) {
-        console.error(`Erro ao validar registro (tentativa ${currentRetry + 1}/${maxRetries}):`, error)
+        console.error(`Error validating registration (attempt ${currentRetry + 1}/${maxRetries}):`, error)
         currentRetry++
-        
+
         if (currentRetry < maxRetries) {
-          // Esperar um pouco antes de tentar novamente
+          // Wait a bit before retrying
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
         }
       }
     }
     
     if (!success) {
-      setLookupError('Não foi possível obter informações do veículo após várias tentativas. Verifique o número de registro ou preencha os campos manualmente.')
+      setLookupError('Could not retrieve vehicle information after multiple attempts. Please check the registration number or fill in the fields manually.')
     }
     
     setValidatingReg(false)
@@ -133,12 +133,12 @@ export default function AddVehiclePage() {
     }
   }
   
-  // Manipulador para quando o usuário clica em outro campo
+  // Handler for when user clicks on another field
   const handleRegistrationValidation = () => {
-    // Só valida se o erro específico estiver presente e o registro for diferente do último validado
-    if (lookupError === 'Não foi possível obter informações do veículo após várias tentativas. Verifique o número de registro ou preencha os campos manualmente.' 
-        && formData.registration 
-        && formData.registration !== lastValidatedReg 
+    // Only validate if the specific error is present and registration is different from last validated
+    if (lookupError === 'Could not retrieve vehicle information after multiple attempts. Please check the registration number or fill in the fields manually.'
+        && formData.registration
+        && formData.registration !== lastValidatedReg
         && !validatingReg) {
       validateRegistration(formData.registration)
       setLastValidatedReg(formData.registration)

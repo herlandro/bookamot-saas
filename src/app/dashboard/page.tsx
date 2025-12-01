@@ -205,12 +205,12 @@ export default function Dashboard() {
               {/* Header - Outside Card */}
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Minhas Reservas</h2>
-                  <p className="text-muted-foreground text-sm mt-1">Gerencie suas reservas de MOT</p>
+                  <h2 className="text-2xl font-bold text-foreground">Bookings</h2>
+                  <p className="text-muted-foreground text-sm mt-1">Manage your MOT bookings</p>
                 </div>
                 <Button onClick={() => router.push('/search')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
-                  Adicionar Booking
+                  Add Booking
                 </Button>
               </div>
 
@@ -220,9 +220,9 @@ export default function Dashboard() {
               {bookings.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">Nenhuma reserva encontrada</p>
+                  <p className="text-muted-foreground mb-4">No bookings found</p>
                   <Button onClick={() => router.push('/search')} size="sm" className="bg-primary hover:bg-primary/90">
-                    Agendar MOT
+                    Book MOT
                   </Button>
                 </div>
               ) : (
@@ -242,7 +242,7 @@ export default function Dashboard() {
                         if (canEdit) {
                           router.push(`/bookings/edit/${booking.id}`);
                         } else {
-                          // Se não puder editar, redirecionar para a página de detalhes
+                          // If can't edit, redirect to details page
                           router.push(`/bookings/${booking.id}`);
                         }
                       }}
@@ -259,7 +259,7 @@ export default function Dashboard() {
                       <div className="text-sm text-muted-foreground space-y-1">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          {formatDate(new Date(booking.date))} às {booking.timeSlot}
+                          {formatDate(new Date(booking.date))} at {booking.timeSlot}
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4" />
@@ -294,12 +294,12 @@ export default function Dashboard() {
               {/* Header - Outside Card */}
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Meus Veículos</h2>
-                  <p className="text-muted-foreground text-sm mt-1">Gerencie seus veículos e datas de MOT</p>
+                  <h2 className="text-2xl font-bold text-foreground">Vehicles</h2>
+                  <p className="text-muted-foreground text-sm mt-1">Manage your vehicles and MOT dates</p>
                 </div>
                 <Button onClick={() => router.push('/vehicles/add')} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
-                  Adicionar Veículo
+                  Add Vehicle
                 </Button>
               </div>
 
@@ -309,9 +309,9 @@ export default function Dashboard() {
               {vehicles.length === 0 ? (
                 <div className="text-center py-8">
                   <Car className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">Nenhum veículo encontrado</p>
+                  <p className="text-muted-foreground mb-4">No vehicles found</p>
                   <Button onClick={() => router.push('/vehicles/add')} size="sm" className="bg-primary hover:bg-primary/90">
-                    Adicionar Veículo
+                    Add Vehicle
                   </Button>
                 </div>
               ) : (
@@ -346,17 +346,17 @@ export default function Dashboard() {
                           </div>
                           <div className="text-sm text-muted-foreground mt-2">
                             <div className="flex justify-between items-center">
-                              <span>Próximo MOT:</span>
-                              <span className="font-medium">{vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'Não disponível'}</span>
+                              <span>Next MOT:</span>
+                              <span className="font-medium">{vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'Not available'}</span>
                             </div>
                           </div>
                           {isFirstVehicle && motStatus.urgent && (
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               className="w-full mt-3 bg-destructive hover:bg-destructive/90"
                               onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
                             >
-                              Agendar MOT
+                              Book MOT
                             </Button>
                           )}
                         </div>

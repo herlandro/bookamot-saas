@@ -156,11 +156,11 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
   const getResultBadge = (result: string) => {
     switch (result) {
       case 'PASS':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Aprovado</Badge>
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Pass</Badge>
       case 'FAIL':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Reprovado</Badge>
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Fail</Badge>
       case 'ADVISORY':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Observações</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Advisory</Badge>
       default:
         return <Badge variant="secondary">{result}</Badge>
     }
@@ -188,7 +188,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <p className="text-muted-foreground">Carregando detalhes do veículo...</p>
+          <p className="text-muted-foreground">Loading vehicle details...</p>
         </div>
       </MainLayout>
     )
@@ -198,7 +198,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <p className="text-muted-foreground">Veículo não encontrado</p>
+          <p className="text-muted-foreground">Vehicle not found</p>
         </div>
       </MainLayout>
     )
@@ -217,7 +217,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              Back
             </Button>
           </div>
         </div>
@@ -349,20 +349,20 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Histórico de MOT
+                    MOT History
                   </CardTitle>
                   <CardDescription>
-                    Histórico completo de inspeções MOT organizadas por ano
+                    Complete MOT inspection history organised by year
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {motHistory.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      Nenhum histórico de MOT encontrado
+                      No MOT history found
                     </p>
                   ) : groupedMotHistory.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      Erro ao processar histórico de MOT
+                      Error processing MOT history
                     </p>
                   ) : (
                     <div className="space-y-4">
@@ -396,13 +396,13 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                                   <div className="flex justify-between items-start mb-3">
                                     <div>
                                       <p className="font-medium">
-                                        Teste: {new Date(record.testDate).toLocaleDateString('pt-BR')}
+                                        Test: {new Date(record.testDate).toLocaleDateString('en-GB')}
                                       </p>
                                       <p className="text-sm text-muted-foreground">
-                                        Número: {record.testNumber}
+                                        Number: {record.testNumber}
                                       </p>
                                       <p className="text-sm text-muted-foreground">
-                                        Quilometragem: {record.mileage.toLocaleString()} km
+                                        Mileage: {record.mileage.toLocaleString()} km
                                       </p>
                                     </div>
                                     {getResultBadge(record.result)}
@@ -413,25 +413,25 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
                                       {record.defects.dangerous > 0 && (
                                         <div className="text-center p-2 bg-red-50 rounded border border-red-200">
-                                          <p className="text-xs text-red-600 font-medium">Perigosos</p>
+                                          <p className="text-xs text-red-600 font-medium">Dangerous</p>
                                           <p className="text-lg font-bold text-red-700">{record.defects.dangerous}</p>
                                         </div>
                                       )}
                                       {record.defects.major > 0 && (
                                         <div className="text-center p-2 bg-orange-50 rounded border border-orange-200">
-                                          <p className="text-xs text-orange-600 font-medium">Graves</p>
+                                          <p className="text-xs text-orange-600 font-medium">Major</p>
                                           <p className="text-lg font-bold text-orange-700">{record.defects.major}</p>
                                         </div>
                                       )}
                                       {record.defects.minor > 0 && (
                                         <div className="text-center p-2 bg-yellow-50 rounded border border-yellow-200">
-                                          <p className="text-xs text-yellow-600 font-medium">Menores</p>
+                                          <p className="text-xs text-yellow-600 font-medium">Minor</p>
                                           <p className="text-lg font-bold text-yellow-700">{record.defects.minor}</p>
                                         </div>
                                       )}
                                       {record.defects.advisory > 0 && (
                                         <div className="text-center p-2 bg-blue-50 rounded border border-blue-200">
-                                          <p className="text-xs text-blue-600 font-medium">Observações</p>
+                                          <p className="text-xs text-blue-600 font-medium">Advisory</p>
                                           <p className="text-lg font-bold text-blue-700">{record.defects.advisory}</p>
                                         </div>
                                       )}
@@ -440,7 +440,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
 
                                   {record.details.length > 0 && (
                                     <div>
-                                      <h4 className="text-sm font-medium mb-2">Detalhes:</h4>
+                                      <h4 className="text-sm font-medium mb-2">Details:</h4>
                                       <ul className="text-sm text-muted-foreground space-y-1">
                                         {record.details.map((detail, index) => (
                                           <li key={index} className="flex items-start gap-2">

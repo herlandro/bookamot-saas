@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { User, Mail, Phone, Calendar, Shield } from 'lucide-react'
+import { User, Mail, Phone, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -90,11 +90,11 @@ export default function EditProfilePage() {
         },
       })
 
-      alert('Perfil atualizado com sucesso!')
+      alert('Profile updated successfully!')
       router.push('/profile')
     } catch (err) {
       console.error('Error updating profile:', err)
-      alert('Erro ao atualizar o perfil. Tente novamente.')
+      alert('Error updating profile. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -104,7 +104,7 @@ export default function EditProfilePage() {
     return (
       <MainLayout>
         <div className="container max-w-4xl mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold mb-8">Editar Perfil</h1>
+          <h1 className="text-3xl font-bold mb-8">Edit Profile</h1>
           <Card className="border border-border">
             <CardHeader>
               <div className="h-8 w-1/3 mb-2 bg-gray-200 animate-pulse rounded"></div>
@@ -130,13 +130,13 @@ export default function EditProfilePage() {
     return (
       <MainLayout>
         <div className="container max-w-4xl mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold mb-8">Editar Perfil</h1>
+          <h1 className="text-3xl font-bold mb-8">Edit Profile</h1>
           <Card className="border border-border">
             <CardContent className="py-8">
               <div className="text-center">
                 <p className="text-red-500 mb-4">{error}</p>
                 <Button onClick={() => session?.user?.id && fetchUserProfile(session.user.id)}>
-                  Tentar Novamente
+                  Try Again
                 </Button>
               </div>
             </CardContent>
@@ -149,78 +149,77 @@ export default function EditProfilePage() {
   return (
     <MainLayout>
       <div className="container max-w-4xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-8">Editar Perfil</h1>
-        
+        <h1 className="text-3xl font-bold mb-8">Edit Profile</h1>
+
         <Card className="w-full shadow-xl rounded-lg border border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Informações Pessoais
+              Personal Information
             </CardTitle>
             <CardDescription>
-              Atualize seus dados pessoais
+              Update your personal details
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome completo"
+                  placeholder="Your full name"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   value={session?.user?.email || ''}
                   disabled
-                  className="bg-gray-100"
+                  className="bg-muted"
                 />
-                <p className="text-sm text-muted-foreground">O email não pode ser alterado</p>
+                <p className="text-sm text-muted-foreground">Email cannot be changed</p>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="phone">Phone</Label>
                 <Input
                   id="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Seu número de telefone"
+                  placeholder="Your phone number"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label>Tipo de Conta</Label>
-                <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-gray-100">
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {session?.user?.role === 'CUSTOMER' ? 'Cliente' : 
-                     session?.user?.role === 'GARAGE_OWNER' ? 'Proprietário de Oficina' : 
-                     session?.user?.role}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">O tipo de conta não pode ser alterado</p>
+                <Label>Account Type</Label>
+                <Input
+                  value={session?.user?.role === 'CUSTOMER' ? 'Customer' :
+                         session?.user?.role === 'GARAGE_OWNER' ? 'Garage Owner' :
+                         session?.user?.role || ''}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-sm text-muted-foreground">Account type cannot be changed</p>
               </div>
             </div>
           </CardContent>
           <CardFooter>
-            <Button 
-              onClick={() => router.push('/profile')} 
-              variant="outline" 
+            <Button
+              onClick={() => router.push('/profile')}
+              variant="outline"
               className="mr-2"
             >
-              Cancelar
+              Cancel
             </Button>
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </CardFooter>
         </Card>

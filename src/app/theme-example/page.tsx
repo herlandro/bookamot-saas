@@ -18,10 +18,10 @@ export default function ThemeExamplePage() {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar
+            Back
           </Button>
-          <h1 className="text-3xl font-bold mt-4 text-foreground">Exemplo de Tema de Cores</h1>
-          <p className="text-muted-foreground">Esta página demonstra as cores padronizadas do sistema</p>
+          <h1 className="text-3xl font-bold mt-4 text-foreground">Colour Theme Example</h1>
+          <p className="text-muted-foreground">This page demonstrates the standardised system colours</p>
         </div>
 
         <ColorThemeExample />
