@@ -95,6 +95,11 @@ export function NavigationMenu() {
     return null
   }
 
+  // Don't show navigation menu for ADMIN users - they have their own sidebar
+  if (session.user.role === 'ADMIN') {
+    return null
+  }
+
   // Determine navigation items based on user role
   const isGarageOwner = session.user.role === 'GARAGE_OWNER'
   const navigationItems = isGarageOwner ? garageNavigation : customerNavigation

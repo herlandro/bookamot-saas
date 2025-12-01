@@ -2,17 +2,37 @@
 
 import React, { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { LogOut, Settings, User } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation'
+import {
+  LogOut,
+  Settings,
+  User,
+  LayoutDashboard,
+  Building2,
+  Car,
+  Users,
+  Star,
+  Clock
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface AvatarDropdownProps {
   className?: string
 }
 
+const adminMenuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { id: 'pending', label: 'Pending Garages', icon: Clock, href: '/admin/garages/pending' },
+  { id: 'garages', label: 'Garages', icon: Building2, href: '/admin/garages' },
+  { id: 'customers', label: 'Customers', icon: Users, href: '/admin/customers' },
+  { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/admin/vehicles' },
+  { id: 'reviews', label: 'Reviews', icon: Star, href: '/admin/reviews' },
+]
+
 export function AvatarDropdown({ className }: AvatarDropdownProps) {
   const { data: session } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
 
   if (!session?.user) {
@@ -20,6 +40,7 @@ export function AvatarDropdown({ className }: AvatarDropdownProps) {
   }
 
   const user = session.user
+  const isAdmin = user.role === 'ADMIN'
   const initials = user.name
     ? user.name
         .split(' ')
@@ -34,14 +55,16 @@ export function AvatarDropdown({ className }: AvatarDropdownProps) {
     router.push('/signin')
   }
 
-  const handleProfile = () => {
+  const handleNavigation = (href: string) => {
     setIsOpen(false)
-    router.push('/profile')
+    router.push(href)
   }
 
-  const handleSettings = () => {
-    setIsOpen(false)
-    router.push('/settings')
+  const isActive = (href: string) => {
+    if (href === '/admin/garages') {
+      return pathname === href
+    }
+    return pathname === href || pathname.startsWith(`${href}/`)
   }
 
   return (
@@ -49,7 +72,12 @@ export function AvatarDropdown({ className }: AvatarDropdownProps) {
       {/* Avatar Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary font-semibold text-sm hover:bg-primary/20 transition-colors border border-primary/20"
+        className={cn(
+          "flex items-center justify-center h-10 w-10 rounded-full font-semibold text-sm transition-colors border",
+          isAdmin
+            ? "bg-red-600/10 text-red-600 hover:bg-red-600/20 border-red-600/20"
+            : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+        )}
         aria-label="User menu"
         title={user.name || user.email}
       >
@@ -66,21 +94,62 @@ export function AvatarDropdown({ className }: AvatarDropdownProps) {
           />
 
           {/* Menu */}
-          <div className="absolute right-0 mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className={cn(
+            "absolute right-0 mt-2 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden",
+            isAdmin ? "w-64" : "w-56"
+          )}>
             {/* User Info */}
-            <div className="px-4 py-3 border-b border-border bg-muted/50">
-              <p className="text-sm font-semibold text-foreground truncate">
-                {user.name || 'User'}
-              </p>
+            <div className={cn(
+              "px-4 py-3 border-b border-border",
+              isAdmin ? "bg-red-600/10" : "bg-muted/50"
+            )}>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {user.name || 'User'}
+                </p>
+                {isAdmin && (
+                  <span className="px-1.5 py-0.5 text-xs font-medium bg-red-600 text-white rounded">
+                    Admin
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground truncate">
                 {user.email}
               </p>
             </div>
 
-            {/* Menu Items */}
+            {/* Admin Navigation Items */}
+            {isAdmin && (
+              <div className="py-2 border-b border-border">
+                <p className="px-4 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Admin Panel
+                </p>
+                {adminMenuItems.map((item) => {
+                  const Icon = item.icon
+                  const active = isActive(item.href)
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavigation(item.href)}
+                      className={cn(
+                        "w-full px-4 py-2 text-sm transition-colors flex items-center gap-3",
+                        active
+                          ? "bg-red-600 text-white"
+                          : "text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Common Menu Items */}
             <div className="py-1">
               <button
-                onClick={handleProfile}
+                onClick={() => handleNavigation(isAdmin ? '/admin/profile' : '/profile')}
                 className="w-full px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors flex items-center gap-3"
               >
                 <User className="h-4 w-4" />
@@ -88,7 +157,7 @@ export function AvatarDropdown({ className }: AvatarDropdownProps) {
               </button>
 
               <button
-                onClick={handleSettings}
+                onClick={() => handleNavigation(isAdmin ? '/admin/settings' : '/settings')}
                 className="w-full px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors flex items-center gap-3"
               >
                 <Settings className="h-4 w-4" />

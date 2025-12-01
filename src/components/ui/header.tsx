@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useTheme } from 'next-themes'
-import { Bell, Sun, Moon, LogOut, Settings, User, Menu } from 'lucide-react'
+import { Bell, Sun, Moon, Menu } from 'lucide-react'
 import { NavigationMenu } from './navigation-menu'
+import { AvatarDropdown } from './avatar-dropdown'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -14,10 +14,8 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = true }: HeaderProps) {
   const { data: session } = useSession()
-  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [avatarOpen, setAvatarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   React.useEffect(() => {
@@ -26,31 +24,6 @@ export function Header({ onMenuClick, showMenuButton = true }: HeaderProps) {
 
   if (!session?.user) {
     return null
-  }
-
-  const user = session.user
-  const initials = user.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-    : user.email?.charAt(0).toUpperCase() || 'U'
-
-  const handleSignOut = async () => {
-    setAvatarOpen(false)
-    await signOut({ redirect: false })
-    router.push('/signin')
-  }
-
-  const handleProfile = () => {
-    setAvatarOpen(false)
-    router.push('/profile')
-  }
-
-  const handleSettings = () => {
-    setAvatarOpen(false)
-    router.push('/settings')
   }
 
   const toggleTheme = () => {
@@ -151,63 +124,7 @@ export function Header({ onMenuClick, showMenuButton = true }: HeaderProps) {
           )}
 
           {/* Avatar Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setAvatarOpen(!avatarOpen)}
-              className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary font-semibold text-sm hover:bg-primary/20 transition-colors border border-primary/20"
-              aria-label="User menu"
-              title={user.name || user.email}
-            >
-              {initials}
-            </button>
-
-            {avatarOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setAvatarOpen(false)}
-                />
-                <div className="absolute right-0 mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-border bg-muted/50">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {user.name || 'User'}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </p>
-                  </div>
-
-                  <div className="py-1">
-                    <button
-                      onClick={handleProfile}
-                      className="w-full px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors flex items-center gap-3"
-                    >
-                      <User className="h-4 w-4" />
-                      Profile
-                    </button>
-
-                    <button
-                      onClick={handleSettings}
-                      className="w-full px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors flex items-center gap-3"
-                    >
-                      <Settings className="h-4 w-4" />
-                      Settings
-                    </button>
-
-                    <div className="border-t border-border my-1" />
-
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-3"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <AvatarDropdown />
         </div>
       </div>
     </header>
