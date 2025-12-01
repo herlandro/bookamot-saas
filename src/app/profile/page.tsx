@@ -70,7 +70,7 @@ export default function ProfilePage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
+    return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -110,7 +110,7 @@ export default function ProfilePage() {
                 <div className="text-center">
                   <p className="text-red-500 mb-4">{error}</p>
                   <Button onClick={() => session?.user?.id && fetchUserProfile(session.user.id)}>
-                    Tentar Novamente
+                    Try Again
                   </Button>
                 </div>
               </CardContent>
@@ -130,16 +130,16 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Informações Pessoais
+                  Personal Information
                 </CardTitle>
                 <CardDescription>
-                  Seus dados pessoais e informações de conta
+                  Your personal details and account information
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Nome</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Name</p>
                     <p className="text-lg font-medium">{userProfile?.name || session?.user?.name || 'N/A'}</p>
                   </div>
 
@@ -152,27 +152,27 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Telefone</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Phone</p>
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-lg">{userProfile?.phone || 'Não informado'}</p>
+                      <p className="text-lg">{userProfile?.phone || 'Not provided'}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Tipo de Conta</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Account Type</p>
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-muted-foreground" />
                       <p className="text-lg text-foreground">
-                        {session?.user?.role === 'CUSTOMER' ? 'Cliente' :
-                         session?.user?.role === 'GARAGE_OWNER' ? 'Proprietário de Oficina' :
+                        {session?.user?.role === 'CUSTOMER' ? 'Customer' :
+                         session?.user?.role === 'GARAGE_OWNER' ? 'Garage Owner' :
                          session?.user?.role}
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Membro desde</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Member Since</p>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <p className="text-lg">{userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'N/A'}</p>
@@ -182,13 +182,13 @@ export default function ProfilePage() {
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button onClick={() => router.push('/profile/edit')}>
-                  Editar Perfil
+                  Edit Profile
                 </Button>
                 <Button
                   onClick={() => signOut({ callbackUrl: '/signin' })}
                   variant="destructive"
                 >
-                  Sair
+                  Sign Out
                 </Button>
               </CardFooter>
             </Card>
@@ -198,29 +198,29 @@ export default function ProfilePage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Building className="h-5 w-5" />
-                    Informações da Oficina
+                    Garage Information
                   </CardTitle>
                   <CardDescription>
-                    Detalhes da sua oficina registrada
+                    Details of your registered garage
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Nome da Oficina</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Garage Name</p>
                       <p className="text-lg font-medium">{userProfile.garage.name}</p>
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Endereço</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Address</p>
                       <p className="text-lg">{userProfile.garage.address}</p>
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Telefone</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Phone</p>
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-lg">{userProfile.garage.phone || 'Não informado'}</p>
+                        <p className="text-lg">{userProfile.garage.phone || 'Not provided'}</p>
                       </div>
                     </div>
 
@@ -228,22 +228,22 @@ export default function ProfilePage() {
                       <p className="text-sm font-medium text-muted-foreground mb-1">Status</p>
                       <div className="flex items-center gap-2">
                         <span className={`h-2.5 w-2.5 rounded-full ${userProfile.garage.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        <p className="text-lg">{userProfile.garage.isActive ? 'Ativa' : 'Inativa'}</p>
+                        <p className="text-lg">{userProfile.garage.isActive ? 'Active' : 'Inactive'}</p>
                       </div>
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Aprovação DVLA</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">DVLA Approval</p>
                       <div className="flex items-center gap-2">
                         <span className={`h-2.5 w-2.5 rounded-full ${userProfile.garage.dvlaApproved ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                        <p className="text-lg">{userProfile.garage.dvlaApproved ? 'Aprovada' : 'Pendente'}</p>
+                        <p className="text-lg">{userProfile.garage.dvlaApproved ? 'Approved' : 'Pending'}</p>
                       </div>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter>
                   <Button variant="outline" onClick={() => router.push('/garage-admin/settings')} className="ml-auto">
-                    Gerenciar Oficina
+                    Manage Garage
                   </Button>
                 </CardFooter>
               </Card>

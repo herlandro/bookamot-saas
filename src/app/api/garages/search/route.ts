@@ -37,32 +37,40 @@ function getAvailableTimeSlots(garage: any, date: Date, requestedTime?: string):
   let currentMinutes = openHour * 60 + openMinute;
   const endMinutes = closeHour * 60 + closeMinute - slotDuration; // Last slot must end before closing
   
+  // Get current time for filtering past slots
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
   while (currentMinutes <= endMinutes) {
     const hour = Math.floor(currentMinutes / 60);
     const minute = currentMinutes % 60;
-    
+
     const timeSlot = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    
+
+    // Check if this slot is in the past (for today only)
+    const isPast = isToday && currentMinutes <= currentTimeMinutes;
+
     // Check if this slot is blocked
     const isBlocked = garage.timeSlotBlocks.some(
-      (block: any) => 
-        block.date.toDateString() === date.toDateString() && 
+      (block: any) =>
+        block.date.toDateString() === date.toDateString() &&
         block.timeSlot === timeSlot
     );
-    
+
     // Check if this slot is already booked
     const isBooked = garage.bookings && garage.bookings.some(
-      (booking: any) => 
-        booking.date.toDateString() === date.toDateString() && 
+      (booking: any) =>
+        booking.date.toDateString() === date.toDateString() &&
         booking.timeSlot === timeSlot &&
         ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(booking.status)
     );
-    
-    // If not blocked and not booked, add to available slots
-    if (!isBlocked && !isBooked) {
+
+    // If not past, not blocked and not booked, add to available slots
+    if (!isPast && !isBlocked && !isBooked) {
       slots.push(timeSlot);
     }
-    
+
     // Move to next slot
     currentMinutes += slotDuration;
   }

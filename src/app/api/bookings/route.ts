@@ -75,11 +75,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if time slot is available
+    // Check if time slot is in the past
     const bookingDate = new Date(date)
+    const now = new Date()
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number)
+
+    // Create a date object for the booking time slot
+    const bookingDateTime = new Date(bookingDate)
+    bookingDateTime.setHours(slotHour, slotMinute, 0, 0)
+
+    // If the booking date/time is in the past, reject it
+    if (bookingDateTime < now) {
+      return NextResponse.json(
+        { error: 'Cannot book a time slot in the past' },
+        { status: 400 }
+      )
+    }
+
+    // Check if time slot is available
     const startOfDay = new Date(bookingDate)
     startOfDay.setHours(0, 0, 0, 0)
-    
+
     const endOfDay = new Date(bookingDate)
     endOfDay.setHours(23, 59, 59, 999)
 
@@ -100,6 +116,44 @@ export async function POST(request: NextRequest) {
     if (existingBooking) {
       return NextResponse.json(
         { error: 'Time slot is no longer available' },
+        { status: 409 }
+      )
+    }
+
+    // Check if time slot is blocked by the garage
+    const blockedSlot = await prisma.garageTimeSlotBlock.findFirst({
+      where: {
+        garageId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        timeSlot
+      }
+    })
+
+    if (blockedSlot) {
+      return NextResponse.json(
+        { error: 'This time slot has been blocked by the garage' },
+        { status: 409 }
+      )
+    }
+
+    // Check if the garage is closed on this day (schedule exception)
+    const scheduleException = await prisma.garageScheduleException.findFirst({
+      where: {
+        garageId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        isClosed: true
+      }
+    })
+
+    if (scheduleException) {
+      return NextResponse.json(
+        { error: 'The garage is closed on this date' },
         { status: 409 }
       )
     }
@@ -207,8 +261,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const page = parseInt(searchParams.get('page') || '1')
+    const offset = searchParams.get('offset')
+      ? parseInt(searchParams.get('offset')!)
+      : (page - 1) * limit
 
     const whereCondition: any = {
       customerId: session.user.id
@@ -216,6 +274,14 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       whereCondition.status = status
+    }
+
+    // Add search filter for booking reference or vehicle registration
+    if (search) {
+      whereCondition.OR = [
+        { bookingRef: { contains: search, mode: 'insensitive' } },
+        { vehicle: { registration: { contains: search, mode: 'insensitive' } } }
+      ]
     }
 
     const bookings = await prisma.booking.findMany({
@@ -295,7 +361,12 @@ export async function GET(request: NextRequest) {
       bookings: formattedBookings,
       total,
       limit,
-      offset
+      offset,
+      pagination: {
+        page,
+        pages: Math.ceil(total / limit),
+        total
+      }
     })
 
   } catch (error) {
