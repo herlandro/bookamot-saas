@@ -24,7 +24,6 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
   const titleRef = useRef<HTMLHeadingElement>(null)
   const subtitleRef = useRef<HTMLParagraphElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const skipRef = useRef<HTMLButtonElement>(null)
 
   // GSAP animations on mount
   useEffect(() => {
@@ -64,10 +63,6 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         scale: 0.95,
         duration: 0.5,
       }, '-=0.2')
-      .from(skipRef.current, {
-        opacity: 0,
-        duration: 0.3,
-      }, '-=0.2')
     }, containerRef)
 
     // Cleanup
@@ -105,15 +100,6 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         Let's Get Started
         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
       </Button>
-
-      {/* Skip Option */}
-      <button
-        ref={skipRef}
-        onClick={() => window.location.href = '/dashboard'}
-        className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors underline"
-      >
-        I'll do this later
-      </button>
     </div>
   )
 }

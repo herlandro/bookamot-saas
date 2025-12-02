@@ -41,7 +41,11 @@ interface Vehicle {
   make: string
   model: string
   year: number
-  motExpiryDate?: string
+  mileage?: number | null
+  lastMotDate?: string | null
+  lastMotResult?: string | null
+  motExpiryDate?: string | null
+  motStatus?: string | null
 }
 
 interface DashboardStats {
@@ -138,15 +142,17 @@ export default function Dashboard() {
   }
 
   const getBookingStatusBadge = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'confirmed':
-        return <Badge className="bg-blue-500 text-primary-foreground">Confirmed</Badge>
+        return <Badge className="bg-blue-500 text-white">Confirmed</Badge>
       case 'completed':
-        return <Badge className="bg-green-500 text-primary-foreground">Completed</Badge>
+        return <Badge className="bg-green-500 text-white">Completed</Badge>
       case 'cancelled':
-        return <Badge className="bg-destructive text-destructive-foreground">Cancelled</Badge>
+        return <Badge className="bg-red-500 text-white">Cancelled</Badge>
+      case 'pending':
+        return <Badge className="bg-yellow-500 text-black">Pending</Badge>
       default:
-        return <Badge className="bg-muted text-muted-foreground">{status}</Badge>
+        return <Badge className="bg-gray-500 text-white">{status}</Badge>
     }
   }
 
@@ -158,19 +164,57 @@ export default function Dashboard() {
 
   const getVehicleMotStatus = (vehicle: Vehicle) => {
     if (!vehicle.motExpiryDate) {
-      return { urgent: true, message: 'No MOT data' }
+      return { urgent: true, warning: false, message: 'No MOT data', daysUntilExpiry: null }
     }
 
     const expiryDate = new Date(vehicle.motExpiryDate)
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
     if (daysUntilExpiry < 0) {
-      return { urgent: true, message: 'Expired' }
+      return { urgent: true, warning: false, message: 'Expired', daysUntilExpiry }
     } else if (daysUntilExpiry <= 30) {
-      return { urgent: true, message: `${daysUntilExpiry} days left` }
+      return { urgent: false, warning: true, message: `${daysUntilExpiry} days left`, daysUntilExpiry }
+    } else if (daysUntilExpiry <= 60) {
+      return { urgent: false, warning: true, message: `${daysUntilExpiry} days left`, daysUntilExpiry }
     } else {
-      return { urgent: false, message: 'Valid' }
+      return { urgent: false, warning: false, message: 'Valid', daysUntilExpiry }
+    }
+  }
+
+  // Check if Book MOT button should be enabled (within 2 months of expiry)
+  const canBookMot = (vehicle: Vehicle) => {
+    if (!vehicle.motExpiryDate) return true // Always allow if no MOT data
+
+    const expiryDate = new Date(vehicle.motExpiryDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+    // Enable button if within 2 months (60 days) of expiry or already expired
+    return daysUntilExpiry <= 60
+  }
+
+  // Format mileage with thousands separator
+  const formatMileage = (mileage: number | null | undefined) => {
+    if (!mileage) return 'N/A'
+    return mileage.toLocaleString('en-GB') + ' mi'
+  }
+
+  // Get MOT result badge styling
+  const getMotResultBadge = (result: string | null | undefined) => {
+    if (!result) {
+      return <Badge className="bg-gray-500 text-white">Unknown</Badge>
+    }
+
+    switch (result.toUpperCase()) {
+      case 'PASS':
+        return <Badge className="bg-green-500 text-white">Passed</Badge>
+      case 'FAIL':
+        return <Badge className="bg-red-500 text-white">Failed</Badge>
+      default:
+        return <Badge className="bg-gray-500 text-white">{result}</Badge>
     }
   }
 
@@ -200,8 +244,8 @@ export default function Dashboard() {
         )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Bookings Section */}
-            <div>
+            {/* Bookings Section - 50% width */}
+            <div className="lg:col-span-1">
               {/* Header - Outside Card */}
               <div className="flex justify-between items-center mb-4">
                 <div>
@@ -226,61 +270,68 @@ export default function Dashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {bookings
                     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                     .map((booking) => (
-                    <div 
-                      key={booking.id} 
-                      className="border border-border rounded-lg p-4 hover:bg-muted hover:shadow-md transition-all cursor-pointer" 
+                    <div
+                      key={booking.id}
+                      className="border border-border rounded-lg p-3 hover:bg-muted/50 hover:shadow-sm transition-all cursor-pointer"
                       onClick={() => {
-                        // Verificar se a reserva pode ser editada
                         const bookingDate = new Date(booking.date);
                         const isPastBooking = bookingDate < new Date();
                         const canEdit = !isPastBooking && (booking.status === 'confirmed' || booking.status === 'pending');
-                        
+
                         if (canEdit) {
                           router.push(`/bookings/edit/${booking.id}`);
                         } else {
-                          // If can't edit, redirect to details page
                           router.push(`/bookings/${booking.id}`);
                         }
                       }}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">{booking.vehicle.registration}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
-                          </p>
+                      <div className="flex items-center justify-between">
+                        {/* Left side - 2 lines of info */}
+                        <div className="flex-1 min-w-0">
+                          {/* Line 1: Vehicle and date/time */}
+                          <div className="flex items-center gap-3 text-sm">
+                            <span className="font-bold">{booking.vehicle.registration}</span>
+                            <span className="text-muted-foreground">
+                              {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
+                            </span>
+                          </div>
+                          {/* Line 2: Date, time, and garage */}
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>{formatDate(new Date(booking.date))} at {booking.timeSlot}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span className="truncate">{booking.garage.name}, {booking.garage.city}</span>
+                            </div>
+                          </div>
                         </div>
-                        {getBookingStatusBadge(booking.status)}
+
+                        {/* Right side - Status badge centered vertically */}
+                        <div className="flex items-center gap-2 ml-4">
+                          {getBookingStatusBadge(booking.status)}
+                          {booking.status === 'completed' && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedBookingForReview(booking)
+                                setShowReviewModal(true)
+                              }}
+                              variant={booking.hasReview ? "outline" : "default"}
+                              size="sm"
+                              className="flex items-center gap-1"
+                            >
+                              <Star className={`h-3.5 w-3.5 ${booking.hasReview ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                              {booking.hasReview ? 'Reviewed' : 'Review'}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {formatDate(new Date(booking.date))} at {booking.timeSlot}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          {booking.garage.name}, {booking.garage.city}
-                        </div>
-                      </div>
-                      {booking.status === 'completed' && (
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedBookingForReview(booking)
-                            setShowReviewModal(true)
-                          }}
-                          variant={booking.hasReview ? "outline" : "default"}
-                          size="sm"
-                          className="w-full mt-3 flex items-center justify-center gap-2"
-                        >
-                          <Star className={`h-4 w-4 ${booking.hasReview ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                          {booking.hasReview ? 'Review Submitted' : 'Write Review'}
-                        </Button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -289,8 +340,8 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Vehicles Section */}
-            <div>
+            {/* Vehicles Section - 50% width */}
+            <div className="lg:col-span-1">
               {/* Header - Outside Card */}
               <div className="flex justify-between items-center mb-4">
                 <div>
@@ -315,53 +366,171 @@ export default function Dashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {vehicles
-                    .sort((a, b) => {
-                      // Ordenar por data de expiração do MOT (os mais próximos primeiro)
-                      if (!a.motExpiryDate) return -1;
-                      if (!b.motExpiryDate) return 1;
-                      return new Date(a.motExpiryDate).getTime() - new Date(b.motExpiryDate).getTime();
-                    })
-                    .map((vehicle, index) => {
-                      const motStatus = getVehicleMotStatus(vehicle);
-                      const isFirstVehicle = index === 0;
-                      return (
-                        <div 
-                          key={vehicle.id} 
-                          className={`border border-border rounded-lg p-4 hover:bg-muted hover:shadow-md transition-all cursor-pointer ${isFirstVehicle && motStatus.urgent ? 'border-destructive/30 bg-destructive/10 hover:bg-destructive/20' : ''}`}
-                          onClick={() => router.push(`/vehicles/${vehicle.id}`)}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="font-medium">{vehicle.registration}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {vehicle.year} {vehicle.make} {vehicle.model}
-                              </p>
-                            </div>
-                            <Badge className={`${motStatus.urgent ? 'bg-destructive' : 'bg-green-500'} ${motStatus.urgent ? 'text-destructive-foreground' : 'text-primary-foreground'} flex items-center gap-1`}>
-                              {motStatus.urgent ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
-                              {motStatus.message}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-2">
-                            <div className="flex justify-between items-center">
-                              <span>Next MOT:</span>
-                              <span className="font-medium">{vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'Not available'}</span>
-                            </div>
-                          </div>
-                          {isFirstVehicle && motStatus.urgent && (
-                            <Button
-                              size="sm"
-                              className="w-full mt-3 bg-destructive hover:bg-destructive/90"
-                              onClick={() => router.push(`/search?vehicle=${vehicle.id}`)}
+                <div className="overflow-x-auto">
+                  {/* Desktop Table View */}
+                  <table className="w-full hidden md:table">
+                    <thead>
+                      <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                        <th className="pb-3 font-medium w-12"></th>
+                        <th className="pb-3 font-medium">Vehicle</th>
+                        <th className="pb-3 font-medium text-center">Last MOT</th>
+                        <th className="pb-3 font-medium text-center">Result</th>
+                        <th className="pb-3 font-medium text-center">Next MOT Due</th>
+                        <th className="pb-3 font-medium text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vehicles
+                        .sort((a, b) => {
+                          if (!a.motExpiryDate) return -1;
+                          if (!b.motExpiryDate) return 1;
+                          return new Date(a.motExpiryDate).getTime() - new Date(b.motExpiryDate).getTime();
+                        })
+                        .map((vehicle) => {
+                          const motStatus = getVehicleMotStatus(vehicle);
+                          const bookingEnabled = canBookMot(vehicle);
+
+                          return (
+                            <tr
+                              key={vehicle.id}
+                              className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                              onClick={() => router.push(`/vehicles/${vehicle.id}`)}
                             >
-                              Book MOT
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
+                              {/* Avatar Column */}
+                              <td className="py-3 pr-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                                  <Car className="h-5 w-5 text-primary" />
+                                </div>
+                              </td>
+
+                              {/* Vehicle Info Column */}
+                              <td className="py-3">
+                                <p className="font-bold">{vehicle.registration}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {vehicle.year} {vehicle.make} {vehicle.model}
+                                </p>
+                              </td>
+
+                              {/* Last MOT Column */}
+                              <td className="py-3 text-sm text-center">
+                                {vehicle.lastMotDate ? formatDate(new Date(vehicle.lastMotDate)) : 'N/A'}
+                              </td>
+
+                              {/* Result Column */}
+                              <td className="py-3 text-center">
+                                {getMotResultBadge(vehicle.lastMotResult)}
+                              </td>
+
+                              {/* Next MOT Due Column */}
+                              <td className="py-3 text-sm text-center">
+                                <span className={`font-medium ${motStatus.urgent ? 'text-red-600 dark:text-red-400' : motStatus.warning ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                                  {vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'N/A'}
+                                </span>
+                              </td>
+
+                              {/* Action Column */}
+                              <td className="py-3 text-right">
+                                <Button
+                                  size="sm"
+                                  className={`${bookingEnabled
+                                    ? (motStatus.urgent
+                                        ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
+                                        : 'bg-primary hover:bg-primary/90')
+                                    : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+                                  disabled={!bookingEnabled}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (bookingEnabled) {
+                                      router.push(`/search?vehicle=${vehicle.id}`);
+                                    }
+                                  }}
+                                >
+                                  Book
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {vehicles
+                      .sort((a, b) => {
+                        if (!a.motExpiryDate) return -1;
+                        if (!b.motExpiryDate) return 1;
+                        return new Date(a.motExpiryDate).getTime() - new Date(b.motExpiryDate).getTime();
+                      })
+                      .map((vehicle) => {
+                        const motStatus = getVehicleMotStatus(vehicle);
+                        const bookingEnabled = canBookMot(vehicle);
+
+                        return (
+                          <div
+                            key={vehicle.id}
+                            className="border border-border rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
+                            onClick={() => router.push(`/vehicles/${vehicle.id}`)}
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Avatar */}
+                              <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                <Car className="h-5 w-5 text-primary" />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                {/* Vehicle Info */}
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <p className="font-bold">{vehicle.registration}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {vehicle.year} {vehicle.make} {vehicle.model}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* MOT Info Grid */}
+                                <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                                  <div>
+                                    <span className="text-muted-foreground">Last MOT: </span>
+                                    <span className="font-medium">{vehicle.lastMotDate ? formatDate(new Date(vehicle.lastMotDate)) : 'N/A'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Result: </span>
+                                    {getMotResultBadge(vehicle.lastMotResult)}
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Due: </span>
+                                    <span className={`font-medium ${motStatus.urgent ? 'text-red-600 dark:text-red-400' : motStatus.warning ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                                      {vehicle.motExpiryDate ? formatDate(new Date(vehicle.motExpiryDate)) : 'N/A'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Book Button */}
+                                <Button
+                                  size="sm"
+                                  className={`w-full ${bookingEnabled
+                                    ? (motStatus.urgent
+                                        ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
+                                        : 'bg-primary hover:bg-primary/90')
+                                    : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+                                  disabled={!bookingEnabled}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (bookingEnabled) {
+                                      router.push(`/search?vehicle=${vehicle.id}`);
+                                    }
+                                  }}
+                                >
+                                  Book
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
               )}
             </CardContent>

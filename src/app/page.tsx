@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { format } from 'date-fns';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Clock, MapPin, Search } from 'lucide-react';
 import { MainLayout } from '@/components/layout/main-layout';
+import { Info } from 'lucide-react';
 
 // Importar o componente da página de administração de garagem
 import GarageAdminPage from './garage-admin/calendar/page';
@@ -20,10 +17,8 @@ import Dashboard from './dashboard/page';
 export default function HomePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [postcode, setPostcode] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState<string>('');
-  
+  const [showMessage, setShowMessage] = useState(false);
+
   // Se o usuário estiver autenticado
   if (status === 'authenticated') {
     // Se for proprietário de garagem, renderizar a página de administração de garagem
@@ -34,40 +29,15 @@ export default function HomePage() {
     return <Dashboard />;
   }
 
-  const handleSearch = () => {
-    // Build search parameters
-    const params = new URLSearchParams();
-    if (postcode) {
-      params.append('location', postcode);
-    }
-    if (date) {
-      params.append('date', format(date, 'yyyy-MM-dd'));
-    }
-    if (time) {
-      params.append('time', time);
-    }
+  const handleBookMOT = () => {
+    // Show message to user
+    setShowMessage(true);
 
-    // Redirect to search page
-    router.push(`/search?${params.toString()}`);
-  };
-
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Here you would typically convert coordinates to a postcode
-          // using a geocoding service
-          console.log('Location:', position.coords);
-          // For demo purposes, just set a placeholder
-          setPostcode('Current Location');
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-        }
-      );
-    } else {
-      console.error('Geolocation is not supported by this browser.');
-    }
+    // Auto-close message and redirect after 3 seconds
+    setTimeout(() => {
+      setShowMessage(false);
+      router.push('/signup');
+    }, 3000);
   };
 
   // Conteúdo principal da página
@@ -83,90 +53,36 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Search Container */}
-      <div className="w-full max-w-4xl">
-        {/* Search Form */}
-        <div className="bg-card border border-border rounded-full shadow-lg p-2 mb-8">
-          <div className="flex items-center">
-            {/* Vehicle Registration Input */}
-            <div className="flex-1 px-4 py-3">
-              <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Enter postcode"
-                  value={postcode}
-                  onChange={(e) => setPostcode(e.target.value)}
-                  className="border-0 bg-transparent p-0 h-auto text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
-                />
-              </div>
+      {/* Registration Required Message */}
+      {showMessage && (
+        <div className="w-full max-w-lg mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-start gap-3">
+            <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-foreground font-medium">Registration Required</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                To book a MOT, you need to create an account first. Redirecting you to sign in...
+              </p>
             </div>
-
-            {/* Date Picker */}
-            <div className="flex-1 px-4 py-3 border-l border-border">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-left font-normal border-0 p-0 h-auto text-base text-muted-foreground hover:bg-transparent"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : 'date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-popover border-border" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    className="bg-popover text-foreground"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Time Picker */}
-            <div className="flex-1 px-4 py-3 border-l border-border">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-left font-normal border-0 p-0 h-auto text-base text-muted-foreground hover:bg-transparent"
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    {time || 'time'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-4 bg-popover border-border" align="end">
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-foreground">Select time</label>
-                    <Input
-                      type="time"
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="w-full bg-muted border-border text-foreground"
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            {/* Search Button */}
-            <Button
-              onClick={handleSearch}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-3 ml-2 text-base font-medium"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Search
-            </Button>
           </div>
         </div>
+      )}
+
+      {/* Book MOT Button */}
+      <div className="w-full max-w-md">
+        <Button
+          onClick={handleBookMOT}
+          disabled={showMessage}
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-4 text-lg font-medium"
+          size="lg"
+        >
+          I want to book a MOT
+        </Button>
       </div>
-      
+
       {/* Footer Text */}
       <div className="text-center text-sm text-muted-foreground mt-8">
-        Using BookaMOT means you agree to the <a href="#" className="underline">Terms of Use</a>. See our <a href="#" className="underline">Privacy Statement</a>.
+        Using BookaMOT means you agree to the <Link href="/terms" className="underline hover:text-primary">Terms and Conditions</Link>. See our <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link> and <Link href="/cookies" className="underline hover:text-primary">Cookie Policy</Link>.
       </div>
     </>
   );

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { Shield, Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react'
 
 export default function SignUp() {
@@ -20,6 +21,7 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [statusMessage, setStatusMessage] = useState('')
   const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -65,7 +67,27 @@ export default function SignUp() {
       const data = await response.json()
 
       if (response.ok) {
-        router.push('/signin?message=Account created successfully')
+        // Account created successfully, now automatically sign in
+        setStatusMessage('Account created! Signing you in...')
+
+        const signInResult = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        })
+
+        if (signInResult?.error) {
+          // Sign-in failed, redirect to sign-in page with message
+          setError('Account created but automatic sign-in failed. Please sign in manually.')
+          setTimeout(() => {
+            router.push('/signin?message=Account created successfully')
+          }, 2000)
+        } else {
+          // Sign-in successful, redirect based on role
+          setStatusMessage('Success! Redirecting...')
+          const redirectUrl = formData.userType === 'garage' ? '/garage-admin/calendar' : '/onboarding'
+          router.push(redirectUrl)
+        }
       } else {
         setError(data.error || 'An error occurred during registration')
       }
@@ -101,6 +123,16 @@ export default function SignUp() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
                 {error}
+              </div>
+            )}
+
+            {statusMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {statusMessage}
               </div>
             )}
 
@@ -314,7 +346,7 @@ export default function SignUp() {
               <label htmlFor="terms" className="ml-2 block text-sm text-slate-900">
                 I agree to the{' '}
                 <Link href="/terms" className="text-blue-600 hover:text-blue-500">
-                  Terms of Service
+                  Terms and Conditions
                 </Link>{' '}
                 and{' '}
                 <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
@@ -326,10 +358,10 @@ export default function SignUp() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !!statusMessage}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Creating account...' : 'Create account'}
+                {statusMessage ? statusMessage : (isLoading ? 'Creating account...' : 'Create account')}
               </button>
             </div>
           </form>

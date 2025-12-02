@@ -8,13 +8,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, ArrowLeft, Car, Plus, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Car, Plus, Loader2, CheckCircle, Calendar, Gauge } from 'lucide-react'
 import { createVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 
 type VehicleFormData = z.infer<typeof createVehicleSchema>
+
+interface MotHistoryInfo {
+  lastTestDate: string | null
+  lastTestResult: string | null
+  expiryDate: string | null
+  mileage: number | null
+  totalTests: number
+}
 
 export default function AddVehiclePage() {
   const { data: session, status } = useSession()
@@ -32,6 +41,8 @@ export default function AddVehiclePage() {
   const [loading, setLoading] = useState(false)
   const [validatingReg, setValidatingReg] = useState(false)
   const [lookupError, setLookupError] = useState<string | null>(null)
+  const [lookupSuccess, setLookupSuccess] = useState(false)
+  const [motHistory, setMotHistory] = useState<MotHistoryInfo | null>(null)
   const [lastValidatedReg, setLastValidatedReg] = useState<string>('')
 
   useEffect(() => {
@@ -58,33 +69,51 @@ export default function AddVehiclePage() {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
-    
-    // Clear lookup error message when user edits the registration field
-    if (field === 'registration' && lookupError) {
-      setLookupError(null)
+
+    // Clear lookup states when user edits the registration field
+    if (field === 'registration') {
+      if (lookupError) setLookupError(null)
+      if (lookupSuccess) setLookupSuccess(false)
+      if (motHistory) setMotHistory(null)
+    }
+  }
+
+  // Helper function to format date
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A'
+    try {
+      return new Date(dateString).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    } catch {
+      return dateString
     }
   }
 
   // Function to validate the vehicle registration number
   const validateRegistration = async (registration: string) => {
     if (!registration || registration.trim() === '') return
-    
+
     setValidatingReg(true)
     setLookupError(null)
-    
+    setLookupSuccess(false)
+    setMotHistory(null)
+
     // Maximum number of retries
     const maxRetries = 3
     let currentRetry = 0
     let success = false
-    
+
     while (currentRetry < maxRetries && !success) {
       try {
         const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration)}`)
-        
+
         if (response.ok) {
           const vehicleData = await response.json()
-          
-          // Preencher os campos do formulário com os dados retornados da API
+
+          // Populate form fields with the data returned from the API
           setFormData(prev => ({
             ...prev,
             make: vehicleData.make || prev.make,
@@ -94,12 +123,18 @@ export default function AddVehiclePage() {
             color: vehicleData.color || prev.color,
             engineSize: vehicleData.engineSize || prev.engineSize
           }))
-          
+
+          // Store MOT history if available
+          if (vehicleData.motHistory) {
+            setMotHistory(vehicleData.motHistory)
+          }
+
+          setLookupSuccess(true)
           success = true
         } else {
-          // Se a resposta não for bem-sucedida, incrementar a contagem de tentativas
+          // If response is not successful, increment retry count
           currentRetry++
-          
+
           if (currentRetry < maxRetries) {
             // Wait a bit before retrying (exponential backoff)
             await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
@@ -115,11 +150,11 @@ export default function AddVehiclePage() {
         }
       }
     }
-    
+
     if (!success) {
       setLookupError('Could not retrieve vehicle information after multiple attempts. Please check the registration number or fill in the fields manually.')
     }
-    
+
     setValidatingReg(false)
   }
   
@@ -309,6 +344,51 @@ export default function AddVehiclePage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{lookupError}</AlertDescription>
                   </Alert>
+                )}
+                {lookupSuccess && (
+                  <Alert className="mt-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <AlertDescription className="text-green-800 dark:text-green-200">
+                      Vehicle details retrieved from DVSA. Form fields have been auto-populated.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {motHistory && (
+                  <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <p className="text-sm font-medium mb-2 text-foreground">MOT History Summary</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-muted-foreground">Last Test:</span>
+                        <span className="font-medium">{formatDate(motHistory.lastTestDate)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Result:</span>
+                        {motHistory.lastTestResult === 'PASSED' ? (
+                          <Badge className="bg-green-500 text-white text-xs">Passed</Badge>
+                        ) : motHistory.lastTestResult === 'FAILED' ? (
+                          <Badge className="bg-red-500 text-white text-xs">Failed</Badge>
+                        ) : (
+                          <Badge className="bg-gray-500 text-white text-xs">Unknown</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-muted-foreground">Expires:</span>
+                        <span className="font-medium">{formatDate(motHistory.expiryDate)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-muted-foreground">Mileage:</span>
+                        <span className="font-medium">{motHistory.mileage ? motHistory.mileage.toLocaleString() : 'N/A'} mi</span>
+                      </div>
+                    </div>
+                    {motHistory.totalTests > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Total MOT tests on record: {motHistory.totalTests}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

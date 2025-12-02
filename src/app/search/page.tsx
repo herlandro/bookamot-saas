@@ -56,8 +56,9 @@ function SearchPageContent() {
     const location = searchParams.get('location')
     const date = searchParams.get('date')
     const time = searchParams.get('time')
+    const vehicleId = searchParams.get('vehicle')
 
-    console.log('📥 URL Parameters:', { location, date, time })
+    console.log('📥 URL Parameters:', { location, date, time, vehicleId })
 
     if (location) {
       setSearchLocation(location)
@@ -69,6 +70,7 @@ function SearchPageContent() {
       setSelectedGridDate(date)
     }
 
+    // Vehicle selection from URL will be handled after vehicles are loaded
     // Mark that URL params have been loaded
     setUrlParamsLoaded(true)
   }, [searchParams])
@@ -115,14 +117,42 @@ function SearchPageContent() {
       const response = await fetch('/api/vehicles')
       if (response.ok) {
         const data = await response.json()
-        setVehicles(data.vehicles || [])
-        if (data.vehicles?.length > 0) {
-          setSelectedVehicle(data.vehicles[0])
+        const vehiclesList = data.vehicles || []
+        setVehicles(vehiclesList)
+
+        // Check if there's a vehicle ID in the URL
+        const vehicleIdFromUrl = searchParams.get('vehicle')
+
+        if (vehicleIdFromUrl && vehiclesList.length > 0) {
+          // Try to find the vehicle with the matching ID
+          const vehicleFromUrl = vehiclesList.find((v: Vehicle) => v.id === vehicleIdFromUrl)
+          if (vehicleFromUrl) {
+            setSelectedVehicle(vehicleFromUrl)
+            console.log('🚗 Selected vehicle from URL:', vehicleFromUrl.registration)
+          } else {
+            // Vehicle ID not found, select first vehicle
+            setSelectedVehicle(vehiclesList[0])
+            console.log('⚠️ Vehicle ID from URL not found, selecting first vehicle')
+          }
+        } else if (vehiclesList.length > 0) {
+          // No vehicle in URL, select first vehicle
+          setSelectedVehicle(vehiclesList[0])
         }
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error)
     }
+  }
+
+  // Update URL when vehicle selection changes
+  const handleVehicleSelect = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle)
+
+    // Update URL with the selected vehicle ID
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('vehicle', vehicle.id)
+    router.replace(`/search?${params.toString()}`, { scroll: false })
+    console.log('🔄 Updated URL with vehicle:', vehicle.id)
   }
 
   const searchGarages = async (abortController?: AbortController) => {
@@ -240,7 +270,7 @@ function SearchPageContent() {
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setSelectedVehicle(vehicle)}
+                    onClick={() => handleVehicleSelect(vehicle)}
                   >
                     <div className="font-semibold">{vehicle.registration}</div>
                     <div className="text-sm text-muted-foreground">
