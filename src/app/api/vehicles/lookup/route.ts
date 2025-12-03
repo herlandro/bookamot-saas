@@ -78,7 +78,7 @@ async function getDVSAToken(): Promise<string | null> {
 }
 
 // Helper function to fetch vehicle data from DVSA API
-// Uses the legacy API with x-api-key authentication
+// Uses the DVSA MOT History API with x-api-key authentication
 // Documentation: https://dvsa.github.io/mot-history-api-documentation/
 async function fetchVehicleFromDVSA(registration: string, retryCount = 0): Promise<any | null> {
   const MAX_RETRIES = 2
@@ -92,7 +92,8 @@ async function fetchVehicleFromDVSA(registration: string, retryCount = 0): Promi
   try {
     console.log(`🔍 [Lookup] Fetching vehicle data from DVSA for: ${registration}`)
 
-    const url = `${DVSA_API_BASE_URL}?registration=${registration}`
+    // Correct DVSA API endpoint format
+    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
 
     // DVSA MOT API requires specific Accept header and x-api-key
     // Per documentation: Accept: application/json+v6, x-api-key: <your api key>
@@ -102,6 +103,7 @@ async function fetchVehicleFromDVSA(registration: string, retryCount = 0): Promi
     }
 
     console.log(`🔍 [Lookup] Making request to: ${url}`)
+    console.log(`🔑 [Lookup] Using API key: ${DVSA_API_KEY.substring(0, 10)}...`)
 
     const response = await fetch(url, {
       method: 'GET',
@@ -113,9 +115,9 @@ async function fetchVehicleFromDVSA(registration: string, retryCount = 0): Promi
       console.error(`❌ [Lookup] DVSA API error: ${response.status} ${response.statusText}`)
       console.error(`❌ [Lookup] Response body: ${errorBody}`)
 
-      // If we get 403, try with OAuth token as well (for new API)
-      if (response.status === 403 && retryCount === 0) {
-        console.log('🔄 [Lookup] Trying with OAuth token...')
+      // If we get 401/403, the API key might be invalid
+      if ((response.status === 401 || response.status === 403) && retryCount === 0) {
+        console.log('🔄 [Lookup] Authentication failed, trying with OAuth token...')
         return fetchVehicleFromDVSAWithToken(registration)
       }
 
@@ -124,12 +126,14 @@ async function fetchVehicleFromDVSA(registration: string, retryCount = 0): Promi
 
     const data = await response.json()
     console.log(`✅ [Lookup] Successfully fetched vehicle data from DVSA for ${registration}`)
+    console.log(`📊 [Lookup] Data structure:`, JSON.stringify(data).substring(0, 200))
     return data
   } catch (error) {
     console.error('❌ [Lookup] Error fetching from DVSA API:', error)
 
     if (retryCount < MAX_RETRIES) {
       console.log(`🔄 [Lookup] Retrying (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second before retry
       return fetchVehicleFromDVSA(registration, retryCount + 1)
     }
 
@@ -146,7 +150,7 @@ async function fetchVehicleFromDVSAWithToken(registration: string): Promise<any 
       return null
     }
 
-    const url = `${DVSA_API_BASE_URL}?registration=${registration}`
+    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
 
     const headers: Record<string, string> = {
       'Accept': 'application/json+v6',
@@ -158,6 +162,7 @@ async function fetchVehicleFromDVSAWithToken(registration: string): Promise<any 
     }
 
     console.log(`🔍 [Lookup] Making OAuth request to: ${url}`)
+    console.log(`🔑 [Lookup] Using OAuth token: ${token.substring(0, 20)}...`)
 
     const response = await fetch(url, {
       method: 'GET',
@@ -178,6 +183,17 @@ async function fetchVehicleFromDVSAWithToken(registration: string): Promise<any 
     console.error('❌ [Lookup] Error fetching from DVSA OAuth API:', error)
     return null
   }
+}
+
+/**
+ * Helper function to validate MOT test date against vehicle manufacturing year
+ * MOT tests in the UK start 3 years after the vehicle's first registration/manufacturing year
+ */
+function isValidMotTestDate(testDate: string, vehicleYear: number): boolean {
+  const testYear = new Date(testDate).getFullYear()
+  const minValidYear = vehicleYear + 3
+
+  return testYear >= minValidYear
 }
 
 // Transform DVSA response to our vehicle format
@@ -210,8 +226,21 @@ function transformDVSAToVehicle(dvsaData: any): any {
     year = parseInt(vehicle.manufactureYear, 10)
   }
 
-  // Get latest MOT test for mileage info
-  const latestMot = vehicle.motTests?.[0]
+  // Filter MOT tests to only include valid ones (3+ years after vehicle year)
+  let validMotTests = vehicle.motTests || []
+  if (validMotTests.length > 0) {
+    const originalCount = validMotTests.length
+    validMotTests = validMotTests.filter((test: any) =>
+      isValidMotTestDate(test.completedDate, year)
+    )
+
+    if (validMotTests.length < originalCount) {
+      console.log(`🔍 [Lookup] Filtered ${originalCount} MOT tests to ${validMotTests.length} valid tests (vehicle year: ${year})`)
+    }
+  }
+
+  // Get latest valid MOT test for mileage info
+  const latestMot = validMotTests[0]
 
   return {
     make: vehicle.make || '',
@@ -220,13 +249,13 @@ function transformDVSAToVehicle(dvsaData: any): any {
     fuelType: fuelTypeMap[vehicle.fuelType] || 'PETROL',
     color: vehicle.primaryColour || vehicle.colour || '',
     engineSize: vehicle.engineSize ? `${(parseInt(vehicle.engineSize, 10) / 1000).toFixed(1)}L` : '',
-    // Include MOT history info for display
-    motHistory: vehicle.motTests ? {
+    // Include MOT history info for display (only valid tests)
+    motHistory: validMotTests.length > 0 ? {
       lastTestDate: latestMot?.completedDate || null,
       lastTestResult: latestMot?.testResult || null,
       expiryDate: latestMot?.expiryDate || null,
       mileage: latestMot?.odometerValue ? parseInt(latestMot.odometerValue, 10) : null,
-      totalTests: vehicle.motTests.length
+      totalTests: validMotTests.length
     } : null
   }
 }

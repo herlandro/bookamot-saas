@@ -6,9 +6,81 @@ import { motCache, generateMotCacheKey, generateDvsaCacheKey } from '@/lib/cache
 import { checkAndNotifyMotStatus } from '@/lib/services/mot-notification-service'
 
 // DVSA API Configuration
-const DVSA_API_BASE_URL = 'https://history.mot.api.gov.uk/v1/trade/vehicles'
-const DVSA_API_KEY = process.env.DVSA_API_KEY || 'Y65dFlmMDD1wgqGNnyGJ95QYK813NRjvarLCrsX0'
-const DVSA_API_TOKEN = process.env.DVSA_API_TOKEN || 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InlFVXdtWFdMMTA3Q2MtN1FaMldTYmVPYjNzUSIsImtpZCI6InlFVXdtWFdMMTA3Q2MtN1FaMldTYmVPYjNzUSJ9.eyJhdWQiOiJodHRwczovL3RhcGkuZHZzYS5nb3YudWsiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9hNDU1YjgyNy0yNDRmLTRjOTctYjViNC1jZTVkMTNiNGQwMGMvIiwiaWF0IjoxNzYwODY4NDA5LCJuYmYiOjE3NjA4Njg0MDksImV4cCI6MTc2MDg3MjMwOSwiYWlvIjoiazJKZ1lKQm5DQzk3ZGpIWjQ4aWh3d1czT0RpRkFBPT0iLCJhcHBpZCI6IjdhZDAyZjljLTVlODUtNDM4MS04ZjI0LWMyYmQzNDQwNzI3YSIsImFwcGlkYWNyIjoiMSIsImlkcCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0L2E0NTViODI3LTI0NGYtNGM5Ny1iNWI0LWNlNWQxM2I0ZDAwYy8iLCJvaWQiOiJhZDVmY2UzNS0xM2I5LTQzOGEtYmE3YS00MTI3ZmNhMzI5YmIiLCJyaCI6IjEuQVVjQUo3aFZwRThrbDB5MXRNNWRFN1RRREZSR2EtSU5mSTFKbTNjbFJzczdYeGhIQUFCSEFBLiIsInJvbGVzIjpbInRhcGkucHVibGljIl0sInN1YiI6ImFkNWZjZTM1LTEzYjktNDM4YS1iYTdhLTQxMjdmY2EzMjliYiIsInRpZCI6ImE0NTViODI3LTI0NGYtNGM5Ny1iNWI0LWNlNWQxM2I0ZDAwYyIsInV0aSI6IkdNNlhtbjVGeVVtM014c3R3Y0ZyQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfZnRkIjoiRGFSbWNPM3REbnRtSXBlMXI5aWQ1TWRHQklQT2FmVHZfNVYtaDhDT2xwSUJaWFZ5YjNCbGJtOXlkR2d0WkhOdGN3In0.dbClwQEw-CiSFf3bgEkRk2JflGqz3iSGzMpRWUOXae4amECuelTTql1oOMhVTs_Z6t4J9Ft6f3f7m07cQM-SBZOsvrsSmvRGH_CSzyCfjv6gWxRmMXmSggSJCrA_y1aa4X1emIztwQ_mmhM3eLWINezVvfUW4Jwjy3t6Egxw01bMfOqIWbFA76fc2uVuQ2sRBei7kfPkz42nEL6C3ljybd1G2fQJaKAQLucAc2WpVHSMBpjhPHNpY1Rp2iZgpf--MViz3V9meXn7XBoqzSttN3yRakAxtyLDf6SeRQ7o9ATT2b0YAOYFd07AeTqmHMu2j9xZZKlvsjio3p8jW6KbWg'
+const DVSA_API_BASE_URL = process.env.DVSA_API_BASE_URL || 'https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests'
+const DVSA_API_KEY = process.env.DVSA_API_KEY || ''
+const DVSA_CLIENT_ID = process.env.DVSA_CLIENT_ID || ''
+const DVSA_CLIENT_SECRET = process.env.DVSA_CLIENT_SECRET || ''
+const DVSA_TOKEN_URL = process.env.DVSA_TOKEN_URL || 'https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token'
+const DVSA_SCOPE = process.env.DVSA_SCOPE || 'https://tapi.dvsa.gov.uk/.default'
+
+// Token cache for DVSA authentication
+interface TokenCache {
+  accessToken: string
+  expiresAt: number
+}
+
+let dvsaTokenCache: TokenCache | null = null
+
+// Helper function to get DVSA authentication token
+async function getDVSAToken(): Promise<string | null> {
+  const now = Date.now()
+  const bufferMs = 5 * 60 * 1000
+
+  if (dvsaTokenCache && dvsaTokenCache.expiresAt > now + bufferMs) {
+    console.log('🔑 [MOT History] Using cached DVSA token')
+    return dvsaTokenCache.accessToken
+  }
+
+  console.log('🔐 [MOT History] Fetching new DVSA authentication token...')
+
+  if (!DVSA_CLIENT_ID || !DVSA_CLIENT_SECRET) {
+    console.error('❌ [MOT History] DVSA_CLIENT_ID or DVSA_CLIENT_SECRET not configured')
+    return null
+  }
+
+  try {
+    const tokenRequestBody = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: DVSA_CLIENT_ID,
+      client_secret: DVSA_CLIENT_SECRET,
+      scope: DVSA_SCOPE
+    })
+
+    const response = await fetch(DVSA_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: tokenRequestBody.toString()
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`❌ [MOT History] DVSA token request failed: ${response.status}`)
+      console.error(`❌ [MOT History] Error details: ${errorText}`)
+      return null
+    }
+
+    const tokenData = await response.json()
+
+    if (!tokenData.access_token) {
+      console.error('❌ [MOT History] DVSA token response missing access_token')
+      return null
+    }
+
+    const expiresInSeconds = tokenData.expires_in || 3600
+    dvsaTokenCache = {
+      accessToken: tokenData.access_token,
+      expiresAt: now + (expiresInSeconds * 1000)
+    }
+
+    console.log(`✅ [MOT History] DVSA token obtained, expires in ${expiresInSeconds} seconds`)
+    return dvsaTokenCache.accessToken
+  } catch (error) {
+    console.error('❌ [MOT History] Error fetching DVSA token:', error)
+    return null
+  }
+}
 
 // Mock MOT history data for demonstration (fallback)
 const mockMotHistory = [
@@ -109,36 +181,142 @@ const mockMotHistory = [
 ]
 
 // Helper function to fetch MOT history from DVSA API
-async function fetchMotHistoryFromDVSA(registration: string) {
-  try {
-    console.log(`🔍 Fetching MOT history from DVSA for registration: ${registration}`)
+async function fetchMotHistoryFromDVSA(registration: string): Promise<any | null> {
+  // Check if API key is configured
+  if (!DVSA_API_KEY) {
+    console.log('⚠️ [MOT History] DVSA_API_KEY not configured')
+    return null
+  }
 
-    const url = `${DVSA_API_BASE_URL}/registration/${registration}`
+  try {
+    console.log(`🔍 [MOT History] Fetching MOT history from DVSA for registration: ${registration}`)
+
+    // Correct DVSA API endpoint format
+    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+
+    // Try with API key first
+    const headers: Record<string, string> = {
+      'Accept': 'application/json+v6',
+      'x-api-key': DVSA_API_KEY
+    }
+
+    console.log(`🔍 [MOT History] Making request to: ${url}`)
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${DVSA_API_TOKEN}`,
-        'x-api-key': DVSA_API_KEY,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
+      headers
     })
 
     if (!response.ok) {
-      console.error(`❌ DVSA API error: ${response.status} ${response.statusText}`)
+      const errorBody = await response.text()
+      console.error(`❌ [MOT History] DVSA API error: ${response.status} ${response.statusText}`)
+      console.error(`❌ [MOT History] Response body: ${errorBody}`)
+
+      // If authentication fails, try with OAuth token
+      if (response.status === 401 || response.status === 403) {
+        console.log('🔄 [MOT History] Trying with OAuth token...')
+        return fetchMotHistoryFromDVSAWithToken(registration)
+      }
+
       return null
     }
 
     const data = await response.json()
-    console.log(`✅ Successfully fetched MOT data from DVSA for ${registration}`)
-    console.log(`📊 Found ${data.motTests?.length || 0} MOT records`)
+    console.log(`✅ [MOT History] Successfully fetched MOT data from DVSA for ${registration}`)
 
-    return data
+    // The API returns an array with one vehicle object
+    const vehicleData = Array.isArray(data) ? data[0] : data
+    console.log(`📊 [MOT History] Found ${vehicleData?.motTests?.length || 0} MOT records`)
+
+    return vehicleData
   } catch (error) {
-    console.error('❌ Error fetching from DVSA API:', error)
+    console.error('❌ [MOT History] Error fetching from DVSA API:', error)
     return null
   }
+}
+
+// Alternative method using OAuth token
+async function fetchMotHistoryFromDVSAWithToken(registration: string): Promise<any | null> {
+  try {
+    const token = await getDVSAToken()
+    if (!token) {
+      console.log('⚠️ [MOT History] No DVSA token available')
+      return null
+    }
+
+    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+
+    const headers: Record<string, string> = {
+      'Accept': 'application/json+v6',
+      'Authorization': `Bearer ${token}`
+    }
+
+    if (DVSA_API_KEY) {
+      headers['x-api-key'] = DVSA_API_KEY
+    }
+
+    console.log(`🔍 [MOT History] Making OAuth request to: ${url}`)
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers
+    })
+
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error(`❌ [MOT History] DVSA OAuth API error: ${response.status} ${response.statusText}`)
+      console.error(`❌ [MOT History] Response body: ${errorBody}`)
+      return null
+    }
+
+    const data = await response.json()
+    console.log(`✅ [MOT History] Successfully fetched MOT data via OAuth for ${registration}`)
+
+    const vehicleData = Array.isArray(data) ? data[0] : data
+    console.log(`📊 [MOT History] Found ${vehicleData?.motTests?.length || 0} MOT records`)
+
+    return vehicleData
+  } catch (error) {
+    console.error('❌ [MOT History] Error fetching from DVSA OAuth API:', error)
+    return null
+  }
+}
+
+/**
+ * Helper function to validate MOT test date against vehicle manufacturing year
+ * MOT tests in the UK start 3 years after the vehicle's first registration/manufacturing year
+ * @param testDate - The MOT test date
+ * @param vehicleYear - The vehicle's manufacturing/first registration year
+ * @returns true if the MOT test is valid (3+ years after vehicle year)
+ */
+function isValidMotTestDate(testDate: string, vehicleYear: number): boolean {
+  const testYear = new Date(testDate).getFullYear()
+  const minValidYear = vehicleYear + 3
+
+  return testYear >= minValidYear
+}
+
+/**
+ * Helper function to get vehicle year from DVSA data
+ * @param dvsaData - The DVSA vehicle data
+ * @returns The vehicle's year
+ */
+function getVehicleYear(dvsaData: any): number {
+  // Try to extract year from firstUsedDate
+  if (dvsaData.firstUsedDate) {
+    const dateMatch = dvsaData.firstUsedDate.match(/\d{4}/)
+    if (dateMatch) {
+      return parseInt(dateMatch[0], 10)
+    }
+  }
+
+  // Fallback to manufactureYear
+  if (dvsaData.manufactureYear) {
+    return parseInt(dvsaData.manufactureYear, 10)
+  }
+
+  // If no year found, return current year (will allow all MOT records)
+  return new Date().getFullYear()
 }
 
 // Helper function to transform DVSA data to our format
@@ -147,7 +325,22 @@ function transformDVSAData(dvsaData: any): any[] {
     return []
   }
 
-  return dvsaData.motTests.map((test: any) => {
+  // Get vehicle year for validation
+  const vehicleYear = getVehicleYear(dvsaData)
+  console.log(`🚗 [MOT History] Vehicle year: ${vehicleYear}, MOT tests valid from: ${vehicleYear + 3}`)
+
+  // Filter and transform MOT tests
+  const validTests = dvsaData.motTests.filter((test: any) => {
+    const isValid = isValidMotTestDate(test.completedDate, vehicleYear)
+    if (!isValid) {
+      console.log(`⚠️ [MOT History] Filtering out invalid MOT test from ${test.completedDate} (before ${vehicleYear + 3})`)
+    }
+    return isValid
+  })
+
+  console.log(`📊 [MOT History] Filtered ${dvsaData.motTests.length} tests to ${validTests.length} valid tests`)
+
+  return validTests.map((test: any) => {
     // Count defects by type
     const defects = test.defects || []
     const dangerousCount = defects.filter((d: any) => d.dangerous === true).length
