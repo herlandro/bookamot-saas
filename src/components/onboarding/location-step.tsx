@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -180,6 +181,14 @@ export function LocationStep({ onNext, onBack }: LocationStepProps) {
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
           Great! Now let's find MOT centres near you
         </h2>
+        <div className="mt-6 text-center">
+          <Link
+            href="/"
+            className="text-sm text-primary hover:underline focus:underline active:underline inline-block py-2"
+          >
+            Skip onboarding
+          </Link>
+        </div>
       </div>
 
       {/* Main Form */}
@@ -286,4 +295,3 @@ export function LocationStep({ onNext, onBack }: LocationStepProps) {
     </div>
   )
 }
-

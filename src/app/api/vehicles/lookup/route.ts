@@ -7,6 +7,10 @@ const DVSA_CLIENT_ID = process.env.DVSA_CLIENT_ID || ''
 const DVSA_CLIENT_SECRET = process.env.DVSA_CLIENT_SECRET || ''
 const DVSA_TOKEN_URL = process.env.DVSA_TOKEN_URL || 'https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token'
 const DVSA_SCOPE = process.env.DVSA_SCOPE || 'https://tapi.dvsa.gov.uk/.default'
+const DVSA_FETCH_TIMEOUT_MS = Number(process.env.DVSA_FETCH_TIMEOUT_MS || 5000)
+// Mock fallback disabled in production
+
+let lastDVSAError: { status?: number; message?: string; kind?: 'network' | 'timeout' | 'auth' | 'not_found' | 'rate_limit' | 'unknown'; dvsaErrorCode?: string; dvsaErrorMessage?: string; requestId?: string } | null = null
 
 // Token cache for DVSA authentication
 interface TokenCache {
@@ -22,14 +26,14 @@ async function getDVSAToken(): Promise<string | null> {
   const bufferMs = 5 * 60 * 1000
 
   if (dvsaTokenCache && dvsaTokenCache.expiresAt > now + bufferMs) {
-    console.log('🔑 [Lookup] Using cached DVSA token')
+    
     return dvsaTokenCache.accessToken
   }
 
-  console.log('🔐 [Lookup] Fetching new DVSA authentication token...')
+  
 
   if (!DVSA_CLIENT_ID || !DVSA_CLIENT_SECRET) {
-    console.error('❌ [Lookup] DVSA_CLIENT_ID or DVSA_CLIENT_SECRET not configured')
+    
     return null
   }
 
@@ -41,25 +45,43 @@ async function getDVSAToken(): Promise<string | null> {
       scope: DVSA_SCOPE
     })
 
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), DVSA_FETCH_TIMEOUT_MS)
     const response = await fetch(DVSA_TOKEN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: tokenRequestBody.toString()
+      body: tokenRequestBody.toString(),
+      signal: controller.signal
     })
+    clearTimeout(timer)
 
-    if (!response.ok) {
+  if (!response.ok) {
       const errorText = await response.text()
-      console.error(`❌ [Lookup] DVSA token request failed: ${response.status}`)
-      console.error(`❌ [Lookup] Error details: ${errorText}`)
+      
+      const baseLower = DVSA_API_BASE_URL.toLowerCase()
+      if (headers['Authorization'] && !baseLower.includes('/v1/') && !baseLower.includes('history.mot.api.gov.uk')) {
+        try {
+          const v1Url = `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${encodeURIComponent(registration)}`
+          const v1Headers = { ...headers, Accept: 'application/json' }
+          const controller2 = new AbortController()
+          const timer2 = setTimeout(() => controller2.abort(), DVSA_FETCH_TIMEOUT_MS)
+          const res2 = await fetch(v1Url, { method: 'GET', headers: v1Headers, signal: controller2.signal })
+          clearTimeout(timer2)
+          if (res2.ok) {
+            const data2 = await res2.json()
+            return data2
+          }
+        } catch {}
+      }
       return null
     }
 
     const tokenData = await response.json()
 
     if (!tokenData.access_token) {
-      console.error('❌ [Lookup] DVSA token response missing access_token')
+      
       return null
     }
 
@@ -69,10 +91,14 @@ async function getDVSAToken(): Promise<string | null> {
       expiresAt: now + (expiresInSeconds * 1000)
     }
 
-    console.log(`✅ [Lookup] DVSA token obtained, expires in ${expiresInSeconds} seconds`)
+    
     return dvsaTokenCache.accessToken
   } catch (error) {
-    console.error('❌ [Lookup] Error fetching DVSA token:', error)
+    if ((error as any)?.name === 'AbortError') {
+      
+    } else {
+      
+    }
     return null
   }
 }
@@ -83,57 +109,74 @@ async function getDVSAToken(): Promise<string | null> {
 async function fetchVehicleFromDVSA(registration: string, retryCount = 0): Promise<any | null> {
   const MAX_RETRIES = 2
 
-  // Check if API key is configured
-  if (!DVSA_API_KEY) {
-    console.log('⚠️ [Lookup] DVSA_API_KEY not configured, falling back to mock data')
-    return null
-  }
-
   try {
-    console.log(`🔍 [Lookup] Fetching vehicle data from DVSA for: ${registration}`)
+    
 
-    // Correct DVSA API endpoint format
-    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+    const url = buildDVSAUrl(registration)
 
-    // DVSA MOT API requires specific Accept header and x-api-key
-    // Per documentation: Accept: application/json+v6, x-api-key: <your api key>
     const headers: Record<string, string> = {
-      'Accept': 'application/json+v6',
-      'x-api-key': DVSA_API_KEY
+      Accept: getDVSAAcceptHeader()
     }
 
-    console.log(`🔍 [Lookup] Making request to: ${url}`)
-    console.log(`🔑 [Lookup] Using API key: ${DVSA_API_KEY.substring(0, 10)}...`)
+    const token = await getDVSAToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    if (DVSA_API_KEY) headers['x-api-key'] = DVSA_API_KEY
 
+    if (!headers['Authorization'] && !headers['x-api-key']) {
+      lastDVSAError = { status: 503, message: 'DVSA not configured', kind: 'auth' }
+      return null
+    }
+
+    
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), DVSA_FETCH_TIMEOUT_MS)
     const response = await fetch(url, {
       method: 'GET',
-      headers
+      headers,
+      signal: controller.signal
     })
+    clearTimeout(timer)
 
     if (!response.ok) {
-      const errorBody = await response.text()
-      console.error(`❌ [Lookup] DVSA API error: ${response.status} ${response.statusText}`)
-      console.error(`❌ [Lookup] Response body: ${errorBody}`)
+      const errorRaw = await response.text()
+      let errorBody: any = null
+      try { errorBody = JSON.parse(errorRaw) } catch {}
+      const reqIdHdr = response.headers.get('x-ms-request-id') || response.headers.get('x-request-id') || undefined
+      
 
-      // If we get 401/403, the API key might be invalid
-      if ((response.status === 401 || response.status === 403) && retryCount === 0) {
-        console.log('🔄 [Lookup] Authentication failed, trying with OAuth token...')
-        return fetchVehicleFromDVSAWithToken(registration)
+      if ((response.status === 401 || response.status === 403) && headers['Authorization'] && retryCount === 0) {
+        dvsaTokenCache = null
+        
+        return fetchVehicleFromDVSA(registration, retryCount + 1)
       }
-
+      if (response.status === 404) {
+        lastDVSAError = { status: 404, message: 'Vehicle not found', kind: 'not_found', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId || reqIdHdr }
+      } else if (response.status === 429) {
+        lastDVSAError = { status: 429, message: 'Rate limit exceeded', kind: 'rate_limit', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId || reqIdHdr }
+      } else if (response.status === 401 || response.status === 403) {
+        lastDVSAError = { status: response.status, message: 'Unauthorized', kind: 'auth', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId || reqIdHdr }
+      } else {
+        lastDVSAError = { status: response.status, message: 'DVSA API error', kind: 'unknown', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId || reqIdHdr }
+      }
       return null
     }
 
     const data = await response.json()
-    console.log(`✅ [Lookup] Successfully fetched vehicle data from DVSA for ${registration}`)
-    console.log(`📊 [Lookup] Data structure:`, JSON.stringify(data).substring(0, 200))
+    
     return data
   } catch (error) {
-    console.error('❌ [Lookup] Error fetching from DVSA API:', error)
+    if ((error as any)?.name === 'AbortError') {
+      
+      lastDVSAError = { kind: 'timeout', message: 'DVSA timeout' }
+    } else {
+      
+      lastDVSAError = { kind: 'network', message: 'Network error calling DVSA' }
+    }
 
     if (retryCount < MAX_RETRIES) {
-      console.log(`🔄 [Lookup] Retrying (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second before retry
+      
+      await new Promise(resolve => setTimeout(resolve, 1000))
       return fetchVehicleFromDVSA(registration, retryCount + 1)
     }
 
@@ -150,10 +193,10 @@ async function fetchVehicleFromDVSAWithToken(registration: string): Promise<any 
       return null
     }
 
-    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+    const url = buildDVSAUrl(registration)
 
     const headers: Record<string, string> = {
-      'Accept': 'application/json+v6',
+      'Accept': getDVSAAcceptHeader(),
       'Authorization': `Bearer ${token}`
     }
 
@@ -161,26 +204,39 @@ async function fetchVehicleFromDVSAWithToken(registration: string): Promise<any 
       headers['x-api-key'] = DVSA_API_KEY
     }
 
-    console.log(`🔍 [Lookup] Making OAuth request to: ${url}`)
-    console.log(`🔑 [Lookup] Using OAuth token: ${token.substring(0, 20)}...`)
+    
 
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), DVSA_FETCH_TIMEOUT_MS)
     const response = await fetch(url, {
       method: 'GET',
-      headers
+      headers,
+      signal: controller.signal
     })
+    clearTimeout(timer)
 
     if (!response.ok) {
-      const errorBody = await response.text()
-      console.error(`❌ [Lookup] DVSA OAuth API error: ${response.status} ${response.statusText}`)
-      console.error(`❌ [Lookup] Response body: ${errorBody}`)
+      const errorRaw = await response.text()
+      let errorBody: any = null
+      try { errorBody = JSON.parse(errorRaw) } catch {}
+      
+      if (response.status === 404) {
+        lastDVSAError = { status: 404, message: 'Vehicle not found', kind: 'not_found', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId }
+      } else if (response.status === 429) {
+        lastDVSAError = { status: 429, message: 'Rate limit exceeded', kind: 'rate_limit', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId }
+      } else if (response.status === 401 || response.status === 403) {
+        lastDVSAError = { status: response.status, message: 'Unauthorized', kind: 'auth', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId }
+      } else {
+        lastDVSAError = { status: response.status, message: 'DVSA OAuth API error', kind: 'unknown', dvsaErrorCode: errorBody?.errorCode, dvsaErrorMessage: errorBody?.errorMessage, requestId: errorBody?.requestId }
+      }
       return null
     }
 
     const data = await response.json()
-    console.log(`✅ [Lookup] Successfully fetched vehicle data from DVSA (OAuth) for ${registration}`)
+    
     return data
   } catch (error) {
-    console.error('❌ [Lookup] Error fetching from DVSA OAuth API:', error)
+    
     return null
   }
 }
@@ -235,7 +291,7 @@ function transformDVSAToVehicle(dvsaData: any): any {
     )
 
     if (validMotTests.length < originalCount) {
-      console.log(`🔍 [Lookup] Filtered ${originalCount} MOT tests to ${validMotTests.length} valid tests (vehicle year: ${year})`)
+      
     }
   }
 
@@ -269,6 +325,16 @@ function transformDVSAToVehicle(dvsaData: any): any {
  */
 export async function GET(request: NextRequest) {
   try {
+    
+
+    if (isTokenEndpoint(DVSA_API_BASE_URL)) {
+      
+      return NextResponse.json(
+        { error: 'DVSA API base URL misconfigured', code: 'MISCONFIGURED_ENDPOINT' },
+        { status: 500 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const registration = searchParams.get('registration')
 
@@ -281,6 +347,14 @@ export async function GET(request: NextRequest) {
 
     const normalizedReg = registration.toUpperCase().replace(/\s/g, '')
 
+    // Basic format validation: 5-8 alphanumeric characters
+    if (!/^[A-Z0-9]{5,8}$/.test(normalizedReg)) {
+      return NextResponse.json(
+        { error: 'Invalid registration format', code: 'INVALID_FORMAT' },
+        { status: 400 }
+      )
+    }
+
     // Try DVSA API first
     const dvsaData = await fetchVehicleFromDVSA(normalizedReg)
 
@@ -291,51 +365,86 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback to mock data for development/testing
-    console.log('⚠️ [Lookup] Using mock data fallback')
-
-    const mockVehicleData: Record<string, any> = {
-      'AB12CDE': {
-        make: 'Ford',
-        model: 'Focus',
-        year: 2020,
-        fuelType: 'PETROL',
-        color: 'Blue',
-        engineSize: '1.6L'
-      },
-      'WJ11USE': {
-        make: 'Volkswagen',
-        model: 'Golf',
-        year: 2011,
-        fuelType: 'DIESEL',
-        color: 'Silver',
-        engineSize: '2.0L'
-      },
-      'XY99ZZZ': {
-        make: 'Toyota',
-        model: 'Corolla',
-        year: 2019,
-        fuelType: 'HYBRID',
-        color: 'White',
-        engineSize: '1.8L'
-      }
+    // If DVSA is configured but failed, optionally use mock fallback only when explicitly enabled
+    if (DVSA_API_KEY && DVSA_ALLOW_MOCK_FALLBACK) {
+      
     }
 
-    const vehicleData = mockVehicleData[normalizedReg]
-
-    if (vehicleData) {
-      return NextResponse.json(vehicleData, { status: 200 })
-    } else {
+    // If DVSA is configured but failed, return specific error
+    if (DVSA_API_KEY) {
+      const err = lastDVSAError
+      if (err?.kind === 'not_found') {
+        return NextResponse.json(
+          { error: 'Vehicle not found', code: 'NOT_FOUND', error_code: err.dvsaErrorCode, error_message: err.dvsaErrorMessage, request_id: err.requestId },
+          { status: 404 }
+        )
+      }
+      if (err?.kind === 'rate_limit') {
+        return NextResponse.json(
+          { error: 'Rate limit exceeded. Please try again later.', code: 'RATE_LIMIT', error_code: err.dvsaErrorCode, error_message: err.dvsaErrorMessage, request_id: err.requestId },
+          { status: 429 }
+        )
+      }
+      if (err?.kind === 'timeout') {
+        return NextResponse.json(
+          { error: 'DVSA request timed out. Please retry.', code: 'TIMEOUT', error_code: err.dvsaErrorCode, error_message: err.dvsaErrorMessage, request_id: err.requestId },
+          { status: 504 }
+        )
+      }
+      if (err?.kind === 'auth') {
+        return NextResponse.json(
+          { error: 'DVSA authentication failed. Check credentials.', code: 'AUTH_ERROR', error_code: err.dvsaErrorCode, error_message: err.dvsaErrorMessage, request_id: err.requestId },
+          { status: 403 }
+        )
+      }
       return NextResponse.json(
-        { error: 'Vehicle not found' },
-        { status: 404 }
+        { error: 'DVSA service unavailable', code: 'DVSA_UNAVAILABLE', error_code: err?.dvsaErrorCode, error_message: err?.dvsaErrorMessage, request_id: err?.requestId },
+        { status: 503 }
       )
     }
+
+    // DVSA not configured: do not use mock, return explicit error
+    return NextResponse.json(
+      { error: 'DVSA not configured', code: 'DVSA_NOT_CONFIGURED' },
+      { status: 503 }
+    )
   } catch (error) {
-    console.error('Error in vehicle lookup:', error)
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
+}
+function isTokenEndpoint(url: string): boolean {
+  return /oauth2\/v2\.0\/token/i.test(url)
+}
+
+function logConfigSummary() {}
+function buildDVSAUrl(registration: string): string {
+  const base = DVSA_API_BASE_URL.replace(/\/$/, '')
+  if (/mot-tests/i.test(base)) {
+    // Legacy beta endpoint with query parameter
+    return `${base}?registration=${encodeURIComponent(registration)}`
+  }
+  // v1 API style: use path parameter for registration
+  if (/\/registration(\/)?$/i.test(base)) {
+    return `${base}/${encodeURIComponent(registration)}`
+  }
+  if (/\/v1\/trade\/vehicles/i.test(base)) {
+    return `${base}/registration/${encodeURIComponent(registration)}`
+  }
+  // Base host only: default to official v1 path
+  if (/^https?:\/\/history\.mot\.api\.gov\.uk$/i.test(base)) {
+    return `${base}/v1/trade/vehicles/registration/${encodeURIComponent(registration)}`
+  }
+  // Default fallback to query param
+  return `${base}?registration=${encodeURIComponent(registration)}`
+}
+function getDVSAAcceptHeader(): string {
+  const base = DVSA_API_BASE_URL.toLowerCase()
+  if (base.includes('history.mot.api.gov.uk') || base.includes('/v1/')) {
+    return 'application/json'
+  }
+  return 'application/json+v6'
 }

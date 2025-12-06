@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Car, Loader2, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Car, Loader2, CheckCircle, AlertCircle, ArrowRight, Calendar, Gauge } from 'lucide-react'
 import { createVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
 import gsap from 'gsap'
@@ -35,11 +37,17 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
   const [loading, setLoading] = useState(false)
   const [validatingReg, setValidatingReg] = useState(false)
   const [lookupSuccess, setLookupSuccess] = useState(false)
+  const [lookupError, setLookupError] = useState<string | null>(null)
+  const [motHistory, setMotHistory] = useState<{ lastTestDate: string | null; lastTestResult: string | null; expiryDate: string | null; mileage: number | null; totalTests: number } | null>(null)
+  const [lastValidatedReg, setLastValidatedReg] = useState<string>('')
+  const [manualFillRequired, setManualFillRequired] = useState(false)
+  const [showAllFields, setShowAllFields] = useState(false)
 
   const formRef = useRef<HTMLFormElement | null>(null)
   const successMessageRef = useRef<HTMLParagraphElement>(null)
   const carIconRef = useRef<HTMLDivElement>(null)
   const carContainerRef = useRef<HTMLDivElement>(null)
+  const buttonsRef = useRef<HTMLDivElement>(null)
 
   // Entrance animation
   useEffect(() => {
@@ -128,42 +136,127 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
     )
   }, [lookupSuccess])
 
-  // Auto-lookup vehicle details from registration
+  const isFormValid = createVehicleSchema.safeParse(formData).success
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion || !buttonsRef.current) return
+    if (isFormValid) {
+      gsap.fromTo(
+        buttonsRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+      )
+    }
+  }, [isFormValid])
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A'
+    try {
+      return new Date(dateString).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    } catch {
+      return dateString || 'N/A'
+    }
+  }
+
   const validateRegistration = async (registration: string) => {
     if (!registration || registration.trim() === '') return
 
     setValidatingReg(true)
+    setLookupError(null)
     setLookupSuccess(false)
+    setMotHistory(null)
+    setManualFillRequired(false)
 
-    try {
-      const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration)}`)
+    const maxRetries = 3
+    let currentRetry = 0
+    let success = false
 
-      if (response.ok) {
-        const vehicleData = await response.json()
+    while (currentRetry < maxRetries && !success) {
+      try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 4000)
+        const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration.trim())}`, { signal: controller.signal })
+        clearTimeout(timeout)
 
-        setFormData(prev => ({
-          ...prev,
-          make: vehicleData.make || prev.make,
-          model: vehicleData.model || prev.model,
-          year: vehicleData.year || prev.year,
-          fuelType: vehicleData.fuelType || prev.fuelType,
-          color: vehicleData.color || prev.color,
-          engineSize: vehicleData.engineSize || prev.engineSize
-        }))
-
-        setLookupSuccess(true)
+        if (response.ok) {
+          const vehicleData = await response.json()
+          setFormData(prev => ({
+            ...prev,
+            make: vehicleData.make || prev.make,
+            model: vehicleData.model || prev.model,
+            year: vehicleData.year || prev.year,
+            fuelType: vehicleData.fuelType || prev.fuelType,
+            color: vehicleData.color || prev.color,
+            engineSize: vehicleData.engineSize || prev.engineSize
+          }))
+          if (vehicleData.motHistory) setMotHistory(vehicleData.motHistory)
+          setLookupSuccess(true)
+          setShowAllFields(true)
+          success = true
+        } else {
+          currentRetry++
+          if (currentRetry < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
+          }
+          try {
+            const errorBody = await response.json()
+            const status = response.status
+            let message = 'Lookup failed.'
+            if (status === 400 && errorBody?.code === 'INVALID_FORMAT') {
+              message = 'Invalid registration format. Please check and try again.'
+            } else if (status === 404 || errorBody?.code === 'NOT_FOUND') {
+              message = 'Vehicle not found. Please fill in the fields manually.'
+            } else if (status === 429 || errorBody?.code === 'RATE_LIMIT') {
+              message = 'Rate limit exceeded. Please wait and try again.'
+            } else if (status === 504 || errorBody?.code === 'TIMEOUT') {
+              message = 'DVSA request timed out. You can try again.'
+            } else if (status === 503 || errorBody?.code === 'DVSA_UNAVAILABLE') {
+              message = 'DVSA service unavailable. Please try again later or fill in manually.'
+            } else if (status === 403 || errorBody?.code === 'AUTH_ERROR') {
+              message = 'DVSA authentication error. Please contact support.'
+            } else if (status === 500 || errorBody?.code === 'MISCONFIGURED_ENDPOINT') {
+              message = 'Configuration error: DVSA API base URL is misconfigured.'
+            } else if (errorBody?.error_message || errorBody?.error) {
+              message = errorBody?.error_message || errorBody?.error
+            }
+            setLookupError(message)
+            setShowAllFields(true)
+            setManualFillRequired(true)
+          } catch {}
+        }
+      } catch {
+        currentRetry++
+        if (currentRetry < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
+        }
       }
-    } catch (error) {
-      console.error('Error looking up vehicle:', error)
-    } finally {
-      setValidatingReg(false)
     }
+
+    if (!success && !lookupError) {
+      setLookupError('Could not retrieve vehicle information after multiple attempts. Please check the registration number or fill in the fields manually.')
+      setShowAllFields(true)
+      setManualFillRequired(true)
+    }
+
+    setValidatingReg(false)
   }
 
   const handleInputChange = (field: keyof VehicleFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+    if (field === 'registration') {
+      if (lookupError) setLookupError(null)
+      if (lookupSuccess) setLookupSuccess(false)
+      if (motHistory) setMotHistory(null)
+      setShowAllFields(false)
+      setManualFillRequired(false)
     }
   }
 
@@ -291,15 +384,50 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
                 placeholder="e.g., AB12 CDE"
                 value={formData.registration || ''}
                 onChange={(e) => handleInputChange('registration', e.target.value.toUpperCase())}
-                onBlur={() => validateRegistration(formData.registration || '')}
-                className={`text-lg h-12 pr-10 ${errors.registration ? 'border-red-500' : ''} ${lookupSuccess ? 'border-green-500' : ''}`}
+                onBlur={() => {
+                  if (formData.registration && formData.registration !== lastValidatedReg) {
+                    validateRegistration(formData.registration)
+                    setLastValidatedReg(formData.registration)
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab' && formData.registration && formData.registration !== lastValidatedReg) {
+                    e.preventDefault()
+                    validateRegistration(formData.registration)
+                    setLastValidatedReg(formData.registration)
+                    setTimeout(() => {
+                      document.getElementById('make')?.focus()
+                    }, 100)
+                  }
+                }}
+                className={`text-lg h-12 pr-10 ${errors.registration ? 'border-red-500' : ''}`}
                 disabled={loading}
               />
-              {validatingReg && (
+              {validatingReg ? (
                 <Loader2 className="absolute right-3 top-3 h-6 w-6 animate-spin text-muted-foreground" />
-              )}
-              {lookupSuccess && !validatingReg && (
-                <CheckCircle className="absolute right-3 top-3 h-6 w-6 text-green-500" />
+              ) : (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Validate registration"
+                  title="Validate registration"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                  disabled={!formData.registration}
+                  onClick={() => {
+                    if (formData.registration && formData.registration !== lastValidatedReg) {
+                      validateRegistration(formData.registration)
+                      setLastValidatedReg(formData.registration)
+                      setTimeout(() => {
+                        document.getElementById('make')?.focus()
+                      }, 100)
+                    } else if (formData.registration) {
+                      validateRegistration(formData.registration)
+                    }
+                  }}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               )}
             </div>
             {errors.registration && (
@@ -308,20 +436,71 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
                 {errors.registration}
               </p>
             )}
+            {lookupError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between gap-2">
+                  <span>{lookupError} All form fields will be shown for manual entry.</span>
+                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                    if (!validatingReg && formData.registration) {
+                      validateRegistration(formData.registration)
+                      setLastValidatedReg(formData.registration)
+                    }
+                  }}>Retry</Button>
+                </AlertDescription>
+              </Alert>
+            )}
             {lookupSuccess && (
-              <p ref={successMessageRef} className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                Vehicle details found and filled in!
-              </p>
+              <Alert className="mt-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Vehicle data retrieved from DVSA. Fields have been autofilled.
+                </AlertDescription>
+              </Alert>
+            )}
+            {motHistory && (
+              <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30">
+                <p className="text-sm font-medium mb-2 text-foreground">MOT History Summary</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Last Test:</span>
+                    <span className="font-medium">{formatDate(motHistory.lastTestDate)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Result:</span>
+                    {motHistory.lastTestResult === 'PASSED' ? (
+                      <Badge className="bg-green-500 text-white text-xs">Passed</Badge>
+                    ) : motHistory.lastTestResult === 'FAILED' ? (
+                      <Badge className="bg-red-500 text-white text-xs">Failed</Badge>
+                    ) : (
+                      <Badge className="bg-gray-500 text-white text-xs">Unknown</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Expires:</span>
+                    <span className="font-medium">{formatDate(motHistory.expiryDate)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Mileage:</span>
+                    <span className="font-medium">{motHistory.mileage ? motHistory.mileage.toLocaleString() : 'N/A'} mi</span>
+                  </div>
+                </div>
+                {motHistory.totalTests > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">Total MOT tests on record: {motHistory.totalTests}</p>
+                )}
+              </div>
             )}
           </div>
         </div>
 
         {/* Row 2: Make, Model, Year, Fuel Type */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 form-field">
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 form-field ${showAllFields || lookupSuccess ? '' : 'hidden'}`}>
           {/* Make */}
           <div className="space-y-2">
-            <Label htmlFor="make">Make *</Label>
+            <Label htmlFor="make" className="flex items-center gap-2">Make * {manualFillRequired && (<Badge variant="destructive">Required</Badge>)}</Label>
             <Input
               id="make"
               placeholder="e.g., Ford"
@@ -329,6 +508,12 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
               onChange={(e) => handleInputChange('make', e.target.value)}
               className={errors.make ? 'border-red-500' : ''}
               disabled={loading}
+              onFocus={() => {
+                if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                  validateRegistration(formData.registration)
+                  setLastValidatedReg(formData.registration)
+                }
+              }}
             />
             {errors.make && (
               <p className="text-sm text-red-500">{errors.make}</p>
@@ -337,7 +522,7 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
 
           {/* Model */}
           <div className="space-y-2">
-            <Label htmlFor="model">Model *</Label>
+            <Label htmlFor="model" className="flex items-center gap-2">Model * {manualFillRequired && (<Badge variant="destructive">Required</Badge>)}</Label>
             <Input
               id="model"
               placeholder="e.g., Focus"
@@ -345,6 +530,12 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
               onChange={(e) => handleInputChange('model', e.target.value)}
               className={errors.model ? 'border-red-500' : ''}
               disabled={loading}
+              onFocus={() => {
+                if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                  validateRegistration(formData.registration)
+                  setLastValidatedReg(formData.registration)
+                }
+              }}
             />
             {errors.model && (
               <p className="text-sm text-red-500">{errors.model}</p>
@@ -359,7 +550,12 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
               onValueChange={(value) => handleInputChange('year', parseInt(value))}
               disabled={loading}
             >
-              <SelectTrigger className={errors.year ? 'border-red-500' : ''}>
+              <SelectTrigger className={errors.year ? 'border-red-500' : ''} onClick={() => {
+                if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                  validateRegistration(formData.registration)
+                  setLastValidatedReg(formData.registration)
+                }
+              }}>
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
@@ -383,7 +579,12 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
               onValueChange={(value) => handleInputChange('fuelType', value)}
               disabled={loading}
             >
-              <SelectTrigger>
+              <SelectTrigger onClick={() => {
+                if (lookupError && formData.registration && formData.registration !== lastValidatedReg && !validatingReg) {
+                  validateRegistration(formData.registration)
+                  setLastValidatedReg(formData.registration)
+                }
+              }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -391,13 +592,15 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
                 <SelectItem value="DIESEL">Diesel</SelectItem>
                 <SelectItem value="ELECTRIC">Electric</SelectItem>
                 <SelectItem value="HYBRID">Hybrid</SelectItem>
+                <SelectItem value="LPG">LPG</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between form-field">
+        <div ref={buttonsRef} className={`flex flex-col sm:flex-row gap-4 items-center justify-between form-field ${(showAllFields || lookupSuccess) && isFormValid ? '' : 'hidden'}`}>
           <Button
             type="button"
             variant="outline"
@@ -427,8 +630,9 @@ export function VehicleStep({ onNext, onBack }: VehicleStepProps) {
             )}
           </Button>
         </div>
+
+        
       </form>
     </div>
   )
 }
-

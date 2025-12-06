@@ -88,25 +88,19 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
       setLoading(true)
 
       // Fetch vehicle details
-      console.log('Fetching vehicle details for ID:', vehicleId)
       const vehicleResponse = await fetch(`/api/vehicles/${vehicleId}`)
       if (vehicleResponse.ok) {
         const vehicleData = await vehicleResponse.json()
-        console.log('Vehicle data received:', vehicleData)
         setVehicle(vehicleData)
       } else {
-        console.error('Vehicle fetch failed:', vehicleResponse.status)
+        
       }
 
       // Fetch MOT history
-      console.log('Fetching MOT history for vehicle:', vehicleId)
       const motResponse = await fetch(`/api/vehicles/${vehicleId}/mot-history`)
-      console.log('MOT response status:', motResponse.status)
 
       if (motResponse.ok) {
         const motData = await motResponse.json()
-        console.log('MOT data received:', motData)
-        console.log('Number of MOT records:', motData.length)
 
         setMotHistory(motData)
 
@@ -129,15 +123,13 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
         const mileageChartData = Array.from(mileageMap.values())
           .sort((a: MileageData, b: MileageData) => a.year - b.year)
 
-        console.log('Mileage chart data:', mileageChartData)
         setMileageData(mileageChartData)
       } else {
-        console.error('MOT fetch failed:', motResponse.status)
         const errorData = await motResponse.json()
-        console.error('Error details:', errorData)
+        
       }
     } catch (error) {
-      console.error('Error fetching vehicle data:', error)
+      
     } finally {
       setLoading(false)
     }
@@ -230,32 +222,32 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Car className="h-5 w-5" />
-                    Informações do Veículo
+                    Vehicle Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Placa</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">Registration</h3>
                     <p className="mt-1 font-bold text-lg">{vehicle.registration}</p>
                   </div>
 
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <Car className="h-4 w-4" />
-                      Fabricante
+                      Make
                     </h3>
                     <p className="mt-1 font-medium">{vehicle.make}</p>
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Modelo</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">Model</h3>
                     <p className="mt-1 font-medium">{vehicle.model}</p>
                   </div>
 
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Ano
+                      Year
                     </h3>
                     <p className="mt-1 font-medium">{vehicle.year}</p>
                   </div>
@@ -263,7 +255,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <Fuel className="h-4 w-4" />
-                      Tipo de Combustível
+                      Fuel Type
                     </h3>
                     <p className="mt-1 font-medium">{vehicle.fuelType}</p>
                   </div>
@@ -272,7 +264,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <Palette className="h-4 w-4" />
-                        Cor
+                        Color
                       </h3>
                       <p className="mt-1 font-medium">{vehicle.color}</p>
                     </div>
@@ -282,7 +274,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <Wrench className="h-4 w-4" />
-                        Cilindrada (L)
+                        Engine Size (L)
                       </h3>
                       <p className="mt-1 font-medium">{vehicle.engineSize}L</p>
                     </div>
@@ -299,10 +291,10 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5" />
-                      Evolução da Quilometragem
+                      Mileage Over Time
                     </CardTitle>
                     <CardDescription>
-                      Gráfico mostrando a evolução da quilometragem ao longo dos anos
+                      Chart showing mileage evolution over the years
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -318,7 +310,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                           <YAxis
                             className="text-muted-foreground"
                             tick={{ fontSize: 12 }}
-                            label={{ value: 'Quilometragem', angle: -90, position: 'insideLeft' }}
+                            label={{ value: 'Mileage', angle: -90, position: 'insideLeft' }}
                           />
                           <Tooltip
                             contentStyle={{
@@ -326,8 +318,8 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                               border: '1px solid hsl(var(--border))',
                               borderRadius: '6px'
                             }}
-                            formatter={(value: any) => [`${value} km`, 'Quilometragem']}
-                            labelFormatter={(label: any) => `Ano: ${label}`}
+                            formatter={(value: any) => [`${value} km`, 'Mileage']}
+                            labelFormatter={(label: any) => `Year: ${label}`}
                           />
                           <Line
                             type="monotone"
