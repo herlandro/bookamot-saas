@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, ArrowLeft, Car, Plus, Loader2, CheckCircle, Calendar, Gauge } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, Car, Plus, Loader2, CheckCircle, Calendar, Gauge } from 'lucide-react'
 import { createVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { MainLayout } from '@/components/layout/main-layout'
@@ -44,6 +44,8 @@ export default function AddVehiclePage() {
   const [lookupSuccess, setLookupSuccess] = useState(false)
   const [motHistory, setMotHistory] = useState<MotHistoryInfo | null>(null)
   const [lastValidatedReg, setLastValidatedReg] = useState<string>('')
+  const [showAllFields, setShowAllFields] = useState(false)
+  const [manualFillRequired, setManualFillRequired] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -75,6 +77,8 @@ export default function AddVehiclePage() {
       if (lookupError) setLookupError(null)
       if (lookupSuccess) setLookupSuccess(false)
       if (motHistory) setMotHistory(null)
+      setShowAllFields(false)
+      setManualFillRequired(false)
     }
   }
 
@@ -100,6 +104,7 @@ export default function AddVehiclePage() {
     setLookupError(null)
     setLookupSuccess(false)
     setMotHistory(null)
+    setManualFillRequired(false)
 
     // Maximum number of retries
     const maxRetries = 3
@@ -108,7 +113,12 @@ export default function AddVehiclePage() {
 
     while (currentRetry < maxRetries && !success) {
       try {
-        const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration)}`)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 4000)
+        const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(registration.trim())}`, {
+          signal: controller.signal
+        })
+        clearTimeout(timeout)
 
         if (response.ok) {
           const vehicleData = await response.json()
@@ -130,6 +140,7 @@ export default function AddVehiclePage() {
           }
 
           setLookupSuccess(true)
+          setShowAllFields(true)
           success = true
         } else {
           // If response is not successful, increment retry count
@@ -139,9 +150,37 @@ export default function AddVehiclePage() {
             // Wait a bit before retrying (exponential backoff)
             await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry - 1)))
           }
+
+          try {
+            const errorBody = await response.json()
+            const status = response.status
+            let message = 'Não foi possível validar automaticamente os dados.'
+            if (status === 400 && errorBody?.code === 'INVALID_FORMAT') {
+              message = 'Formato de matrícula inválido. Verifique e tente novamente.'
+            } else if (status === 404 || errorBody?.code === 'NOT_FOUND') {
+              message = 'Veículo não encontrado. Preencha manualmente os campos.'
+            } else if (status === 429 || errorBody?.code === 'RATE_LIMIT') {
+              message = 'Limite de requisições excedido. Aguarde e tente novamente.'
+            } else if (status === 504 || errorBody?.code === 'TIMEOUT') {
+              message = 'Tempo de resposta do DVSA esgotado. Tente novamente.'
+            } else if (status === 503 || errorBody?.code === 'DVSA_UNAVAILABLE') {
+              message = 'Serviço DVSA indisponível. Preencha manualmente os campos.'
+            } else if (status === 403 || errorBody?.code === 'AUTH_ERROR') {
+              message = 'Falha de autenticação DVSA. Preencha manualmente os campos.'
+            } else if (status === 500 || errorBody?.code === 'MISCONFIGURED_ENDPOINT') {
+              message = 'Erro de configuração: URL base do DVSA incorreta.'
+            } else if (errorBody?.error_message || errorBody?.error) {
+              message = errorBody?.error_message || errorBody?.error
+            }
+            setLookupError(message)
+            setShowAllFields(true)
+            setManualFillRequired(true)
+          } catch {
+            // If body is not JSON
+          }
         }
       } catch (error) {
-        console.error(`Error validating registration (attempt ${currentRetry + 1}/${maxRetries}):`, error)
+        
         currentRetry++
 
         if (currentRetry < maxRetries) {
@@ -152,7 +191,11 @@ export default function AddVehiclePage() {
     }
 
     if (!success) {
-      setLookupError('Could not retrieve vehicle information after multiple attempts. Please check the registration number or fill in the fields manually.')
+      if (!lookupError) {
+        setLookupError('Não foi possível validar automaticamente após várias tentativas. Preencha os campos manualmente.')
+      }
+      setShowAllFields(true)
+      setManualFillRequired(true)
     }
 
     setValidatingReg(false)
@@ -234,7 +277,7 @@ export default function AddVehiclePage() {
 
             router.push(`/booking/${context.selectedGarageId}?${bookingParams.toString()}`)
           } catch (error) {
-            console.error('Error parsing booking context:', error)
+            
             router.push('/dashboard')
           }
         } else {
@@ -256,7 +299,7 @@ export default function AddVehiclePage() {
         }
       }
     } catch (error) {
-      console.error('Error adding vehicle:', error)
+      
       alert('Failed to add vehicle. Please try again.')
     } finally {
       setLoading(false)
@@ -298,16 +341,16 @@ export default function AddVehiclePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Vehicle Information</CardTitle>
-            <CardDescription>
-              Enter your vehicle details. All fields marked with * are required.
-            </CardDescription>
+          <CardTitle>Add Vehicle</CardTitle>
+          <CardDescription>
+            Enter the registration to automatically fetch vehicle data. Fields with * are required.
+          </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Registration */}
               <div className="space-y-2">
-                <Label htmlFor="registration">Registration Number *</Label>
+                <Label htmlFor="registration">Registration *</Label>
                 <div className="relative">
                   <Input
                     id="registration"
@@ -322,7 +365,7 @@ export default function AddVehiclePage() {
                         e.preventDefault()
                         validateRegistration(formData.registration)
                         setLastValidatedReg(formData.registration)
-                        // Focar no próximo campo após a validação
+                        // Focus the next field after validation
                         setTimeout(() => {
                           document.getElementById('make')?.focus()
                         }, 100)
@@ -330,10 +373,33 @@ export default function AddVehiclePage() {
                     }}
                     className={`${errors.registration ? 'border-red-500' : ''} ${validatingReg ? 'pr-10' : ''}`}
                   />
-                  {validatingReg && (
+                  {validatingReg ? (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Validate registration"
+                      title="Validate registration"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                      disabled={!formData.registration}
+                      onClick={() => {
+                        if (formData.registration && formData.registration !== lastValidatedReg) {
+                          validateRegistration(formData.registration)
+                          setLastValidatedReg(formData.registration)
+                          setTimeout(() => {
+                            document.getElementById('make')?.focus()
+                          }, 100)
+                        } else if (formData.registration) {
+                          validateRegistration(formData.registration)
+                        }
+                      }}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
                 {errors.registration && (
@@ -342,14 +408,24 @@ export default function AddVehiclePage() {
                 {lookupError && (
                   <Alert variant="destructive" className="mt-2">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{lookupError}</AlertDescription>
+                    <AlertDescription className="flex items-center justify-between gap-2">
+                      <span>{lookupError} All form fields will be shown for manual entry.</span>
+                      <Button type="button" size="sm" variant="outline" onClick={() => {
+                        if (!validatingReg && formData.registration) {
+                          validateRegistration(formData.registration)
+                          setLastValidatedReg(formData.registration)
+                        }
+                      }}>
+                        Retry
+                      </Button>
+                    </AlertDescription>
                   </Alert>
                 )}
                 {lookupSuccess && (
                   <Alert className="mt-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
                     <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <AlertDescription className="text-green-800 dark:text-green-200">
-                      Vehicle details retrieved from DVSA. Form fields have been auto-populated.
+                      Vehicle data retrieved from DVSA. Fields have been autofilled.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -393,9 +469,9 @@ export default function AddVehiclePage() {
               </div>
 
               {/* Make and Model */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showAllFields || lookupSuccess ? '' : 'hidden'}`}>
                 <div className="space-y-2">
-                  <Label htmlFor="make">Make *</Label>
+                  <Label htmlFor="make" className="flex items-center gap-2">Make * {manualFillRequired && (<Badge variant="destructive">Required</Badge>)}</Label>
                   <Input
                     id="make"
                     placeholder="e.g., Ford, BMW, Toyota"
@@ -417,7 +493,7 @@ export default function AddVehiclePage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="model">Model *</Label>
+                  <Label htmlFor="model" className="flex items-center gap-2">Model * {manualFillRequired && (<Badge variant="destructive">Required</Badge>)}</Label>
                   <Input
                     id="model"
                     placeholder="e.g., Focus, 3 Series, Corolla"
@@ -440,9 +516,9 @@ export default function AddVehiclePage() {
               </div>
 
               {/* Year and Fuel Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showAllFields || lookupSuccess ? '' : 'hidden'}`}>
                 <div className="space-y-2">
-                <Label htmlFor="year">Year *</Label>
+                <Label htmlFor="year" className="flex items-center gap-2">Year * {manualFillRequired && (<Badge variant="destructive">Required</Badge>)}</Label>
                 <div>
                   <div>
                     <Select 
@@ -473,7 +549,7 @@ export default function AddVehiclePage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="fuelType">Fuel Type *</Label>
+                <Label htmlFor="fuelType" className="flex items-center gap-2">Fuel Type * {manualFillRequired && (<Badge variant="destructive">Required</Badge>)}</Label>
                 <div>
                   <div>
                     <Select 
@@ -506,7 +582,7 @@ export default function AddVehiclePage() {
               </div>
 
               {/* Color and Engine Size */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showAllFields || lookupSuccess ? '' : 'hidden'}`}>
                 <div className="space-y-2">
                   <Label htmlFor="color">Color</Label>
                   <Input
@@ -524,7 +600,7 @@ export default function AddVehiclePage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="engineSize">Engine Size</Label>
+                  <Label htmlFor="engineSize">Engine</Label>
                   <Input
                     id="engineSize"
                     placeholder="e.g., 1.6L, 2.0L, 3.0L"
@@ -541,7 +617,7 @@ export default function AddVehiclePage() {
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-between gap-2 pt-4">
+              <div className={`flex justify-between gap-2 pt-4 ${showAllFields || lookupSuccess ? '' : 'hidden'}`}>
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel
                 </Button>
@@ -549,12 +625,12 @@ export default function AddVehiclePage() {
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Adding Vehicle...
+                      Adding vehicle...
                     </>
                   ) : (
                     <>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Vehicle
+                      Add vehicle
                     </>
                   )}
                 </Button>

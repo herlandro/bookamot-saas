@@ -19,7 +19,9 @@
     "query:garages": "tsx scripts/query.ts garages",
     "query:slots": "tsx scripts/query.ts slots",
     "verify:deployment": "bash scripts/verify-deployment.sh",
-    "setup:test-data": "bash scripts/setup-test-data.sh"
+    "setup:test-data": "bash scripts/setup-test-data.sh",
+    "test:lookup": "tsx scripts/test-vehicle-lookup.ts",
+    "test:dvsa": "tsx scripts/test-dvsa-oauth.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
