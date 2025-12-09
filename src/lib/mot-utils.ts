@@ -1,6 +1,165 @@
 import fs from 'fs/promises'
 import path from 'path'
 
+// DVSA API Configuration
+const DVSA_API_BASE_URL = process.env.DVSA_API_BASE_URL || 'https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests'
+const DVSA_API_KEY = process.env.DVSA_API_KEY || ''
+const DVSA_CLIENT_ID = process.env.DVSA_CLIENT_ID || ''
+const DVSA_CLIENT_SECRET = process.env.DVSA_CLIENT_SECRET || ''
+const DVSA_TOKEN_URL = process.env.DVSA_TOKEN_URL || 'https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token'
+const DVSA_SCOPE = process.env.DVSA_SCOPE || 'https://tapi.dvsa.gov.uk/.default'
+
+// Token cache for DVSA authentication
+interface TokenCache {
+  accessToken: string
+  expiresAt: number
+}
+
+let dvsaTokenCache: TokenCache | null = null
+
+// Helper function to get DVSA authentication token
+async function getDVSAToken(): Promise<string | null> {
+  const now = Date.now()
+  const bufferMs = 5 * 60 * 1000
+
+  if (dvsaTokenCache && dvsaTokenCache.expiresAt > now + bufferMs) {
+    console.log('🔑 [MOT History] Using cached DVSA token')
+    return dvsaTokenCache.accessToken
+  }
+
+  console.log('🔐 [MOT History] Fetching new DVSA authentication token...')
+
+  if (!DVSA_CLIENT_ID || !DVSA_CLIENT_SECRET) {
+    console.error('❌ [MOT History] DVSA_CLIENT_ID or DVSA_CLIENT_SECRET not configured')
+    return null
+  }
+
+  try {
+    const tokenRequestBody = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: DVSA_CLIENT_ID,
+      client_secret: DVSA_CLIENT_SECRET,
+      scope: DVSA_SCOPE
+    })
+
+    const response = await fetch(DVSA_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: tokenRequestBody.toString()
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`❌ [MOT History] DVSA token request failed: ${response.status}`)
+      console.error(`❌ [MOT History] Error details: ${errorText}`)
+      return null
+    }
+
+    const tokenData = await response.json()
+
+    if (!tokenData.access_token) {
+      console.error('❌ [MOT History] DVSA token response missing access_token')
+      return null
+    }
+
+    const expiresInSeconds = tokenData.expires_in || 3600
+    dvsaTokenCache = {
+      accessToken: tokenData.access_token,
+      expiresAt: now + (expiresInSeconds * 1000)
+    }
+
+    console.log(`✅ [MOT History] DVSA token obtained, expires in ${expiresInSeconds} seconds`)
+    return dvsaTokenCache.accessToken
+  } catch (error) {
+    console.error('❌ [MOT History] Error fetching DVSA token:', error)
+    return null
+  }
+}
+
+export async function fetchMotHistoryFromDVSA(registration: string): Promise<any | null> {
+  if (!DVSA_API_KEY) {
+    console.log('⚠️ [MOT History] DVSA_API_KEY not configured')
+    return null
+  }
+  const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+  const headers: Record<string, string> = {
+    'Accept': 'application/json+v6',
+    'x-api-key': DVSA_API_KEY
+  }
+  console.log(`🔍 [MOT History] Requesting DVSA: ${url}`)
+  const response = await fetchWithRetries(url, headers)
+  if (!response) {
+    console.error('❌ [MOT History] DVSA request failed after retries')
+    return fetchMotHistoryFromDVSAWithToken(registration)
+  }
+  if (!response.ok) {
+    const errorBody = await response.text()
+    console.error(`❌ [MOT History] DVSA API error: ${response.status} ${response.statusText}`)
+    console.error(`❌ [MOT History] Response body: ${errorBody}`)
+    if (response.status === 401 || response.status === 403) {
+      console.log('🔄 [MOT History] Trying with OAuth token...')
+      return fetchMotHistoryFromDVSAWithToken(registration)
+    }
+    if (response.status === 404) {
+      return { motTests: [] }
+    }
+    return null
+  }
+  const data = await response.json()
+  const vehicleData = Array.isArray(data) ? data[0] : data
+  console.log(`✅ [MOT History] DVSA returned ${vehicleData?.motTests?.length || 0} tests for ${registration}`)
+  return vehicleData
+}
+
+// Alternative method using OAuth token
+export async function fetchMotHistoryFromDVSAWithToken(registration: string): Promise<any | null> {
+  try {
+    const token = await getDVSAToken()
+    if (!token) {
+      console.log('⚠️ [MOT History] No DVSA token available')
+      return null
+    }
+
+    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+
+    const headers: Record<string, string> = {
+      'Accept': 'application/json+v6',
+      'Authorization': `Bearer ${token}`
+    }
+
+    if (DVSA_API_KEY) {
+      headers['x-api-key'] = DVSA_API_KEY
+    }
+
+    console.log(`🔍 [MOT History] Making OAuth request to: ${url}`)
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers
+    })
+
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error(`❌ [MOT History] DVSA OAuth API error: ${response.status} ${response.statusText}`)
+      console.error(`❌ [MOT History] Response body: ${errorBody}`)
+      return null
+    }
+
+    const data = await response.json()
+    console.log(`✅ [MOT History] Successfully fetched MOT data via OAuth for ${registration}`)
+
+    const vehicleData = Array.isArray(data) ? data[0] : data
+    console.log(`📊 [MOT History] Found ${vehicleData?.motTests?.length || 0} MOT records`)
+
+    return vehicleData
+  } catch (error) {
+    console.error('❌ [MOT History] Error fetching from DVSA OAuth API:', error)
+    return null
+  }
+}
+
 export async function fetchWithRetries(url: string, headers: Record<string, string>, retries = 2, timeoutMs = 10000): Promise<Response | null> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController()
