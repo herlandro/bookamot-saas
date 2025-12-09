@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: MOT History API
+  version: 1.0.0
+paths:
+  /api/vehicles/{id}/mot-history:
+    get:
+      summary: Get MOT history for a vehicle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: MOT history records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string }
+                    testDate: { type: string, format: date-time }
+                    expiryDate: { type: string, nullable: true }
+                    result: { type: string, enum: [PASS, FAIL, REFUSED] }
+                    mileage: { type: integer, nullable: true, description: Kilometres }
+                    odometerUnit: { type: string, nullable: true }
+                    defects:
+                      type: object
+                      properties:
+                        dangerous: { type: integer }
+                        major: { type: integer }
+                        minor: { type: integer }
+                        advisory: { type: integer }
+                        prs: { type: integer }
+                    details:
+                      type: array
+                      items: { type: string }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No MOT data available for this vehicle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Rate limited by DVSA
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: MOT history not available from DVSA
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
