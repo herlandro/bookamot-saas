@@ -21,7 +21,13 @@
     "verify:deployment": "bash scripts/verify-deployment.sh",
     "setup:test-data": "bash scripts/setup-test-data.sh",
     "test:lookup": "tsx scripts/test-vehicle-lookup.ts",
-    "test:dvsa": "tsx scripts/test-dvsa-oauth.ts"
+    "test:dvsa": "tsx scripts/test-dvsa-oauth.ts",
+    "test:mot-errors": "tsx scripts/test-mot-history-errors.ts",
+    "test:mot-rate": "tsx scripts/test-mot-history-rate-limit.ts",
+    "test:mot-mock": "tsx scripts/test-mot-history-integration-mock.ts",
+    "test:mot-mapping": "tsx scripts/test-mot-mapping.ts",
+    "test:api-vehicle": "DATABASE_URL=postgresql://bookamot:changeme@localhost:5432/bookamot tsx scripts/test-api-vehicle-details.ts",
+    "test:mot-db": "DATABASE_URL=postgresql://bookamot:changeme@localhost:5432/bookamot tsx scripts/test-mot-history-db-match.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
