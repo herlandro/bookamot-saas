@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowLeft, Calendar, Save } from 'lucide-react'
+import { ArrowLeft, Calendar, Save, Loader2 } from 'lucide-react'
 
 interface Booking {
   id: string
@@ -147,7 +147,7 @@ export default function EditBookingPage({ params }: { params: Promise<{ id: stri
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-red-600 mx-auto mb-4" />
             <p className="text-slate-600">Loading booking details...</p>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { StarRating } from '@/components/ui/star-rating';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Star } from 'lucide-react';
+import { Star, Loader2 } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -83,7 +83,7 @@ export function BookingReviewsSection({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <Loader2 className="h-6 w-6 animate-spin text-red-600" />
           </div>
         </CardContent>
       </Card>
@@ -174,4 +174,3 @@ export function BookingReviewsSection({
     </Card>
   );
 }
-

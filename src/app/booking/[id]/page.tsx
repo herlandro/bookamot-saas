@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { BookingCalendar } from '@/components/booking/booking-calendar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, CheckCircle, MapPin, Phone, Mail, Calendar, Clock, Car } from 'lucide-react'
+import { ArrowLeft, CheckCircle, MapPin, Phone, Mail, Calendar, Clock, Car, Loader2 } from 'lucide-react'
 import { MainLayout } from '@/components/layout/main-layout'
 
 // Component for automatic redirect
@@ -207,7 +207,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
   if (status === 'loading' || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     )
   }

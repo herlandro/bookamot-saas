@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StarRatingDisplay } from '@/components/ui/star-rating';
 import { ReviewList } from '@/components/reviews/review-list';
-import { ArrowLeft, Mail, Phone, Calendar, DollarSign, CheckCircle, Car } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Calendar, DollarSign, CheckCircle, Car, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 
@@ -137,7 +137,7 @@ export default function CustomerDetailPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -374,4 +374,3 @@ export default function CustomerDetailPage() {
     </GarageLayout>
   );
 }
-

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Calendar, Clock, Users, Settings, BarChart3, Plus, Edit, Save, X } from 'lucide-react';
+import { Calendar, Clock, Users, Settings, BarChart3, Plus, Edit, Save, X, Loader2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { GarageCalendar } from '@/components/garage/garage-calendar';
 import { BookingModal } from '@/components/garage/booking-modal';
@@ -251,7 +251,7 @@ export default function GarageAdminPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     );
   }

@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 import { AdminLayout } from '@/components/layout/admin-layout'
 import { ThemeSettingsCard } from '@/components/ui/theme-settings-card'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Shield, Bell, Globe } from 'lucide-react'
+import { Shield, Bell, Globe, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 
 export default function AdminSettingsPage() {
@@ -29,7 +29,7 @@ export default function AdminSettingsPage() {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
         </div>
       </AdminLayout>
     )
@@ -155,4 +155,3 @@ export default function AdminSettingsPage() {
     </AdminLayout>
   )
 }
-

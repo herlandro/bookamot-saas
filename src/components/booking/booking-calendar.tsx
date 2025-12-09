@@ -5,7 +5,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Phone, Mail } from 'lucide-react'
+import { Clock, MapPin, Phone, Mail, Loader2 } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { generateTimeSlots } from '@/lib/utils'
 
@@ -180,7 +180,7 @@ export function BookingCalendar({ garage, vehicle, onBookingSelect, onCancel }: 
           <CardContent>
             {loading ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
               </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">

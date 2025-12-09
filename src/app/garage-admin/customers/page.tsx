@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FilterConfig } from '@/components/ui/advanced-filter-panel';
 import { exportCustomersToCSV } from '@/lib/export/csv-export';
-import { Search, Filter, Download, User, Eye, Edit, Trash2, ChevronDown } from 'lucide-react';
+import { Search, Filter, Download, User, Eye, Edit, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -233,7 +233,7 @@ export default function CustomersPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -463,4 +463,3 @@ export default function CustomersPage() {
     </GarageLayout>
   );
 }
-

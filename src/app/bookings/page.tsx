@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Calendar, Car, MapPin, Clock, Plus, Filter, Star, Search, Download } from 'lucide-react'
+import { Calendar, Car, MapPin, Clock, Plus, Filter, Star, Search, Download, Loader2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal'
@@ -185,7 +185,7 @@ export default function BookingsPage() {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
         </div>
       </MainLayout>
     )

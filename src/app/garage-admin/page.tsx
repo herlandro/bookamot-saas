@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 /**
  * Garage Admin Root Page
@@ -20,7 +21,7 @@ export default function GarageAdminRootPage() {
   // Show loading state while redirecting
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <Loader2 className="h-8 w-8 animate-spin text-red-600" />
     </div>
   );
 }

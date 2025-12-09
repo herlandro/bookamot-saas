@@ -56,7 +56,7 @@ export default function AddVehiclePage() {
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     )
   }
@@ -624,7 +624,7 @@ export default function AddVehiclePage() {
                 <Button type="submit" disabled={loading}>
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       Adding vehicle...
                     </>
                   ) : (

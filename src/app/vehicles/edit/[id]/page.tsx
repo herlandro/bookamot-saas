@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Car, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Car, Save, Trash2, Loader2 } from 'lucide-react'
 import { updateVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
@@ -81,7 +81,7 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     )
   }

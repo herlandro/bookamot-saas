@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Star, Clock, Car, ArrowLeft, Calendar } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Clock, Car, ArrowLeft, Calendar, Loader2 } from 'lucide-react'
 import { formatCurrency, calculateDistance } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 
@@ -226,7 +226,7 @@ function SearchPageContent() {
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     )
   }
@@ -551,7 +551,7 @@ export default function SearchPage() {
       fallback={
         <MainLayout>
           <div className="flex justify-center items-center min-h-screen">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-red-600" />
           </div>
         </MainLayout>
       }

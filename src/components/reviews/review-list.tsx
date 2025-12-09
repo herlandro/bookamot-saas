@@ -5,7 +5,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -43,7 +43,7 @@ export function ReviewList({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -132,4 +132,3 @@ export function ReviewList({
     </div>
   );
 }
-

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
 function ResetPasswordPageContent() {
   const router = useRouter()
@@ -117,7 +117,7 @@ function ResetPasswordPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-red-600 mx-auto" />
             <p className="mt-4 text-gray-600">Validating token...</p>
           </div>
         </div>
@@ -247,7 +247,7 @@ function ResetPasswordPageContent() {
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Resetting...
               </div>
             ) : (
@@ -276,7 +276,7 @@ export default function ResetPasswordPage() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <Loader2 className="h-8 w-8 animate-spin text-red-600 mx-auto" />
               <p className="mt-4 text-gray-600">Loading page...</p>
             </div>
           </div>

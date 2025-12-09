@@ -7,7 +7,7 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AnalyticsOverviewCard } from '@/components/ui/analytics-overview-card';
-import { Users, Building2, Car, CalendarCheck, Star, Clock } from 'lucide-react';
+import { Users, Building2, Car, CalendarCheck, Star, Clock, Loader2 } from 'lucide-react';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -252,4 +252,3 @@ export default function AdminDashboard() {
     </AdminLayout>
   );
 }
-

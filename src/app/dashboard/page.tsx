@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Star } from 'lucide-react'
+import { Calendar, Car, MapPin, Plus, AlertTriangle, CheckCircle, Star, Loader2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal'
@@ -221,7 +221,7 @@ export default function Dashboard() {
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     )
   }

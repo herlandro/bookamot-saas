@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Star, MessageSquare, Calendar } from 'lucide-react';
+import { Search, Star, MessageSquare, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -182,7 +182,7 @@ export default function ReviewsPage() {
     return (
       <GarageLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
         </div>
       </GarageLayout>
     );
@@ -343,4 +343,3 @@ export default function ReviewsPage() {
     </GarageLayout>
   );
 }
-

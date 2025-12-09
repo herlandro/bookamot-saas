@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ThemeSettingsCard } from '@/components/ui/theme-settings-card'
 
@@ -21,7 +22,7 @@ export default function SettingsPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     )
   }
@@ -37,4 +38,3 @@ export default function SettingsPage() {
     </MainLayout>
   )
 }
-

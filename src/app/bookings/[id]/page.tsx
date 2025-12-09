@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Calendar, Car, MapPin, Clock, ArrowLeft, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react'
+import { Calendar, Car, MapPin, Clock, ArrowLeft, Trash2, Edit, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { MainLayout } from '@/components/layout/main-layout'
@@ -162,7 +162,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <Loader2 className="h-8 w-8 animate-spin text-red-600 mx-auto mb-4" />
               <p className="text-slate-600">Loading booking details...</p>
             </div>
           </div>

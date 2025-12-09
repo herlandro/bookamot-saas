@@ -6,7 +6,7 @@ import useAuth from '@/hooks/useAuth'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Car, Calendar, AlertTriangle, CheckCircle, ArrowUpDown, Trash2 } from 'lucide-react'
+import { Plus, Car, Calendar, AlertTriangle, CheckCircle, ArrowUpDown, Trash2, Loader2 } from 'lucide-react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -241,7 +241,7 @@ export default function VehiclesPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <Loader2 className="h-8 w-8 animate-spin text-red-600 mx-auto mb-4" />
               <p className="text-muted-foreground">Loading vehicles...</p>
             </div>
           </div>

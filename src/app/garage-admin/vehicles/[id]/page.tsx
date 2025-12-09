@@ -7,7 +7,7 @@ import { GarageLayout } from '@/components/layout/garage-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -162,7 +162,7 @@ export default function VehicleDetailPage() {
     return (
       <GarageLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
         </div>
       </GarageLayout>
     );
@@ -432,4 +432,3 @@ export default function VehicleDetailPage() {
     </GarageLayout>
   );
 }
-

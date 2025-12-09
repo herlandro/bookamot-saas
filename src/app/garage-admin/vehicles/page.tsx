@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { AdvancedFilterPanel, FilterConfig } from '@/components/ui/advanced-filter-panel';
 import { exportVehiclesToCSV } from '@/lib/export/csv-export';
-import { Search, Filter, Download, Car, User, Calendar, AlertCircle } from 'lucide-react';
+import { Search, Filter, Download, Car, User, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -158,7 +158,7 @@ export default function VehiclesPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -345,4 +345,3 @@ export default function VehiclesPage() {
     </GarageLayout>
   );
 }
-
