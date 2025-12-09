@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { motCache, generateMotCacheKey, generateDvsaCacheKey } from '@/lib/cache/mot-cache'
-import { checkAndNotifyMotStatus } from '@/lib/services/mot-notification-service'
+import fs from 'fs/promises'
+import path from 'path'
+import { validateMotSchema } from '@/lib/mot-utils'
 
 // DVSA API Configuration
 const DVSA_API_BASE_URL = process.env.DVSA_API_BASE_URL || 'https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests'
@@ -82,161 +83,76 @@ async function getDVSAToken(): Promise<string | null> {
   }
 }
 
-// Mock MOT history data for demonstration (fallback)
-const mockMotHistory = [
-  {
-    id: '1',
-    testDate: '2024-03-15',
-    expiryDate: '2025-03-14',
-    result: 'PASS',
-    mileage: 45000,
-    testNumber: 'MOT2024001',
-    defects: {
-      dangerous: 0,
-      major: 0,
-      minor: 1,
-      advisory: 2
-    },
-    details: [
-      'Pneu dianteiro direito com desgaste irregular',
-      'Óleo do motor próximo ao limite mínimo',
-      'Limpador de para-brisa com pequeno desgaste'
-    ]
-  },
-  {
-    id: '2',
-    testDate: '2023-03-10',
-    expiryDate: '2024-03-09',
-    result: 'PASS',
-    mileage: 38000,
-    testNumber: 'MOT2023001',
-    defects: {
-      dangerous: 0,
-      major: 0,
-      minor: 0,
-      advisory: 1
-    },
-    details: [
-      'Pastilhas de freio com desgaste moderado'
-    ]
-  },
-  {
-    id: '3',
-    testDate: '2022-11-22',
-    expiryDate: '2023-11-21',
-    result: 'PASS',
-    mileage: 35500,
-    testNumber: 'MOT2022002',
-    defects: {
-      dangerous: 0,
-      major: 0,
-      minor: 2,
-      advisory: 1
-    },
-    details: [
-      'Pneu traseiro direito com desgaste moderado',
-      'Filtro de ar necessita substituição',
-      'Amortecedor dianteiro com pequeno vazamento'
-    ]
-  },
-  {
-    id: '4',
-    testDate: '2022-03-08',
-    expiryDate: '2023-03-07',
-    result: 'FAIL',
-    mileage: 31000,
-    testNumber: 'MOT2022001',
-    defects: {
-      dangerous: 1,
-      major: 2,
-      minor: 0,
-      advisory: 0
-    },
-    details: [
-      'Sistema de freios com vazamento crítico',
-      'Pneu traseiro esquerdo abaixo do limite legal',
-      'Farol principal direito não funcional'
-    ]
-  },
-  {
-    id: '5',
-    testDate: '2021-08-15',
-    expiryDate: '2022-08-14',
-    result: 'PASS',
-    mileage: 28500,
-    testNumber: 'MOT2021002',
-    defects: {
-      dangerous: 0,
-      major: 0,
-      minor: 1,
-      advisory: 3
-    },
-    details: [
-      'Correia do alternador com desgaste',
-      'Óleo da transmissão próximo ao limite',
-      'Pneus dianteiros com desgaste irregular',
-      'Bateria com baixa capacidade'
-    ]
-  }
-]
 
-// Helper function to fetch MOT history from DVSA API
+export async function fetchWithRetries(url: string, headers: Record<string, string>, retries = 2, timeoutMs = 10000): Promise<Response | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const res = await fetch(url, { method: 'GET', headers, signal: controller.signal })
+      clearTimeout(timer)
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10)
+        const backoff = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * (attempt + 1), 10000)
+        await new Promise(r => setTimeout(r, backoff))
+        continue
+      }
+      if (!res.ok && res.status >= 500 && attempt < retries) {
+        const backoff = Math.min(1000 * Math.pow(2, attempt), 8000)
+        await new Promise(r => setTimeout(r, backoff))
+        continue
+      }
+      return res
+    } catch (e) {
+      clearTimeout(timer)
+      if (attempt < retries) {
+        const backoff = Math.min(1000 * Math.pow(2, attempt), 8000)
+        await new Promise(r => setTimeout(r, backoff))
+        continue
+      }
+      return null
+    }
+  }
+  return null
+}
+
 async function fetchMotHistoryFromDVSA(registration: string): Promise<any | null> {
-  // Check if API key is configured
   if (!DVSA_API_KEY) {
     console.log('⚠️ [MOT History] DVSA_API_KEY not configured')
     return null
   }
-
-  try {
-    console.log(`🔍 [MOT History] Fetching MOT history from DVSA for registration: ${registration}`)
-
-    // Correct DVSA API endpoint format
-    const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
-
-    // Try with API key first
-    const headers: Record<string, string> = {
-      'Accept': 'application/json+v6',
-      'x-api-key': DVSA_API_KEY
+  const url = `${DVSA_API_BASE_URL}?registration=${encodeURIComponent(registration)}`
+  const headers: Record<string, string> = {
+    'Accept': 'application/json+v6',
+    'x-api-key': DVSA_API_KEY
+  }
+  console.log(`🔍 [MOT History] Requesting DVSA: ${url}`)
+  const response = await fetchWithRetries(url, headers)
+  if (!response) {
+    console.error('❌ [MOT History] DVSA request failed after retries')
+    return fetchMotHistoryFromDVSAWithToken(registration)
+  }
+  if (!response.ok) {
+    const errorBody = await response.text()
+    console.error(`❌ [MOT History] DVSA API error: ${response.status} ${response.statusText}`)
+    console.error(`❌ [MOT History] Response body: ${errorBody}`)
+    if (response.status === 401 || response.status === 403) {
+      console.log('🔄 [MOT History] Trying with OAuth token...')
+      return fetchMotHistoryFromDVSAWithToken(registration)
     }
-
-    console.log(`🔍 [MOT History] Making request to: ${url}`)
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers
-    })
-
-    if (!response.ok) {
-      const errorBody = await response.text()
-      console.error(`❌ [MOT History] DVSA API error: ${response.status} ${response.statusText}`)
-      console.error(`❌ [MOT History] Response body: ${errorBody}`)
-
-      // If authentication fails, try with OAuth token
-      if (response.status === 401 || response.status === 403) {
-        console.log('🔄 [MOT History] Trying with OAuth token...')
-        return fetchMotHistoryFromDVSAWithToken(registration)
-      }
-
-      return null
+    if (response.status === 404) {
+      return { motTests: [] }
     }
-
-    const data = await response.json()
-    console.log(`✅ [MOT History] Successfully fetched MOT data from DVSA for ${registration}`)
-
-    // The API returns an array with one vehicle object
-    const vehicleData = Array.isArray(data) ? data[0] : data
-    console.log(`📊 [MOT History] Found ${vehicleData?.motTests?.length || 0} MOT records`)
-
-    return vehicleData
-  } catch (error) {
-    console.error('❌ [MOT History] Error fetching from DVSA API:', error)
     return null
   }
+  const data = await response.json()
+  const vehicleData = Array.isArray(data) ? data[0] : data
+  console.log(`✅ [MOT History] DVSA returned ${vehicleData?.motTests?.length || 0} tests for ${registration}`)
+  return vehicleData
 }
 
 // Alternative method using OAuth token
-async function fetchMotHistoryFromDVSAWithToken(registration: string): Promise<any | null> {
+export async function fetchMotHistoryFromDVSAWithToken(registration: string): Promise<any | null> {
   try {
     const token = await getDVSAToken()
     if (!token) {
@@ -320,7 +236,7 @@ function getVehicleYear(dvsaData: any): number {
 }
 
 // Helper function to transform DVSA data to our format
-function transformDVSAData(dvsaData: any): any[] {
+export function transformDVSAData(dvsaData: any): any[] {
   if (!dvsaData.motTests || !Array.isArray(dvsaData.motTests)) {
     return []
   }
@@ -341,91 +257,65 @@ function transformDVSAData(dvsaData: any): any[] {
   console.log(`📊 [MOT History] Filtered ${dvsaData.motTests.length} tests to ${validTests.length} valid tests`)
 
   return validTests.map((test: any) => {
-    // Count defects by type
-    const defects = test.defects || []
+    const defects = Array.isArray(test.defects) ? test.defects : []
     const dangerousCount = defects.filter((d: any) => d.dangerous === true).length
     const majorCount = defects.filter((d: any) => d.type === 'MAJOR').length
     const minorCount = defects.filter((d: any) => d.type === 'MINOR').length
     const advisoryCount = defects.filter((d: any) => d.type === 'ADVISORY').length
     const prsCount = defects.filter((d: any) => d.type === 'PRS').length
 
+    const rawMileage = test?.odometerValue ? parseInt(test.odometerValue, 10) : null
+    const unitStr = (test?.odometerUnit || '').toUpperCase()
+    const isMiles = unitStr.startsWith('MI')
+    const mileageKm = rawMileage !== null ? (isMiles ? Math.round(rawMileage * 1.60934) : rawMileage) : null
+    const normalizedUnit = isMiles ? 'KILOMETRES' : unitStr || null
+
     return {
+      id: test.motTestNumber || `${test.completedDate}-${test.registrationAtTimeOfTest || ''}`,
       testDate: test.completedDate,
-      expiryDate: test.expiryDate,
+      expiryDate: test.expiryDate || null,
       result: test.testResult === 'PASSED' ? 'PASS' : test.testResult === 'FAILED' ? 'FAIL' : 'REFUSED',
-      mileage: test.odometerValue ? parseInt(test.odometerValue) : null,
-      odometerUnit: test.odometerUnit,
+      mileage: mileageKm,
+      odometerUnit: normalizedUnit,
       odometerResultType: test.odometerResultType,
       testNumber: test.motTestNumber,
       dataSource: test.dataSource,
       registrationAtTimeOfTest: test.registrationAtTimeOfTest,
-      defects: {
-        dangerous: dangerousCount,
-        major: majorCount,
-        minor: minorCount,
-        advisory: advisoryCount,
-        prs: prsCount
-      },
-      details: defects.map((d: any) => ({
-        text: d.text,
-        type: d.type,
-        dangerous: d.dangerous
-      }))
+      defects: { dangerous: dangerousCount, major: majorCount, minor: minorCount, advisory: advisoryCount, prs: prsCount },
+      details: defects.map((d: any) => d.text).filter((t: any) => typeof t === 'string')
     }
   })
 }
 
-// Helper function to save MOT history to database
-async function saveMotHistoryToDatabase(vehicleId: string, motData: any[]) {
-  try {
-    // Delete existing MOT history for this vehicle
-    await prisma.motHistory.deleteMany({
-      where: { vehicleId }
-    })
-
-    console.log(`🗑️  Cleared existing MOT records for vehicle ${vehicleId}`)
-
-    // Save new MOT history
-    for (const record of motData) {
-      try {
-        await prisma.motHistory.create({
-          data: {
-            vehicleId,
-            testDate: new Date(record.testDate),
-            result: record.result,
-            certificateNumber: record.testNumber,
-            testNumber: record.testNumber,
-            expiryDate: record.expiryDate ? new Date(record.expiryDate) : null,
-            mileage: record.mileage,
-            odometerUnit: record.odometerUnit,
-            odometerResultType: record.odometerResultType,
-            testLocation: 'DVSA',
-            dataSource: record.dataSource,
-            registrationAtTimeOfTest: record.registrationAtTimeOfTest,
-            dangerousDefects: record.defects?.dangerous || 0,
-            majorDefects: record.defects?.major || 0,
-            minorDefects: record.defects?.minor || 0,
-            advisoryDefects: record.defects?.advisory || 0,
-            prsDefects: record.defects?.prs || 0,
-            defectDetails: record.details ? JSON.stringify(record.details) : null
-          }
-        })
-      } catch (error: any) {
-        // Handle unique constraint violation for testNumber
-        if (error.code === 'P2002') {
-          console.log(`⚠️  Test number ${record.testNumber} already exists, skipping...`)
-        } else {
-          throw error
-        }
+function validateMotSchema(data: any): string | null {
+  if (!data || typeof data !== 'object') return 'Invalid JSON structure'
+  if (!Array.isArray(data.motTests)) return 'motTests must be an array'
+  const allowedResults = new Set(['PASSED', 'FAILED', 'REFUSED'])
+  for (const t of data.motTests) {
+    if (!t || typeof t !== 'object') return 'motTests contains invalid entries'
+    if (!t.completedDate || typeof t.completedDate !== 'string') return 'completedDate missing or invalid'
+    if (!t.testResult || typeof t.testResult !== 'string' || !allowedResults.has(t.testResult)) return 'testResult missing or invalid'
+    if (t.odometerValue != null && isNaN(parseInt(String(t.odometerValue), 10))) return 'odometerValue must be numeric'
+    if (t.defects != null && !Array.isArray(t.defects)) return 'defects must be an array'
+    if (Array.isArray(t.defects)) {
+      for (const d of t.defects) {
+        if (!d || typeof d !== 'object' || typeof d.text !== 'string') return 'defect entries must include text'
       }
     }
+  }
+  return null
+}
 
-    console.log(`💾 Saved ${motData.length} MOT records for vehicle ${vehicleId}`)
-  } catch (error) {
-    console.error('❌ Error saving MOT history to database:', error)
-    throw error
+export async function readLocalMotJson(registration: string): Promise<any | null> {
+  try {
+    const filePath = path.join(process.cwd(), 'src', 'app', 'api', 'vehicles', '[id]', 'mot-history', `vehicle-${registration}.json`)
+    const content = await fs.readFile(filePath, 'utf-8')
+    return JSON.parse(content)
+  } catch {
+    return null
   }
 }
+
 
 // Helper function to refresh MOT data manually
 export async function POST(
@@ -466,46 +356,13 @@ export async function POST(
       )
     }
 
-    // Transform and save data
+    // Transform and return data (no persistence)
     const transformedData = transformDVSAData(dvsaData)
-    await saveMotHistoryToDatabase(vehicleId, transformedData)
-
-    // Fetch updated data from database
-    const updatedRecords = await prisma.motHistory.findMany({
-      where: { vehicleId },
-      orderBy: { testDate: 'desc' }
-    })
-
-    const formattedHistory = updatedRecords.map(record => ({
-      id: record.id,
-      testDate: record.testDate.toISOString().split('T')[0],
-      expiryDate: record.expiryDate ? record.expiryDate.toISOString().split('T')[0] : null,
-      result: record.result,
-      mileage: record.mileage || 0,
-      odometerUnit: record.odometerUnit,
-      odometerResultType: record.odometerResultType,
-      testNumber: record.testNumber || record.certificateNumber || 'N/A',
-      dataSource: record.dataSource,
-      registrationAtTimeOfTest: record.registrationAtTimeOfTest,
-      defects: {
-        dangerous: record.dangerousDefects || 0,
-        major: record.majorDefects || 0,
-        minor: record.minorDefects || 0,
-        advisory: record.advisoryDefects || 0,
-        prs: record.prsDefects || 0
-      },
-      details: record.defectDetails ? JSON.parse(record.defectDetails) : []
-    }))
-
-    console.log(`✅ Manual refresh completed. Updated ${updatedRecords.length} MOT records`)
-
-    // Check and create notifications if needed
-    await checkAndNotifyMotStatus(vehicleId)
-
+    console.log(`✅ Manual refresh completed. Returned ${transformedData.length} MOT records (no persistence)`)
     return NextResponse.json({
       success: true,
-      message: `Successfully refreshed MOT data. Found ${updatedRecords.length} records.`,
-      data: formattedHistory,
+      message: `Successfully refreshed MOT data. Found ${transformedData.length} records.`,
+      data: transformedData,
       refreshedAt: new Date().toISOString()
     })
   } catch (error) {
@@ -542,118 +399,72 @@ export async function GET(
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
 
-    // Try to fetch MOT history from database first
-    const dbMotHistory = await prisma.motHistory.findMany({
-      where: { vehicleId },
-      orderBy: { testDate: 'desc' }
-    })
-
-    // If we have data in database, return it
-    if (dbMotHistory.length > 0) {
-      console.log(`✅ Found ${dbMotHistory.length} MOT records in database for vehicle ${vehicleId}`)
-
-      const formattedHistory = dbMotHistory.map(record => ({
-        id: record.id,
-        testDate: record.testDate.toISOString().split('T')[0],
-        expiryDate: record.expiryDate ? record.expiryDate.toISOString().split('T')[0] : null,
-        result: record.result,
-        mileage: record.mileage || 0,
-        odometerUnit: record.odometerUnit,
-        odometerResultType: record.odometerResultType,
-        testNumber: record.testNumber || record.certificateNumber || 'N/A',
-        dataSource: record.dataSource,
-        registrationAtTimeOfTest: record.registrationAtTimeOfTest,
-        defects: {
-          dangerous: record.dangerousDefects || 0,
-          major: record.majorDefects || 0,
-          minor: record.minorDefects || 0,
-          advisory: record.advisoryDefects || 0,
-          prs: record.prsDefects || 0
-        },
-        details: record.defectDetails ? JSON.parse(record.defectDetails) : []
-      }))
-
-      // Check and create notifications if needed
-      await checkAndNotifyMotStatus(vehicleId)
-
-      return NextResponse.json(formattedHistory)
-    }
-
-    // If no data in database, try to fetch from DVSA API
-    console.log(`📡 No MOT records in database. Attempting to fetch from DVSA API for registration: ${vehicle.registration}`)
-
-    // Check cache first
-    const dvsaCacheKey = generateDvsaCacheKey(vehicle.registration)
-    let dvsaData = motCache.get(dvsaCacheKey)
-
-    if (!dvsaData) {
-      console.log(`📡 DVSA cache miss. Fetching from API...`)
-      dvsaData = await fetchMotHistoryFromDVSA(vehicle.registration)
-
-      // Cache the result if successful
-      if (dvsaData && dvsaData.motTests) {
-        motCache.set(dvsaCacheKey, dvsaData)
+    console.log(`📡 Fetching MOT history from DVSA for registration: ${vehicle.registration}`)
+    const dvsaData = await fetchMotHistoryFromDVSA(vehicle.registration)
+    if (!dvsaData || !Array.isArray(dvsaData.motTests)) {
+      const localData = await readLocalMotJson(vehicle.registration)
+      if (localData) {
+        const schemaErr = validateMotSchema(localData)
+        if (schemaErr) {
+          return NextResponse.json({ error: `Invalid MOT JSON file: ${schemaErr}` }, { status: 422 })
+        }
       }
-    } else {
-      console.log(`✅ Using cached DVSA data for ${vehicle.registration}`)
+      if (localData && Array.isArray(localData.motTests) && localData.motTests.length > 0) {
+        const transformedLocal = transformDVSAData(localData)
+        return NextResponse.json(transformedLocal)
+      }
+      return NextResponse.json(
+        { error: 'MOT history not available from DVSA' },
+        { status: 503 }
+      )
     }
-
-    if (dvsaData && dvsaData.motTests && dvsaData.motTests.length > 0) {
-      // Transform DVSA data to our format
-      const transformedData = transformDVSAData(dvsaData)
-
-      // Save to database
-      await saveMotHistoryToDatabase(vehicleId, transformedData)
-
-      // Fetch from database to return formatted data
-      const savedRecords = await prisma.motHistory.findMany({
-        where: { vehicleId },
-        orderBy: { testDate: 'desc' }
-      })
-
-      const formattedHistory = savedRecords.map(record => ({
-        id: record.id,
-        testDate: record.testDate.toISOString().split('T')[0],
-        expiryDate: record.expiryDate ? record.expiryDate.toISOString().split('T')[0] : null,
-        result: record.result,
-        mileage: record.mileage || 0,
-        odometerUnit: record.odometerUnit,
-        odometerResultType: record.odometerResultType,
-        testNumber: record.testNumber || record.certificateNumber || 'N/A',
-        dataSource: record.dataSource,
-        registrationAtTimeOfTest: record.registrationAtTimeOfTest,
-        defects: {
-          dangerous: record.dangerousDefects || 0,
-          major: record.majorDefects || 0,
-          minor: record.minorDefects || 0,
-          advisory: record.advisoryDefects || 0,
-          prs: record.prsDefects || 0
-        },
-        details: record.defectDetails ? JSON.parse(record.defectDetails) : []
-      }))
-
-      // Check and create notifications if needed
-      await checkAndNotifyMotStatus(vehicleId)
-
-      return NextResponse.json(formattedHistory)
+    const transformedData = transformDVSAData(dvsaData)
+    if (transformedData.length === 0) {
+      const localData = await readLocalMotJson(vehicle.registration)
+      if (localData) {
+        const schemaErr = validateMotSchema(localData)
+        if (schemaErr) {
+          return NextResponse.json({ error: `Invalid MOT JSON file: ${schemaErr}` }, { status: 422 })
+        }
+      }
+      if (localData && Array.isArray(localData.motTests) && localData.motTests.length > 0) {
+        const transformedLocal = transformDVSAData(localData)
+        return NextResponse.json(transformedLocal)
+      }
+      return NextResponse.json(
+        { error: 'No MOT data available for this vehicle' },
+        { status: 404 }
+      )
     }
-
-    // Fallback to mock data if DVSA API fails
-    console.log(`⚠️  DVSA API failed or returned no data. Using mock data as fallback.`)
-    console.log(`📋 Mock data contains ${mockMotHistory.length} records`)
-    await saveMotHistoryToDatabase(vehicleId, mockMotHistory)
-
-    // Verify that data was saved
-    const savedRecords = await prisma.motHistory.findMany({
-      where: { vehicleId },
-      orderBy: { testDate: 'desc' }
+    const dbVehicle = await prisma.vehicle.findFirst({
+      where: { id: vehicleId, ownerId: session.user.id },
+      include: { motHistory: { orderBy: { testDate: 'desc' } } }
     })
-    console.log(`✅ Verified: ${savedRecords.length} mock records saved to database`)
-
-    // Check and create notifications if needed
-    await checkAndNotifyMotStatus(vehicleId)
-
-    return NextResponse.json(mockMotHistory)
+    let headers: Record<string, string> = {}
+    if (dbVehicle && dbVehicle.motHistory.length > 0) {
+      const dbMap = new Map<string, { testDate: string; result: string; mileage: number | null }>()
+      for (const r of dbVehicle.motHistory) {
+        const key = r.testNumber || r.testDate.toISOString()
+        dbMap.set(key, { testDate: r.testDate.toISOString(), result: r.result, mileage: r.mileage ?? null })
+      }
+      let mismatches = 0
+      for (const t of transformedData) {
+        const key = t.testNumber || t.testDate
+        const db = dbMap.get(key)
+        if (!db) { mismatches++; continue }
+        const sameResult = db.result === t.result
+        const sameMileage = (db.mileage ?? null) === (t.mileage ?? null)
+        const sameDate = new Date(db.testDate).getTime() === new Date(t.testDate).getTime()
+        if (!sameResult || !sameMileage || !sameDate) mismatches++
+      }
+      headers['x-mot-sync'] = mismatches === 0 ? 'match' : 'mismatch'
+      headers['x-mot-sync-counts'] = `${transformedData.length}/${dbVehicle.motHistory.length}`
+    } else {
+      headers['x-mot-sync'] = 'no-db'
+    }
+    const res = NextResponse.json(transformedData)
+    Object.entries(headers).forEach(([k, v]) => res.headers.set(k, v))
+    return res
   } catch (error) {
     console.error('❌ MOT history error:', error)
     return NextResponse.json(

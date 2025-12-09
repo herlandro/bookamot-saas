@@ -255,12 +255,64 @@ GET /api/vehicles
       "id": "clx123...",
       "registration": "AB12CDE",
       "make": "Ford",
-      "model": "Focus",
-      "year": 2020
+  "model": "Focus",
+  "year": 2020
     }
   ]
 }
 ```
+### Vehicle Details (with MOT data)
+```
+GET /api/vehicles/{id}
+```
+
+**Response:**
+```json
+{
+  "id": "clx456...",
+  "registration": "AB12CDE",
+  "make": "Ford",
+  "model": "Focus",
+  "year": 2020,
+  "fuelType": "PETROL",
+  "engineSize": 1600,
+  "color": "Blue",
+  "lastMotDate": "2024-10-01",
+  "lastMotResult": "PASS",
+  "nextMotDate": "2025-10-01",
+  "motStatus": "VALID",
+  "createdAt": "2025-10-20T12:00:00.000Z",
+  "motTests": [
+    {
+      "id": "1234567890",
+      "testDate": "2024-10-01",
+      "expiryDate": "2025-10-01",
+      "result": "PASS",
+      "mileage": 1609,
+      "odometerUnit": "MILES",
+      "odometerResultType": "READ",
+      "testNumber": "1234567890",
+      "defects": {
+        "dangerous": 0,
+        "major": 1,
+        "minor": 0,
+        "advisory": 2,
+        "prs": 0
+      },
+      "details": [
+        "Brake pads wear",
+        "Tyre tread advisory"
+      ]
+    }
+  ],
+  "motError": null
+}
+```
+
+**Notes:**
+- `mileage` values are normalized to kilometres when DVSA reports miles.
+- `motTests` are ordered by `testDate` descending.
+- `details` contains human-readable defect descriptions.
 
 ### Create Vehicle
 ```
@@ -367,4 +419,3 @@ POST /api/bookings
 - `onboarding-flow.md` - New user onboarding process
 - `vehicle-registration-flow.md` - Vehicle registration details
 - `garage-registration-flow.md` - Garage account setup
-

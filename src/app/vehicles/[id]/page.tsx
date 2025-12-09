@@ -72,6 +72,8 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
   const [motHistory, setMotHistory] = useState<MOTRecord[]>([])
   const [mileageData, setMileageData] = useState<MileageData[]>([])
   const [loading, setLoading] = useState(true)
+  const [vehicleError, setVehicleError] = useState<string | null>(null)
+  const [motError, setMotError] = useState<string | null>(null)
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set())
 
   useEffect(() => {
@@ -87,52 +89,55 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
     try {
       setLoading(true)
 
-      // Fetch vehicle details
+      // Fetch vehicle details (includes motTests)
       const vehicleResponse = await fetch(`/api/vehicles/${vehicleId}`)
       if (vehicleResponse.ok) {
         const vehicleData = await vehicleResponse.json()
-        setVehicle(vehicleData)
+        if (vehicleData && vehicleData.id && vehicleData.registration) {
+          setVehicle(vehicleData)
+          setVehicleError(null)
+
+          const motData = Array.isArray(vehicleData.motTests) ? vehicleData.motTests : []
+          const validRecords = motData.filter((r: any) => r && r.testDate && typeof r.mileage === 'number')
+          setMotHistory(validRecords)
+          setMotError(vehicleData.motError || null)
+
+          const mileageMap = new Map<number, MileageData>()
+          validRecords.forEach((record: MOTRecord) => {
+            const year = new Date(record.testDate).getFullYear()
+            const existingRecord = mileageMap.get(year)
+            if (!existingRecord || new Date(record.testDate) > new Date(existingRecord.date)) {
+              mileageMap.set(year, {
+                year,
+                mileage: record.mileage,
+                date: record.testDate
+              })
+            }
+          })
+
+          const mileageChartData = Array.from(mileageMap.values()).sort((a, b) => a.year - b.year)
+          setMileageData(mileageChartData)
+        } else {
+          setVehicleError('Unexpected vehicle response format')
+          setMotHistory([])
+          setMileageData([])
+        }
       } else {
-        
-      }
-
-      // Fetch MOT history
-      const motResponse = await fetch(`/api/vehicles/${vehicleId}/mot-history`)
-
-      if (motResponse.ok) {
-        const motData = await motResponse.json()
-
-        setMotHistory(motData)
-
-        // Extract mileage data for chart - remove duplicates and keep only one entry per year
-        const mileageMap = new Map()
-        motData.forEach((record: MOTRecord) => {
-          const year = new Date(record.testDate).getFullYear()
-          const existingRecord = mileageMap.get(year)
-
-          // Keep the record with the latest date for each year
-          if (!existingRecord || new Date(record.testDate) > new Date(existingRecord.date)) {
-            mileageMap.set(year, {
-              year,
-              mileage: record.mileage,
-              date: record.testDate
-            })
-          }
-        })
-
-        const mileageChartData = Array.from(mileageMap.values())
-          .sort((a: MileageData, b: MileageData) => a.year - b.year)
-
-        setMileageData(mileageChartData)
-      } else {
-        const errorData = await motResponse.json()
-        
+        const err = await safeJson(vehicleResponse)
+        setVehicleError(err?.error || 'Failed to load vehicle')
+        setMotHistory([])
+        setMileageData([])
       }
     } catch (error) {
-      
+      setVehicleError('Failed to load vehicle data')
+      setMotError('Failed to load MOT history')
     } finally {
       setLoading(false)
     }
+  }
+
+  const safeJson = async (res: Response) => {
+    try { return await res.json() } catch { return null }
   }
 
   const toggleYear = (year: number) => {
@@ -286,7 +291,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
             {/* MOT History and Mileage Chart */}
             <div className="lg:col-span-2 space-y-6">
               {/* Mileage Chart */}
-              {mileageData.length > 0 && (
+              {mileageData.length > 0 ? (
                 <Card className="shadow-xl rounded-lg border border-border bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -334,6 +339,20 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                     </div>
                   </CardContent>
                 </Card>
+              ) : (
+                <Card className="shadow-xl rounded-lg border border-border bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Mileage Over Time
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      {motError || 'No mileage data available'}
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
               {/* MOT History */}
@@ -350,7 +369,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                 <CardContent>
                   {motHistory.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      No MOT history found
+                      {motError || 'No MOT history found'}
                     </p>
                   ) : groupedMotHistory.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
