@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import fs from 'fs/promises'
-import path from 'path'
-import { fetchMotHistoryFromDVSA, fetchWithRetries, readLocalMotJson, validateMotSchema } from '@/lib/mot-utils'
-
+import { fetchMotHistoryFromDVSA, readLocalMotJson, validateMotSchema, transformDVSAData } from '@/lib/mot-utils'
 // Helper function to refresh MOT data manually
 export async function POST(
   req: NextRequest,
