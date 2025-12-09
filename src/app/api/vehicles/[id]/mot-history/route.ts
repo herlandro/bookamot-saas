@@ -440,7 +440,7 @@ export async function GET(
       where: { id: vehicleId, ownerId: session.user.id },
       include: { motHistory: { orderBy: { testDate: 'desc' } } }
     })
-    let headers: Record<string, string> = {}
+    const headers: Record<string, string> = {}
     if (dbVehicle && dbVehicle.motHistory.length > 0) {
       const dbMap = new Map<string, { testDate: string; result: string; mileage: number | null }>()
       for (const r of dbVehicle.motHistory) {
