@@ -69,6 +69,15 @@ function milesToKm(value: number | null): number | null {
   return Math.round(value * 1.60934)
 }
 
+function mapTestResult(testResult: string): 'PASS' | 'FAIL' | 'ADVISORY' | 'REFUSED' {
+  const resultMap: Record<string, 'PASS' | 'FAIL' | 'ADVISORY' | 'REFUSED'> = {
+    'PASSED': 'PASS',
+    'FAILED': 'FAIL',
+    'ADVISORY': 'ADVISORY',
+  }
+  return resultMap[testResult] || 'REFUSED'
+}
+
 function transformMotTests(dvsaData: any): Array<{
   id: string
   testDate: string
@@ -100,7 +109,7 @@ function transformMotTests(dvsaData: any): Array<{
       id: test.motTestNumber || `${test.completedDate}-${test.registrationAtTimeOfTest || ''}`,
       testDate: test.completedDate,
       expiryDate: test.expiryDate || null,
-      result: test.testResult === 'PASSED' ? 'PASS' : test.testResult === 'FAILED' ? 'FAIL' : 'REFUSED',
+      result: mapTestResult(test.testResult),
       mileage: mileageKm,
       odometerUnit: test.odometerUnit,
       odometerResultType: test.odometerResultType,

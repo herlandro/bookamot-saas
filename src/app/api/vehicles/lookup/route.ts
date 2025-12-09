@@ -8,7 +8,6 @@ const DVSA_CLIENT_SECRET = process.env.DVSA_CLIENT_SECRET || ''
 const DVSA_TOKEN_URL = process.env.DVSA_TOKEN_URL || 'https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token'
 const DVSA_SCOPE = process.env.DVSA_SCOPE || 'https://tapi.dvsa.gov.uk/.default'
 const DVSA_FETCH_TIMEOUT_MS = Number(process.env.DVSA_FETCH_TIMEOUT_MS || 5000)
-// Mock fallback disabled in production
 
 let lastDVSAError: { status?: number; message?: string; kind?: 'network' | 'timeout' | 'auth' | 'not_found' | 'rate_limit' | 'unknown'; dvsaErrorCode?: string; dvsaErrorMessage?: string; requestId?: string } | null = null
 
@@ -57,24 +56,10 @@ async function getDVSAToken(): Promise<string | null> {
     })
     clearTimeout(timer)
 
-  if (!response.ok) {
+    if (!response.ok) {
       const errorText = await response.text()
-      
-      const baseLower = DVSA_API_BASE_URL.toLowerCase()
-      if (headers['Authorization'] && !baseLower.includes('/v1/') && !baseLower.includes('history.mot.api.gov.uk')) {
-        try {
-          const v1Url = `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${encodeURIComponent(registration)}`
-          const v1Headers = { ...headers, Accept: 'application/json' }
-          const controller2 = new AbortController()
-          const timer2 = setTimeout(() => controller2.abort(), DVSA_FETCH_TIMEOUT_MS)
-          const res2 = await fetch(v1Url, { method: 'GET', headers: v1Headers, signal: controller2.signal })
-          clearTimeout(timer2)
-          if (res2.ok) {
-            const data2 = await res2.json()
-            return data2
-          }
-        } catch {}
-      }
+      console.error(`❌ [Lookup] DVSA token request failed: ${response.status}`)
+      console.error(`❌ [Lookup] Error details: ${errorText}`)
       return null
     }
 
@@ -321,7 +306,7 @@ function transformDVSAToVehicle(dvsaData: any): any {
  * GET /api/vehicles/lookup?registration={registration}
  *
  * Looks up vehicle details from registration number using DVSA MOT History API
- * Falls back to mock data if DVSA API is not configured or fails
+ * Returns error if DVSA API is not configured or fails
  */
 export async function GET(request: NextRequest) {
   try {
@@ -365,11 +350,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // If DVSA is configured but failed, optionally use mock fallback only when explicitly enabled
-    if (DVSA_API_KEY && DVSA_ALLOW_MOCK_FALLBACK) {
-      
-    }
-
     // If DVSA is configured but failed, return specific error
     if (DVSA_API_KEY) {
       const err = lastDVSAError
@@ -403,7 +383,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // DVSA not configured: do not use mock, return explicit error
+    // DVSA not configured: return explicit error
     return NextResponse.json(
       { error: 'DVSA not configured', code: 'DVSA_NOT_CONFIGURED' },
       { status: 503 }
