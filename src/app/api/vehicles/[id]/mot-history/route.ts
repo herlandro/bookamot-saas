@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import fs from 'fs/promises'
 import path from 'path'
-import { validateMotSchema } from '@/lib/mot-utils'
+import { fetchWithRetries, validateMotSchema } from '@/lib/mot-utils'
 
 // DVSA API Configuration
 const DVSA_API_BASE_URL = process.env.DVSA_API_BASE_URL || 'https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests'
@@ -81,39 +81,6 @@ async function getDVSAToken(): Promise<string | null> {
     console.error('❌ [MOT History] Error fetching DVSA token:', error)
     return null
   }
-}
-
-
-export async function fetchWithRetries(url: string, headers: Record<string, string>, retries = 2, timeoutMs = 10000): Promise<Response | null> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
-    try {
-      const res = await fetch(url, { method: 'GET', headers, signal: controller.signal })
-      clearTimeout(timer)
-      if (res.status === 429) {
-        const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10)
-        const backoff = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * (attempt + 1), 10000)
-        await new Promise(r => setTimeout(r, backoff))
-        continue
-      }
-      if (!res.ok && res.status >= 500 && attempt < retries) {
-        const backoff = Math.min(1000 * Math.pow(2, attempt), 8000)
-        await new Promise(r => setTimeout(r, backoff))
-        continue
-      }
-      return res
-    } catch (e) {
-      clearTimeout(timer)
-      if (attempt < retries) {
-        const backoff = Math.min(1000 * Math.pow(2, attempt), 8000)
-        await new Promise(r => setTimeout(r, backoff))
-        continue
-      }
-      return null
-    }
-  }
-  return null
 }
 
 async function fetchMotHistoryFromDVSA(registration: string): Promise<any | null> {
@@ -287,25 +254,6 @@ export function transformDVSAData(dvsaData: any): any[] {
   })
 }
 
-function validateMotSchema(data: any): string | null {
-  if (!data || typeof data !== 'object') return 'Invalid JSON structure'
-  if (!Array.isArray(data.motTests)) return 'motTests must be an array'
-  const allowedResults = new Set(['PASSED', 'FAILED', 'REFUSED'])
-  for (const t of data.motTests) {
-    if (!t || typeof t !== 'object') return 'motTests contains invalid entries'
-    if (!t.completedDate || typeof t.completedDate !== 'string') return 'completedDate missing or invalid'
-    if (!t.testResult || typeof t.testResult !== 'string' || !allowedResults.has(t.testResult)) return 'testResult missing or invalid'
-    if (t.odometerValue != null && isNaN(parseInt(String(t.odometerValue), 10))) return 'odometerValue must be numeric'
-    if (t.defects != null && !Array.isArray(t.defects)) return 'defects must be an array'
-    if (Array.isArray(t.defects)) {
-      for (const d of t.defects) {
-        if (!d || typeof d !== 'object' || typeof d.text !== 'string') return 'defect entries must include text'
-      }
-    }
-  }
-  return null
-}
-
 export async function readLocalMotJson(registration: string): Promise<any | null> {
   try {
     const filePath = path.join(process.cwd(), 'src', 'app', 'api', 'vehicles', '[id]', 'mot-history', `vehicle-${registration}.json`)
@@ -315,7 +263,6 @@ export async function readLocalMotJson(registration: string): Promise<any | null
     return null
   }
 }
-
 
 // Helper function to refresh MOT data manually
 export async function POST(
