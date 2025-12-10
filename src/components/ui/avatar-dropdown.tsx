@@ -10,9 +10,9 @@ import {
   LayoutDashboard,
   Building2,
   Car,
-  Users,
   Star,
-  Clock
+  Clock,
+  BookOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,7 +24,7 @@ const adminMenuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
   { id: 'pending', label: 'Pending Garages', icon: Clock, href: '/admin/garages/pending' },
   { id: 'garages', label: 'Garages', icon: Building2, href: '/admin/garages' },
-  { id: 'customers', label: 'Customers', icon: Users, href: '/admin/customers' },
+  { id: 'bookings', label: 'Bookings', icon: BookOpen, href: '/admin/bookings' },
   { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/admin/vehicles' },
   { id: 'reviews', label: 'Reviews', icon: Star, href: '/admin/reviews' },
 ]
