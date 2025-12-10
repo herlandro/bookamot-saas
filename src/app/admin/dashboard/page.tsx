@@ -7,6 +7,7 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AnalyticsOverviewCard } from '@/components/ui/analytics-overview-card';
+import { RecentEntitiesCard, formatDate } from '@/components/ui/recent-entities-card';
 import { Users, Building2, Car, CalendarCheck, Star, Clock, Loader2 } from 'lucide-react';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
@@ -60,6 +61,13 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recentEntities, setRecentEntities] = useState<{
+    customers: Array<{ id: string; name: string; email: string; createdAt: string }>;
+    vehicles: Array<{ id: string; make: string; model: string; registration: string; owner: { id: string; name: string; email: string } }>;
+    garages: Array<{ id: string; name: string; location: string; specialty: string }>;
+  } | null>(null);
+  const [recentEntitiesLoading, setRecentEntitiesLoading] = useState(true);
+  const [recentEntitiesError, setRecentEntitiesError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -75,6 +83,7 @@ export default function AdminDashboard() {
     }
 
     fetchData();
+    fetchRecentEntities();
   }, [session, status, router]);
 
   const fetchData = async () => {
@@ -88,6 +97,24 @@ export default function AdminDashboard() {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecentEntities = async () => {
+    try {
+      setRecentEntitiesError(null);
+      const response = await fetch('/api/recent-entities');
+      if (response.ok) {
+        const result = await response.json();
+        setRecentEntities(result);
+      } else {
+        setRecentEntitiesError('Failed to load recent entities');
+      }
+    } catch (error) {
+      console.error('Error fetching recent entities:', error);
+      setRecentEntitiesError('Failed to load recent entities');
+    } finally {
+      setRecentEntitiesLoading(false);
     }
   };
 
@@ -198,7 +225,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Recent Bookings */}
             <Card>
               <CardHeader>
@@ -246,6 +273,63 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Recent Entities */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Customers */}
+            <RecentEntitiesCard
+              title="Recent Customers"
+              description="Latest registered customers"
+              entities={recentEntities?.customers || []}
+              loading={recentEntitiesLoading}
+              error={recentEntitiesError}
+              viewAllHref="/admin/customers"
+              emptyMessage="No customers found"
+              renderEntity={(customer) => (
+                <div>
+                  <p className="font-medium text-sm">{customer.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Joined {formatDate(customer.createdAt)}</p>
+                </div>
+              )}
+            />
+
+            {/* Recent Vehicles */}
+            <RecentEntitiesCard
+              title="Recent Vehicles"
+              description="Latest registered vehicles"
+              entities={recentEntities?.vehicles || []}
+              loading={recentEntitiesLoading}
+              error={recentEntitiesError}
+              viewAllHref="/admin/vehicles"
+              emptyMessage="No vehicles found"
+              renderEntity={(vehicle) => (
+                <div>
+                  <p className="font-medium text-sm">{vehicle.make} {vehicle.model}</p>
+                  <p className="text-xs text-muted-foreground">Registration: {vehicle.registration}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Owner: {vehicle.owner.name}</p>
+                </div>
+              )}
+            />
+
+            {/* Recent Garages */}
+            <RecentEntitiesCard
+              title="Recent Garages"
+              description="Latest registered garages"
+              entities={recentEntities?.garages || []}
+              loading={recentEntitiesLoading}
+              error={recentEntitiesError}
+              viewAllHref="/admin/garages"
+              emptyMessage="No garages found"
+              renderEntity={(garage) => (
+                <div>
+                  <p className="font-medium text-sm">{garage.name}</p>
+                  <p className="text-xs text-muted-foreground">{garage.location}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{garage.specialty}</p>
+                </div>
+              )}
+            />
           </div>
         </div>
       </div>
