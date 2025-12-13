@@ -321,7 +321,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
                     <div className="text-2xl font-bold text-primary">
                       £{bookingData.garage.motPrice.toFixed(2)}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-base font-semibold mt-2 text-amber-500 dark:text-amber-400">
                       Payment at the garage on the test day
                     </div>
                   </div>
