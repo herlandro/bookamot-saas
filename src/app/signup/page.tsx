@@ -60,7 +60,7 @@ export default function SignUp() {
           role: formData.userType === 'garage' ? 'GARAGE_OWNER' : 'CUSTOMER',
           garageName: formData.userType === 'garage' ? formData.garageName : undefined,
           address: formData.userType === 'garage' ? formData.address : undefined,
-          phone: formData.userType === 'garage' ? formData.phone : undefined,
+          phone: formData.phone || undefined,
         }),
       })
 
@@ -186,6 +186,25 @@ export default function SignUp() {
                 />
               </div>
             </div>
+
+            {/* Phone Number field for customers */}
+            {formData.userType === 'customer' && (
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter phone number"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                />
+              </div>
+            )}
 
             {formData.userType === 'garage' && (
               <>
