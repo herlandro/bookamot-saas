@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, ArrowLeft, ArrowRight, Car, Plus, Loader2, CheckCircle, Calendar, Gauge } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, Car, Loader2, CheckCircle, Calendar, Gauge } from 'lucide-react'
 import { createVehicleSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { MainLayout } from '@/components/layout/main-layout'
@@ -628,10 +628,7 @@ export default function AddVehiclePage() {
                       Adding vehicle...
                     </>
                   ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add vehicle
-                    </>
+                    'Confirm'
                   )}
                 </Button>
               </div>
