@@ -241,9 +241,9 @@ function SearchPageContent() {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Find MOT Test Centers</h1>
+            <h1 className="text-2xl font-bold">Find MOT Test Centres</h1>
             <p className="text-muted-foreground">
-              Search for approved MOT test centers near you and book your test online.
+              Search for approved MOT test centres near you and book your test online.
             </p>
           </div>
         </div>
