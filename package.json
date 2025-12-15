@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate --schema=prisma/schema.prisma && prisma migrate deploy && next build",
+    "build": "next build",
     "postinstall": "prisma generate --schema=prisma/schema.prisma",
-    "start": "next start -p ${PORT:-3000}",
+    "start": "prisma migrate deploy && next start -p ${PORT:-3000}",
     "lint": "next lint",
     "db": "tsx scripts/db.ts",
     "db:clean": "tsx scripts/db.ts clean",
