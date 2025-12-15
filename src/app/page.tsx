@@ -61,7 +61,7 @@ export default function HomePage() {
             <div>
               <p className="text-foreground font-medium">Registration Required</p>
               <p className="text-sm text-muted-foreground mt-1">
-                To book a MOT, you need to create an account first. Redirecting you to sign in...
+                To book an MOT, you need to create an account first. Redirecting you to sign in...
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function HomePage() {
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-4 text-lg font-medium"
           size="lg"
         >
-          I want to book a MOT
+          I want to book an MOT
         </Button>
       </div>
 
