@@ -11,6 +11,7 @@ import { NotificationsDropdown } from './notifications-dropdown'
 interface HeaderProps {
   onMenuClick?: () => void
   showMenuButton?: boolean
+  onBookingClick?: (bookingId: string) => void
 }
 
 export function Header({ onMenuClick, showMenuButton = true, onBookingClick }: HeaderProps) {
