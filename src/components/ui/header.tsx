@@ -6,13 +6,14 @@ import { useTheme } from 'next-themes'
 import { Sun, Moon, Menu } from 'lucide-react'
 import { NavigationMenu } from './navigation-menu'
 import { AvatarDropdown } from './avatar-dropdown'
+import { NotificationsDropdown } from './notifications-dropdown'
 
 interface HeaderProps {
   onMenuClick?: () => void
   showMenuButton?: boolean
 }
 
-export function Header({ onMenuClick, showMenuButton = true }: HeaderProps) {
+export function Header({ onMenuClick, showMenuButton = true, onBookingClick }: HeaderProps) {
   const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -58,6 +59,11 @@ export function Header({ onMenuClick, showMenuButton = true }: HeaderProps) {
 
         {/* Right Side */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Notifications - Only for garage owners */}
+          {session.user.role === 'GARAGE_OWNER' && (
+            <NotificationsDropdown onBookingClick={onBookingClick} />
+          )}
+
           {/* Theme Toggle */}
           {mounted && (
             <button

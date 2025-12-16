@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 
 interface GarageLayoutProps {
   children: React.ReactNode;
+  onBookingClick?: (bookingId: string) => void;
 }
 
-export function GarageLayout({ children }: GarageLayoutProps) {
+export function GarageLayout({ children, onBookingClick }: GarageLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -19,7 +20,7 @@ export function GarageLayout({ children }: GarageLayoutProps) {
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       {/* Header */}
-      <Header onMenuClick={toggleSidebar} showMenuButton={true} />
+      <Header onMenuClick={toggleSidebar} showMenuButton={true} onBookingClick={onBookingClick} />
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">

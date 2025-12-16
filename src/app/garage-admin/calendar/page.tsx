@@ -13,6 +13,7 @@ import { GarageCalendar } from '@/components/garage/garage-calendar';
 import { BookingModal } from '@/components/garage/booking-modal';
 import { ReviewSubmissionModal } from '@/components/reviews/review-submission-modal';
 import { GarageLayout } from '@/components/layout/garage-layout';
+import { BookingModalProvider, useBookingModal } from '@/contexts/booking-modal-context';
 
 interface Booking {
   id: string;
@@ -38,9 +39,10 @@ interface GarageStats {
   monthlyRevenue: number;
 }
 
-export default function GarageAdminPage() {
+function GarageAdminPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { openBookingModal, booking: contextBooking, isOpen: contextIsOpen, setIsOpen: setContextIsOpen } = useBookingModal();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<GarageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,6 +146,14 @@ export default function GarageAdminPage() {
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };
+
+  // Sync context booking with local state
+  useEffect(() => {
+    if (contextBooking && contextIsOpen) {
+      setSelectedBooking(contextBooking);
+      setIsModalOpen(true);
+    }
+  }, [contextBooking, contextIsOpen]);
 
   const handleSlotClick = (date: string, timeSlot: string) => {
     if (isEditMode) {
@@ -260,7 +270,7 @@ export default function GarageAdminPage() {
   // The StatusBadge component is used to display booking status with appropriate colors
 
   return (
-    <GarageLayout>
+    <GarageLayout onBookingClick={openBookingModal}>
       <div className="min-h-screen">
       <div className="px-6 py-6">
         {/* Interactive Calendar */}
@@ -281,10 +291,11 @@ export default function GarageAdminPage() {
 
         {/* Booking Modal */}
         <BookingModal
-          booking={selectedBooking}
-          isOpen={isModalOpen}
+          booking={selectedBooking || contextBooking}
+          isOpen={isModalOpen || contextIsOpen}
           onClose={() => {
             setIsModalOpen(false);
+            setContextIsOpen(false);
             setSelectedBooking(null);
           }}
           onStatusUpdate={updateBookingStatus}
@@ -310,5 +321,13 @@ export default function GarageAdminPage() {
       </div>
     </div>
     </GarageLayout>
+  );
+}
+
+export default function GarageAdminPage() {
+  return (
+    <BookingModalProvider>
+      <GarageAdminPageContent />
+    </BookingModalProvider>
   );
 }
