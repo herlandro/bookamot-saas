@@ -4,8 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Shield, Eye, EyeOff, Mail, Lock, User, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Eye, EyeOff, Mail, Lock, User, Loader2 } from 'lucide-react'
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -97,13 +96,7 @@ export default function SignUp() {
     <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="flex justify-center">
-            <div className="flex items-center">
-              <Shield className="h-12 w-12 text-primary mr-3" />
-              <h1 className="text-3xl font-bold text-foreground">BookaMOT</h1>
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
+          <h2 className="text-center text-3xl font-extrabold text-foreground">
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
@@ -112,15 +105,6 @@ export default function SignUp() {
               sign in to your existing account
             </Link>
           </p>
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => router.push('/garage-admin/signup')}
-            >
-              I'm a garage owner
-            </Button>
-          </div>
         </div>
         <div className="bg-card py-8 px-6 shadow-xl rounded-lg border border-border">
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -293,13 +277,11 @@ export default function SignUp() {
             </div>
           </form>
         </div>
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => router.push('/')}
-        >
-          Back to Home
-        </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          <Link href="/" className="font-medium text-primary hover:text-primary/90">
+            Back to Home
+          </Link>
+        </p>
       </div>
     </div>
   )

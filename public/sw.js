@@ -95,7 +95,7 @@ self.addEventListener('fetch', (event) => {
  * Estratégia Network First
  * Tenta buscar da rede primeiro, usa cache se falhar
  */
-async function networkFirstStrategy(request: Request): Promise<Response> {
+async function networkFirstStrategy(request) {
   try {
     const response = await fetch(request)
     
@@ -130,7 +130,7 @@ async function networkFirstStrategy(request: Request): Promise<Response> {
  * Estratégia Cache First
  * Tenta buscar do cache primeiro, usa rede se não encontrar
  */
-async function cacheFirstStrategy(request: Request): Promise<Response> {
+async function cacheFirstStrategy(request) {
   const cachedResponse = await caches.match(request)
   
   if (cachedResponse) {
@@ -173,7 +173,7 @@ self.addEventListener('message', (event) => {
     self.skipWaiting()
   }
   
-  if (event.data && event.data.type === 'GET_VERSION') {
+  if (event.data && event.data.type === 'GET_VERSION' && event.ports && event.ports[0]) {
     event.ports[0].postMessage({
       version: BUILD_VERSION,
       timestamp: BUILD_TIMESTAMP,
