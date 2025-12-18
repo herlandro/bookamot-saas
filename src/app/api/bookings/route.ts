@@ -222,8 +222,35 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // TODO: Send confirmation email
-    // TODO: Send SMS notification if phone number is available
+    // Send confirmation emails (async, non-blocking)
+    // Import and execute immediately to ensure it runs
+    console.log('📧 Starting booking confirmation emails...')
+    console.log('   Booking ID:', booking.id)
+    console.log('   Customer email:', booking.customer.email)
+    console.log('   Garage email:', booking.garage.email)
+    
+    // Immediately start the email sending process
+    // Using void to explicitly mark as fire-and-forget
+    void (async () => {
+      try {
+        const emailService = await import('@/lib/email/booking-email-service')
+        console.log('   ✅ Email service imported')
+        
+        // Send emails in parallel
+        await Promise.allSettled([
+          emailService.sendBookingConfirmationToCustomer(booking).catch(err => {
+            console.error('❌ Customer email error:', err)
+          }),
+          emailService.sendBookingNotificationToGarage(booking).catch(err => {
+            console.error('❌ Garage email error:', err)
+          }),
+        ])
+        
+        console.log('   ✅ Email sending process completed')
+      } catch (error) {
+        console.error('❌ Error in email sending process:', error)
+      }
+    })()
 
     return NextResponse.json({
       booking: {

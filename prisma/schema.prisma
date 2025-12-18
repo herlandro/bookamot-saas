@@ -180,6 +180,8 @@ model Booking {
   // MOT Result
   motResult MotResult?
   reviews   Review[]
+  emailLogs EmailLog[]
+  scheduledEmails ScheduledEmail[]
 }
 
 model MotResult {
@@ -391,4 +393,80 @@ model GarageApprovalLog {
   admin  User   @relation("ApprovedByAdmin", fields: [adminId], references: [id])
 
   @@index([garageId])
+}
+
+// Email logs for tracking email delivery
+model EmailLog {
+  id            String      @id @default(cuid())
+  bookingId     String?
+  recipientEmail String
+  recipientName  String?
+  emailType     EmailType
+  subject       String
+  status        EmailStatus @default(PENDING)
+  errorMessage  String?
+  retryCount    Int         @default(0)
+  sentAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([emailType])
+  @@index([createdAt])
+}
+
+// Scheduled email reminders
+model ScheduledEmail {
+  id            String          @id @default(cuid())
+  bookingId     String
+  emailType     ScheduledEmailType
+  scheduledFor  DateTime        // When to send the email
+  status        ScheduledStatus @default(PENDING)
+  sentAt        DateTime?
+  errorMessage  String?
+  retryCount    Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([scheduledFor])
+  @@index([status])
+  @@unique([bookingId, emailType])
+}
+
+enum EmailType {
+  BOOKING_CONFIRMATION_CUSTOMER
+  BOOKING_NOTIFICATION_GARAGE
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  BOOKING_REMINDER_1_MONTH
+  BOOKING_REMINDER_1_WEEK
+  BOOKING_REMINDER_1_DAY
+  BOOKING_COMPLETED_FOLLOWUP
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+enum ScheduledEmailType {
+  REMINDER_1_MONTH
+  REMINDER_1_WEEK
+  REMINDER_1_DAY
+}
+
+enum ScheduledStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
 }

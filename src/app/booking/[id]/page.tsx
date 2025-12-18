@@ -80,33 +80,137 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
-    // Try to get booking data from session storage
-    const storedData = sessionStorage.getItem('bookingData')
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData)
-        if (parsed.garage?.id === garageId) {
-          // Convert date string back to Date object if it exists
-          if (parsed.date && typeof parsed.date === 'string') {
-            parsed.date = new Date(parsed.date)
+    const loadBookingData = async () => {
+      // Try to get booking data from session storage
+      const storedData = sessionStorage.getItem('bookingData')
+      
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData)
+          
+          if (parsed.garage?.id === garageId) {
+            // Convert date string back to Date object if it exists
+            if (parsed.date && typeof parsed.date === 'string') {
+              parsed.date = new Date(parsed.date)
+            }
+            
+            // Check if vehicle has temporary ID - if so, we need to create or find the vehicle
+            if (parsed.vehicle?.id?.startsWith('temp-')) {
+              // Try to find existing vehicle or create new one
+              const success = await handleVehicleCreation(parsed)
+              setLoading(false)
+              if (!success) {
+                // If vehicle creation failed, redirect will happen in handleVehicleCreation
+                return
+              }
+              return
+            }
+            
+            setBookingData(parsed)
+          } else {
+            // Garage ID doesn't match, fetch garage data
+            fetchGarageData()
           }
-          setBookingData(parsed)
-        } else {
-          // Garage ID doesn't match, fetch garage data
+        } catch (error) {
+          console.error('Error parsing booking data:', error)
           fetchGarageData()
         }
-      } catch (error) {
-        console.error('Error parsing booking data:', error)
+      } else {
         fetchGarageData()
       }
-    } else {
-      fetchGarageData()
+      
+      setLoading(false)
     }
     
-    setLoading(false)
+    loadBookingData()
   }, [garageId])
 
-
+  const handleVehicleCreation = async (parsed: any): Promise<boolean> => {
+    try {
+      // First, check if user already has this vehicle
+      const vehiclesResponse = await fetch('/api/vehicles')
+      if (vehiclesResponse.ok) {
+        const vehiclesData = await vehiclesResponse.json()
+        const existingVehicle = vehiclesData.vehicles?.find((v: any) => 
+          v.registration.toUpperCase().replace(/\s/g, '') === parsed.vehicle.registration.toUpperCase().replace(/\s/g, '')
+        )
+        
+        if (existingVehicle) {
+          parsed.vehicle = existingVehicle
+          setBookingData(parsed)
+          return true
+        }
+      }
+      
+      // If vehicle doesn't exist, create it
+      // Ensure we have required fields (make and model are required)
+      const vehicleMake = parsed.vehicle.make?.trim() || 'Unknown'
+      const vehicleModel = parsed.vehicle.model?.trim() || 'Unknown'
+      const vehicleYear = parsed.vehicle.year || new Date().getFullYear()
+      
+      const createResponse = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registration: parsed.vehicle.registration,
+          make: vehicleMake,
+          model: vehicleModel,
+          year: vehicleYear,
+          fuelType: 'PETROL', // Default, user can update later
+          color: parsed.vehicle.color || '',
+          engineSize: parsed.vehicle.engineSize || ''
+        })
+      })
+      
+      if (createResponse.ok) {
+        const responseData = await createResponse.json()
+        const newVehicle = responseData.vehicle || responseData
+        
+        parsed.vehicle = newVehicle
+        setBookingData(parsed)
+        return true
+      } else {
+        const errorData = await createResponse.json().catch(() => ({}))
+        
+        // If vehicle already exists (409), try to find it again
+        if (createResponse.status === 409) {
+          // Try to find the existing vehicle again (it might have been created between our check and creation attempt)
+          const vehiclesResponse = await fetch('/api/vehicles')
+          if (vehiclesResponse.ok) {
+            const vehiclesData = await vehiclesResponse.json()
+            const existingVehicle = vehiclesData.vehicles?.find((v: any) => 
+              v.registration.toUpperCase().replace(/\s/g, '') === parsed.vehicle.registration.toUpperCase().replace(/\s/g, '')
+            )
+            
+            if (existingVehicle) {
+              parsed.vehicle = existingVehicle
+              setBookingData(parsed)
+              return true
+            }
+          }
+        }
+        
+        // For other errors, show message but stay on booking page
+        if (createResponse.status === 400 && errorData.details) {
+          const errorMessages = errorData.details.map((d: any) => d.message).join(', ')
+          alert(`Failed to create vehicle: ${errorMessages}\n\nPlease add the vehicle manually from your dashboard.`)
+        } else {
+          alert(`Failed to create vehicle: ${errorData.error || 'Unknown error'}\n\nPlease add the vehicle manually from your dashboard.`)
+        }
+        // Don't redirect - let user stay on booking page and decide what to do
+        // Set booking data anyway so user can see the booking details
+        setBookingData(parsed)
+        return false
+      }
+    } catch (error) {
+      console.error('Error creating vehicle:', error)
+      alert('Error creating vehicle. Please try again.\n\nPlease add the vehicle manually from your dashboard.')
+      // Don't redirect - let user stay on booking page
+      // Set booking data anyway so user can see the booking details
+      setBookingData(parsed)
+      return false
+    }
+  }
 
   const fetchGarageData = async () => {
     try {
@@ -186,6 +290,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
         }, 3000)
       } else {
         const error = await response.json()
+        
         alert(`Error confirming booking: ${error.error || 'Unknown error'}`)
       }
     } catch (error) {
@@ -283,9 +388,9 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
                       Vehicle Details
                     </h3>
                     <div className="space-y-2 text-sm">
-                      <div className="font-medium text-base">{bookingData.vehicle.registration}</div>
-                      <div className="text-muted-foreground">{bookingData.vehicle.make} {bookingData.vehicle.model}</div>
-                      <div className="text-muted-foreground">Year: {bookingData.vehicle.year}</div>
+                      <div className="font-medium text-base">{bookingData.vehicle?.registration || 'N/A'}</div>
+                      <div className="text-muted-foreground">{bookingData.vehicle?.make || ''} {bookingData.vehicle?.model || ''}</div>
+                      <div className="text-muted-foreground">Year: {bookingData.vehicle?.year || 'N/A'}</div>
                     </div>
                   </div>
                 </div>

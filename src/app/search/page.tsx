@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Star, Clock, Car, ArrowLeft, Calendar, Loader2 } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Clock, ArrowLeft, Loader2, X, Calendar } from 'lucide-react'
 import { formatCurrency, calculateDistance } from '@/lib/utils'
+import { validateUKRegistration } from '@/lib/validations'
 import { MainLayout } from '@/components/layout/main-layout'
 
 interface Garage {
@@ -28,51 +29,82 @@ interface Garage {
   availableSlots?: string[]
 }
 
-interface Vehicle {
-  id: string
-  registration: string
-  make: string
-  model: string
-  year: number
-}
-
 function SearchPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
+  // Calculate default date: today if hour <= 17, tomorrow if hour > 17
+  const getDefaultDate = (): string => {
+    const now = new Date()
+    const currentHour = now.getHours()
+    
+    if (currentHour > 17) {
+      // If after 17:00, use tomorrow
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      return tomorrow.toISOString().split('T')[0]
+    } else {
+      // If 17:00 or earlier, use today
+      return now.toISOString().split('T')[0]
+    }
+  }
+
+  const [vehicleRegistration, setVehicleRegistration] = useState('')
   const [searchLocation, setSearchLocation] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]) // Today's date
+  const [selectedDate, setSelectedDate] = useState<string>(getDefaultDate())
+  // Calculate default time based on selected date
+  const getDefaultTime = (date: string): string => {
+    const selectedDateObj = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    selectedDateObj.setHours(0, 0, 0, 0)
+    
+    // If selected date is greater than today, return empty string (no filter)
+    if (selectedDateObj > today) {
+      return ''
+    }
+    
+    // If selected date is today, calculate next full hour
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    
+    // If current time is past the hour (e.g., 9:05), use next hour (10:00)
+    // If current time is exactly on the hour (e.g., 9:00), use current hour
+    const nextHour = currentMinute > 0 ? currentHour + 1 : currentHour
+    
+    // Format as HH:00
+    return `${nextHour.toString().padStart(2, '0')}:00`
+  }
+
+  const [selectedTime, setSelectedTime] = useState<string>(getDefaultTime(getDefaultDate()))
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<{[garageId: string]: string}>({})
-  const [selectedGridDate, setSelectedGridDate] = useState<string>(new Date().toISOString().split('T')[0]) // Initialize with current date
   const [garages, setGarages] = useState<Garage[]>([])
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(false)
-  const [urlParamsLoaded, setUrlParamsLoaded] = useState(false)
+  const [validatingRegistration, setValidatingRegistration] = useState(false)
+  const [registrationError, setRegistrationError] = useState<string | null>(null)
+  const [registrationValid, setRegistrationValid] = useState(false)
+  const [vehicleData, setVehicleData] = useState<{make?: string, model?: string, year?: number} | null>(null)
 
   // Read URL parameters and populate form fields
   useEffect(() => {
     const location = searchParams.get('location')
     const date = searchParams.get('date')
-    const time = searchParams.get('time')
-    const vehicleId = searchParams.get('vehicle')
-
-    console.log('📥 URL Parameters:', { location, date, time, vehicleId })
+    const vehicleReg = searchParams.get('vehicleReg')
 
     if (location) {
       setSearchLocation(location)
-      setDebouncedSearchTerm(location) // Set immediately to trigger search
+      setDebouncedSearchTerm(location)
     }
 
     if (date) {
       setSelectedDate(date)
-      setSelectedGridDate(date)
     }
 
-    // Vehicle selection from URL will be handled after vehicles are loaded
-    // Mark that URL params have been loaded
-    setUrlParamsLoaded(true)
+    if (vehicleReg) {
+      setVehicleRegistration(vehicleReg)
+    }
   }, [searchParams])
 
   useEffect(() => {
@@ -81,17 +113,11 @@ function SearchPageContent() {
     }
   }, [status, router])
 
-  useEffect(() => {
-    if (session?.user) {
-      fetchUserVehicles()
-    }
-  }, [session])
-
   // Debounce search term to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchLocation)
-    }, 500) // 500ms delay
+    }, 500)
 
     return () => clearTimeout(timer)
   }, [searchLocation])
@@ -110,50 +136,7 @@ function SearchPageContent() {
       abortController.abort()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, selectedDate])
-
-  const fetchUserVehicles = async () => {
-    try {
-      const response = await fetch('/api/vehicles')
-      if (response.ok) {
-        const data = await response.json()
-        const vehiclesList = data.vehicles || []
-        setVehicles(vehiclesList)
-
-        // Check if there's a vehicle ID in the URL
-        const vehicleIdFromUrl = searchParams.get('vehicle')
-
-        if (vehicleIdFromUrl && vehiclesList.length > 0) {
-          // Try to find the vehicle with the matching ID
-          const vehicleFromUrl = vehiclesList.find((v: Vehicle) => v.id === vehicleIdFromUrl)
-          if (vehicleFromUrl) {
-            setSelectedVehicle(vehicleFromUrl)
-            console.log('🚗 Selected vehicle from URL:', vehicleFromUrl.registration)
-          } else {
-            // Vehicle ID not found, select first vehicle
-            setSelectedVehicle(vehiclesList[0])
-            console.log('⚠️ Vehicle ID from URL not found, selecting first vehicle')
-          }
-        } else if (vehiclesList.length > 0) {
-          // No vehicle in URL, select first vehicle
-          setSelectedVehicle(vehiclesList[0])
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching vehicles:', error)
-    }
-  }
-
-  // Update URL when vehicle selection changes
-  const handleVehicleSelect = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle)
-
-    // Update URL with the selected vehicle ID
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('vehicle', vehicle.id)
-    router.replace(`/search?${params.toString()}`, { scroll: false })
-    console.log('🔄 Updated URL with vehicle:', vehicle.id)
-  }
+  }, [debouncedSearchTerm, selectedDate, selectedTime])
 
   const searchGarages = async (abortController?: AbortController) => {
     if (!debouncedSearchTerm.trim()) {
@@ -165,10 +148,13 @@ function SearchPageContent() {
     try {
       const params = new URLSearchParams({
         location: debouncedSearchTerm,
-        date: selectedDate // Include date to get available slots
+        date: selectedDate
       })
-
-      console.log('🔍 Searching garages with params:', { location: debouncedSearchTerm, date: selectedDate })
+      
+      // Only add time parameter if it has a value
+      if (selectedTime && selectedTime.trim()) {
+        params.append('time', selectedTime)
+      }
 
       const response = await fetch(`/api/garages/search?${params}`, {
         signal: abortController?.signal
@@ -176,19 +162,16 @@ function SearchPageContent() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Search results:', data)
-        console.log('📊 Garages order:', data.garages?.map((g: any, i: number) =>
-          `${i+1}. ${g.name} (${g.distance?.toFixed(2) || 'N/A'} miles)`
-        ))
-        setGarages(data.garages || [])
-        // Reset selected time slots when new search results come in
+        // Filter garages that have available slots for the selected time
+        const filteredGarages = (data.garages || []).filter((garage: Garage) => {
+          return garage.availableSlots && garage.availableSlots.length > 0
+        })
+        setGarages(filteredGarages)
         setSelectedTimeSlots({})
-      } else {
-        console.error('❌ Search failed:', response.status, response.statusText)
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('🚫 Search request cancelled')
+        console.log('Search request cancelled')
       } else {
         console.error('Error searching garages:', error)
       }
@@ -197,23 +180,108 @@ function SearchPageContent() {
     }
   }
 
-  const handleBooking = (garage: Garage) => {
-    if (!selectedVehicle) {
-      alert('Please select a vehicle first')
+  const handleSearch = () => {
+    if (searchLocation.trim()) {
+      searchGarages()
+    }
+  }
+
+  const handleBooking = async (garage: Garage) => {
+    if (!vehicleRegistration.trim()) {
+      alert('Please enter a vehicle registration')
+      return
+    }
+
+    if (!registrationValid || registrationError) {
+      alert('Please enter a valid vehicle registration. The registration must be validated with DVLA.')
       return
     }
 
     const selectedTimeSlot = selectedTimeSlots[garage.id]
 
-    // Store booking data in session storage for the booking flow
-    sessionStorage.setItem('bookingData', JSON.stringify({
-      garage,
-      vehicle: selectedVehicle,
-      date: selectedDate,
-      timeSlot: selectedTimeSlot
-    }))
+    if (!selectedTimeSlot) {
+      alert('Please select a time slot')
+      return
+    }
 
-    router.push(`/booking/${garage.id}`)
+    // Get the actual vehicle from user's database (it should exist now since we register on validation)
+    try {
+      const normalizedReg = vehicleRegistration.toUpperCase().replace(/\s/g, '')
+      
+      // Fetch user's vehicles to find the one we just registered
+      const vehiclesResponse = await fetch('/api/vehicles')
+      let vehicle = null
+      
+      if (vehiclesResponse.ok) {
+        const vehiclesData = await vehiclesResponse.json()
+        vehicle = vehiclesData.vehicles?.find((v: any) => 
+          v.registration.toUpperCase().replace(/\s/g, '') === normalizedReg
+        )
+      }
+      
+      // If vehicle not found, fetch from DVLA and create temporary object
+      if (!vehicle) {
+        const vehicleResponse = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(normalizedReg)}`)
+        
+        if (vehicleResponse.ok) {
+          const vehicleData = await vehicleResponse.json()
+          
+          // Create temporary vehicle object (shouldn't happen if registration worked, but fallback)
+          vehicle = {
+            id: 'temp-' + Date.now(),
+            registration: vehicleData.registration || vehicleRegistration,
+            make: vehicleData.make || 'Unknown',
+            model: vehicleData.model || 'Unknown',
+            year: vehicleData.year || new Date().getFullYear(),
+            color: vehicleData.color || '',
+            engineSize: vehicleData.engineSize || ''
+          }
+        } else {
+          // Fallback: create minimal vehicle object
+          vehicle = {
+            id: 'temp-' + Date.now(),
+            registration: vehicleRegistration,
+            make: 'Unknown',
+            model: 'Unknown',
+            year: new Date().getFullYear(),
+            color: '',
+            engineSize: ''
+          }
+        }
+      }
+
+      // Store booking data in session storage for the booking flow
+      const bookingDataToStore = {
+        garage,
+        vehicle,
+        date: selectedDate,
+        timeSlot: selectedTimeSlot
+      }
+      
+      sessionStorage.setItem('bookingData', JSON.stringify(bookingDataToStore))
+      
+      router.push(`/booking/${garage.id}`)
+    } catch (error) {
+      // Fallback: create minimal vehicle object
+      const vehicle = {
+        id: 'temp-' + Date.now(),
+        registration: vehicleRegistration,
+        make: 'Unknown',
+        model: 'Unknown',
+        year: new Date().getFullYear(),
+        color: '',
+        engineSize: ''
+      }
+      
+      sessionStorage.setItem('bookingData', JSON.stringify({
+        garage,
+        vehicle,
+        date: selectedDate,
+        timeSlot: selectedTimeSlot
+      }))
+      
+      router.push(`/booking/${garage.id}`)
+    }
   }
 
   const handleTimeSlotSelect = (garageId: string, timeSlot: string) => {
@@ -222,6 +290,163 @@ function SearchPageContent() {
       [garageId]: timeSlot
     }))
   }
+
+  const clearVehicleRegistration = () => {
+    setVehicleRegistration('')
+    setRegistrationError(null)
+    setRegistrationValid(false)
+    setVehicleData(null)
+  }
+
+  const clearSearchLocation = () => {
+    setSearchLocation('')
+    setDebouncedSearchTerm('')
+    setGarages([])
+  }
+
+  const clearDate = () => {
+    setSelectedDate(new Date().toISOString().split('T')[0])
+  }
+
+  // Register vehicle in the system when validation is successful
+  const registerVehicle = async (vehicleInfo: any, registration: string) => {
+    try {
+      // First, check if user already has this vehicle
+      const vehiclesResponse = await fetch('/api/vehicles')
+      if (vehiclesResponse.ok) {
+        const vehiclesData = await vehiclesResponse.json()
+        const existingVehicle = vehiclesData.vehicles?.find((v: any) => 
+          v.registration.toUpperCase().replace(/\s/g, '') === registration.toUpperCase().replace(/\s/g, '')
+        )
+        
+        if (existingVehicle) {
+          return // Vehicle already exists, no need to create
+        }
+      }
+      
+      // Create the vehicle
+      const vehicleMake = vehicleInfo.make?.trim() || 'Unknown'
+      const vehicleModel = vehicleInfo.model?.trim() || 'Unknown'
+      const vehicleYear = vehicleInfo.year || new Date().getFullYear()
+      
+      const createResponse = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registration: registration,
+          make: vehicleMake,
+          model: vehicleModel,
+          year: vehicleYear,
+          fuelType: vehicleInfo.fuelType || 'PETROL',
+          color: vehicleInfo.color || '',
+          engineSize: vehicleInfo.engineSize || ''
+        })
+      })
+      
+      if (createResponse.ok) {
+        // Vehicle registered successfully
+      } else {
+        const errorData = await createResponse.json().catch(() => ({}))
+        
+        // If vehicle already exists (409), that's fine - it will be found later
+        if (createResponse.status !== 409) {
+          console.error('Failed to register vehicle:', errorData.error)
+        }
+      }
+    } catch (error) {
+      console.error('Error registering vehicle:', error)
+      // Don't show error to user - validation was successful, vehicle creation can happen later
+    }
+  }
+
+  // Validate vehicle registration with DVLA
+  const validateVehicleRegistration = async (registration: string) => {
+    const trimmedReg = registration.trim()
+    
+    // Reset validation state
+    setRegistrationError(null)
+    setRegistrationValid(false)
+    
+    // If empty, don't validate (but field is required)
+    if (!trimmedReg) {
+      return
+    }
+
+    // Basic format validation first
+    if (!validateUKRegistration(trimmedReg)) {
+      setRegistrationError('Invalid UK registration format. Please enter a valid format (e.g., AB12 CDE)')
+      setRegistrationValid(false)
+      return
+    }
+
+    // Validate with DVLA API
+    setValidatingRegistration(true)
+    try {
+      const normalizedReg = trimmedReg.toUpperCase().replace(/\s/g, '')
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      
+      const response = await fetch(`/api/vehicles/lookup?registration=${encodeURIComponent(normalizedReg)}`, {
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+
+      if (response.ok) {
+        const vehicleInfo = await response.json()
+        setRegistrationValid(true)
+        setRegistrationError(null)
+        setVehicleData({
+          make: vehicleInfo.make || '',
+          model: vehicleInfo.model || '',
+          year: vehicleInfo.year || undefined
+        })
+        
+        // Automatically register the vehicle when validation is successful
+        await registerVehicle(vehicleInfo, trimmedReg)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        const status = response.status
+        
+        if (status === 400 && errorData?.code === 'INVALID_FORMAT') {
+          setRegistrationError('Invalid registration format. Please check and try again.')
+        } else if (status === 404 || errorData?.code === 'NOT_FOUND') {
+          setRegistrationError('Vehicle not found in DVLA database. Please verify the registration number.')
+        } else if (status === 429 || errorData?.code === 'RATE_LIMIT') {
+          setRegistrationError('Request limit exceeded. Please wait and try again.')
+        } else if (status === 503 || errorData?.code === 'DVSA_UNAVAILABLE') {
+          setRegistrationError('DVLA service temporarily unavailable. Please try again later.')
+        } else {
+          setRegistrationError('Unable to validate registration. Please verify the number.')
+        }
+        setRegistrationValid(false)
+      }
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+        setRegistrationError('Validation timeout. Please try again.')
+      } else {
+        setRegistrationError('Unable to validate registration. Please verify the number.')
+      }
+      setRegistrationValid(false)
+    } finally {
+      setValidatingRegistration(false)
+    }
+  }
+
+  // Debounce registration validation
+  useEffect(() => {
+    if (!vehicleRegistration.trim()) {
+      setRegistrationError(null)
+      setRegistrationValid(false)
+      return
+    }
+
+    const timer = setTimeout(() => {
+      validateVehicleRegistration(vehicleRegistration)
+    }, 800) // Wait 800ms after user stops typing
+
+    return () => clearTimeout(timer)
+  }, [vehicleRegistration])
 
   if (status === 'loading') {
     return (
@@ -234,312 +459,268 @@ function SearchPageContent() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Find MOT Test Centres</h1>
-            <p className="text-muted-foreground">
-              Search for approved MOT test centres near you and book your test online.
-            </p>
-          </div>
-        </div>
-
-        {/* Vehicle Selection */}
-        {vehicles.length > 0 && (
-          <Card className="mb-6 shadow-xl rounded-lg border border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                Select Vehicle
-              </CardTitle>
-              <CardDescription>
-                Choose the vehicle you want to book an MOT test for.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {vehicles.map((vehicle) => (
-                  <div
-                    key={vehicle.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedVehicle?.id === vehicle.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    onClick={() => handleVehicleSelect(vehicle)}
-                  >
-                    <div className="font-semibold">{vehicle.registration}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {vehicle.make} {vehicle.model} ({vehicle.year})
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="outline" size="sm" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold">Find MOT Test Centres</h1>
+              <p className="text-muted-foreground mb-4">
+                Enter your vehicle registration, postcode or city, and select a date to find nearby MOT test centers.
+              </p>
+              
+              {/* Search Form */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Vehicle Registration */}
+                <div className="relative flex-1">
+                  <div className="relative">
+                    <Input
+                      placeholder="Vehicle Registration (e.g., AB12 CDE)"
+                      value={vehicleRegistration}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVehicleRegistration(e.target.value.toUpperCase())}
+                      onBlur={() => {
+                        if (vehicleRegistration.trim()) {
+                          validateVehicleRegistration(vehicleRegistration)
+                        }
+                      }}
+                      required
+                      className={`pr-8 ${registrationError ? 'border-red-500 focus-visible:ring-red-500' : ''} ${registrationValid ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {validatingRegistration ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <>
+                          {registrationValid && (
+                            <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                          {vehicleRegistration && (
+                            <button
+                              type="button"
+                              onClick={clearVehicleRegistration}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  {registrationError && (
+                    <p className="text-red-500 text-xs mt-1">{registrationError}</p>
+                  )}
+                  {registrationValid && !registrationError && (
+                    <div className="mt-1">
+                      <p className="text-green-600 text-xs">Registration validated</p>
+                      {vehicleData && (vehicleData.make || vehicleData.model || vehicleData.year) && (
+                        <p className="text-green-600 text-xs font-medium mt-0.5">
+                          {vehicleData.make} {vehicleData.model} {vehicleData.year && `(${vehicleData.year})`}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-        {/* Search */}
-        <Card className="mb-6 shadow-xl rounded-lg border border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Search Location
-            </CardTitle>
-            <CardDescription>
-              Enter your postcode or city to find nearby MOT test centers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter postcode or city (e.g., SW1A 1AA, London)"
-                  value={searchLocation}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
-                  className="flex-1"
-                />
-                {searchLocation && (
-                  <Button variant="ghost" onClick={() => {
-                    setSearchLocation('')
-                    setGarages([])
-                  }}>
-                    Clear
-                  </Button>
-                )}
-                <Button onClick={() => searchGarages()} disabled={loading || !searchLocation.trim()}>
-                  {loading ? 'Searching...' : 'Search'}
-                </Button>
-              </div>
+                {/* Postcode/City */}
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Postcode or City (e.g., SW1A 1AA, London)"
+                    value={searchLocation}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
+                    className="pr-8"
+                  />
+                </div>
 
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Select date for available slots:</span>
+                {/* Date */}
+                <div className="relative flex-1">
                   <Input
                     type="date"
                     value={selectedDate}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setSelectedDate(e.target.value)
-                      setSelectedGridDate(e.target.value) // Atualiza também a data selecionada no grid
+                      const newDate = e.target.value
+                      setSelectedDate(newDate)
+                      // Clear time if date is in the future, otherwise set to next full hour
+                      const selectedDateObj = new Date(newDate)
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      selectedDateObj.setHours(0, 0, 0, 0)
+                      if (selectedDateObj > today) {
+                        setSelectedTime('') // Empty time for future dates
+                      } else {
+                        // If date is today, update to next full hour
+                        setSelectedTime(getDefaultTime(newDate))
+                      }
                       if (searchLocation.trim()) {
-                        // Re-search with new date
                         searchGarages()
                       }
                     }}
-                    className="w-auto"
-                    min={new Date().toISOString().split('T')[0]} // Can't select dates in the past
+                    className="pr-8"
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
 
-                <div className="border rounded-lg p-4">
-                  <div className="text-sm font-medium mb-3">Select date for available slots:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: 14 }, (_, i) => {
-                      const date = new Date(selectedDate);
-                      date.setDate(date.getDate() + i);
-                      const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
-                      const dayName = date.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 3);
-                      const dateString = date.toISOString().split('T')[0];
-
-                      return (
-                        <div
-                          key={dateString}
-                          onClick={() => {
-                            // Synchronize both date fields
-                            setSelectedDate(dateString);
-                            setSelectedGridDate(dateString);
-
-                            if (searchLocation.trim()) {
-                              const params = new URLSearchParams({
-                                location: searchLocation,
-                                date: dateString
-                              });
-
-                              setLoading(true);
-                              fetch(`/api/garages/search?${params}`)
-                                .then(response => {
-                                  if (response.ok) return response.json();
-                                  throw new Error('Search failed');
-                                })
-                                .then(data => {
-                                  setGarages(data.garages || []);
-                                  setSelectedTimeSlots({});
-                                })
-                                .catch(error => {
-                                  console.error('Error searching garages:', error);
-                                })
-                                .finally(() => {
-                                  setLoading(false);
-                                });
-                            }
-                          }}
-                          className={`
-                            px-3 py-2 rounded-md text-sm cursor-pointer transition-colors
-                            border hover:border-primary flex flex-col items-center
-                            ${loading && searchLocation.trim() ? 'opacity-50 pointer-events-none' : ''}
-                            ${selectedGridDate === dateString
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background hover:bg-primary/5 border-border'}
-                          `}
-                        >
-                          <span className="font-medium">{dayName}</span>
-                          <span>{formattedDate}</span>
-                        </div>
-                       );
-                    })}
-                  </div>
+                {/* Time */}
+                <div className="relative flex-1">
+                  <Input
+                    type="time"
+                    value={selectedTime}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setSelectedTime(e.target.value)
+                      if (searchLocation.trim()) {
+                        searchGarages()
+                      }
+                    }}
+                    className="pr-8"
+                  />
                 </div>
+
+                {/* Search Button */}
+                <Button 
+                  onClick={handleSearch} 
+                  disabled={loading || !searchLocation.trim()}
+                  className="sm:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Searching...
+                    </>
+                  ) : (
+                    'Search'
+                  )}
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Results */}
-        {garages.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">
-              Found {garages.length} MOT Test Centers
-            </h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {garages.map((garage) => (
-                <Card key={garage.id} className="hover:shadow-lg transition-shadow shadow-xl rounded-lg border border-border">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl">{garage.name}</CardTitle>
-                        <CardDescription className="flex items-center gap-1 mt-1">
-                          <MapPin className="h-4 w-4" />
-                          {garage.address}, {garage.city}, {garage.postcode}
-                        </CardDescription>
-                      </div>
-                      {garage.distance && (
-                        <Badge variant="secondary">
-                          {garage.distance.toFixed(1)} miles
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{garage.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate">{garage.email}</span>
-                      </div>
-                    </div>
-
-                    {garage.rating && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{garage.rating.toFixed(1)}</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          ({garage.reviewCount} reviews)
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Available Time Slots */}
-                    {'availableSlots' in garage && garage.availableSlots && garage.availableSlots.length > 0 ? (
-                      <div className="pt-4 border-t">
-                        <div className="text-sm font-medium mb-2">Available Time Slots:</div>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {garage.availableSlots.map((slot: string) => (
-                            <div
-                              key={slot}
-                              onClick={() => handleTimeSlotSelect(garage.id, slot)}
-                              className={`
-                                px-3 py-1 rounded-md text-sm cursor-pointer transition-colors
-                                border border-border hover:border-primary
-                                ${selectedTimeSlots[garage.id] === slot
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-background hover:bg-primary/5'}
-                              `}
-                            >
-                              {slot}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="pt-4 border-t text-sm text-muted-foreground">
-                        No available slots for today. Try another date.
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4 border-t">
-                      <div>
-                        <div className="text-2xl font-bold text-primary">
-                          {formatCurrency(garage.motPrice)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">MOT Test</div>
-                      </div>
-
-                      <Button
-                        onClick={() => handleBooking(garage)}
-                        disabled={!selectedVehicle || !selectedTimeSlots[garage.id]}
-                        className="flex items-center gap-2"
-                      >
-                        <Clock className="h-4 w-4" />
-                        Book Now
-                      </Button>
-                    </div>
-                  </CardContent>
-              </Card>
-              ))}
             </div>
           </div>
-        )}
 
-        {/* No Results */}
-        {!loading && garages.length === 0 && searchLocation && (
-          <Card className="shadow-xl rounded-lg border border-border">
-            <CardContent className="text-center py-12">
-              <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No MOT centers found</h3>
-              <p className="text-muted-foreground mb-4">
-                We couldn't find any MOT test centers in your area. Try searching with a different location.
-              </p>
-              <Button variant="outline" onClick={() => setSearchLocation('')}>
-                Clear Search
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          {/* Results */}
+          {garages.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold">
+                Found {garages.length} MOT Test Centers
+              </h2>
 
-        {/* No Vehicle Warning */}
-        {vehicles.length === 0 && (
-          <Card className="border-yellow-200 bg-yellow-50 border border-border">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <Car className="h-5 w-5" />
-                <span className="font-medium">No vehicles found</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {garages.map((garage) => (
+                  <Card key={garage.id} className="hover:shadow-lg transition-shadow shadow-xl rounded-lg border border-border">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-xl">{garage.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-1 mt-1">
+                            <MapPin className="h-4 w-4" />
+                            {garage.address}, {garage.city}, {garage.postcode}
+                          </CardDescription>
+                        </div>
+                        {garage.distance && (
+                          <Badge variant="secondary">
+                            {garage.distance.toFixed(1)} miles
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{garage.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="truncate">{garage.email}</span>
+                        </div>
+                      </div>
+
+                      {garage.rating && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-medium">{garage.rating.toFixed(1)}</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            ({garage.reviewCount} reviews)
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Available Time Slots */}
+                      {'availableSlots' in garage && garage.availableSlots && garage.availableSlots.length > 0 ? (
+                        <div className="pt-4 border-t">
+                          <div className="text-sm font-medium mb-2">Available Time Slots:</div>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {garage.availableSlots.map((slot: string) => (
+                              <div
+                                key={slot}
+                                onClick={() => handleTimeSlotSelect(garage.id, slot)}
+                                className={`
+                                  px-3 py-1 rounded-md text-sm cursor-pointer transition-colors
+                                  border border-border hover:border-primary
+                                  ${selectedTimeSlots[garage.id] === slot
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background hover:bg-primary/5'}
+                                `}
+                              >
+                                {slot}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="pt-4 border-t text-sm text-muted-foreground">
+                          No available slots for selected date. Try another date.
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div>
+                          <div className="text-2xl font-bold text-primary">
+                            {formatCurrency(garage.motPrice)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">MOT Test</div>
+                        </div>
+
+                        <Button
+                          onClick={() => handleBooking(garage)}
+                          disabled={!vehicleRegistration.trim() || !selectedTimeSlots[garage.id]}
+                          className="flex items-center gap-2"
+                        >
+                          <Clock className="h-4 w-4" />
+                          Book Now
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <p className="text-yellow-700 mt-2">
-                You need to add a vehicle before you can book an MOT test.
-              </p>
-              <Button
-                variant="outline"
-                className="mt-4 border-yellow-300 text-yellow-800 hover:bg-yellow-100"
-                onClick={() => router.push('/vehicles/add')}
-              >
-                Add Vehicle
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          )}
+
+          {/* No Results */}
+          {!loading && garages.length === 0 && searchLocation && (
+            <Card className="shadow-xl rounded-lg border border-border">
+              <CardContent className="text-center py-12">
+                <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No MOT centres found</h3>
+                <div className="text-muted-foreground mb-4 space-y-1">
+                  <p>We couldn't find any MOT test centres with available slots in the area</p>
+                  <p className="font-semibold text-base">
+                    {searchLocation} for {new Date(selectedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} at {selectedTime}.
+                  </p>
+                  <p>Please try a different postcode, date, or time.</p>
+                </div>
+                <Button variant="outline" onClick={clearSearchLocation}>
+                  Clear Search
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </MainLayout>
   )

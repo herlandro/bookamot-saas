@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import AuthSessionProvider from "@/components/providers/session-provider"
 import { ThemeProvider } from "@/components/providers/theme-provider"
+import { VersionCheckProvider } from "@/components/providers/version-check-provider"
+import { UpdateNotification } from "@/components/ui/update-notification"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +38,10 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <AuthSessionProvider>
-            {children}
+            <VersionCheckProvider>
+              {children}
+              <UpdateNotification />
+            </VersionCheckProvider>
           </AuthSessionProvider>
         </ThemeProvider>
       </body>

@@ -79,9 +79,9 @@ export default function SignUp() {
             router.push('/signin?message=Account created successfully')
           }, 2000)
         } else {
-          // Sign-in successful, redirect based on role
+          // Sign-in successful, redirect to search page
           setStatusMessage('Success! Redirecting...')
-          router.push('/onboarding')
+          router.push('/search')
         }
       } else {
         setError(data.error || 'An error occurred during registration')

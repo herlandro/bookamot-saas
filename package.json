@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "node scripts/build-sw.js",
     "build": "next build",
     "postinstall": "prisma generate --schema=prisma/schema.prisma",
     "start": "prisma migrate deploy && next start -p ${PORT:-3000}",

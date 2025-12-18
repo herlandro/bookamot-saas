@@ -171,6 +171,9 @@ export async function PATCH(
       );
     }
 
+    // Get previous status to detect changes
+    const previousStatus = existingBooking.status
+
     // Update booking status and notes
     const updatedBooking = await prisma.booking.update({
       where: { id },
@@ -201,10 +204,65 @@ export async function PATCH(
           select: {
             id: true,
             name: true,
+            address: true,
+            city: true,
+            postcode: true,
+            phone: true,
+            email: true,
           },
         },
       },
     });
+
+    // Send status update emails if status changed
+    if (status && status !== previousStatus) {
+      try {
+        const {
+          sendBookingApprovedToCustomer,
+          sendBookingRejectedToCustomer,
+        } = await import('@/lib/email/booking-email-service')
+        const { 
+          scheduleBookingReminders,
+          cancelBookingReminders 
+        } = await import('@/lib/email/email-queue')
+
+        // Send appropriate email based on new status
+        if (status === 'CONFIRMED') {
+          await sendBookingApprovedToCustomer(updatedBooking)
+          // Schedule reminder emails
+          await scheduleBookingReminders(updatedBooking)
+        } else if (status === 'CANCELLED') {
+          await sendBookingRejectedToCustomer(updatedBooking, notes || 'Booking cancelled by the garage.')
+          // Cancel scheduled reminders
+          await cancelBookingReminders(updatedBooking.id)
+        } else if (status === 'COMPLETED') {
+          // Get MOT result if available
+          const motResult = await prisma.motResult.findUnique({
+            where: { bookingId: updatedBooking.id },
+            select: {
+              result: true,
+              certificateNumber: true,
+              expiryDate: true,
+            },
+          })
+
+          const { sendBookingCompletedFollowupToCustomer } = await import('@/lib/email/booking-email-service')
+          await sendBookingCompletedFollowupToCustomer(
+            updatedBooking,
+            motResult ? {
+              result: motResult.result,
+              certificateNumber: motResult.certificateNumber || undefined,
+              expiryDate: motResult.expiryDate || undefined,
+            } : undefined
+          )
+          // Cancel any remaining scheduled reminders
+          await cancelBookingReminders(updatedBooking.id)
+        }
+      } catch (error) {
+        console.error('Error sending status update email:', error)
+        // Don't fail the request if email fails
+      }
+    }
 
     // Transform the response
     const transformedBooking = {
