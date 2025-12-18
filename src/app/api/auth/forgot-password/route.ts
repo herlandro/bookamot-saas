@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import nodemailer from 'nodemailer'
 import { forgotPasswordRateLimit } from '@/lib/rate-limit'
 
-// Configuração do transporter de e-mail
+// Email transporter configuration
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -17,13 +17,13 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: NextRequest) {
   try {
-    // Verificar rate limiting
+    // Check rate limiting
     const rateLimitResult = forgotPasswordRateLimit(req)
     if (!rateLimitResult.success) {
       const resetTime = new Date(rateLimitResult.resetTime!)
       return NextResponse.json(
         { 
-          error: 'Muitas tentativas. Tente novamente em 1 hora.',
+          error: 'Too many attempts. Please try again in 1 hour.',
           resetTime: resetTime.toISOString()
         },
         { status: 429 }
@@ -34,30 +34,30 @@ export async function POST(req: NextRequest) {
 
     if (!email) {
       return NextResponse.json(
-        { error: 'E-mail é obrigatório' },
+        { error: 'Email is required' },
         { status: 400 }
       )
     }
 
-    // Verificar se o usuário existe
+    // Check if user exists
     const user = await prisma.user.findUnique({
       where: { email },
     })
 
-    // Por segurança, sempre retornamos sucesso mesmo se o usuário não existir
-    // Isso evita que atacantes descubram quais e-mails estão cadastrados
+    // For security, always return success even if user doesn't exist
+    // This prevents attackers from discovering which emails are registered
     if (!user) {
       return NextResponse.json(
-        { message: 'Se o e-mail estiver cadastrado, você receberá um link de redefinição' },
+        { message: 'If the email is registered, you will receive a reset link' },
         { status: 200 }
       )
     }
 
-    // Gerar token de redefinição
+    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex')
-    const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hora
+    const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hour
 
-    // Salvar token no banco
+    // Save token to database
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -66,16 +66,16 @@ export async function POST(req: NextRequest) {
       } as any,
     })
 
-    // URL de redefinição
+    // Reset URL
     const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`
 
-    // Template do e-mail
+    // Email template
     const emailHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
-          <title>Redefinir Senha - BookaMOT</title>
+          <title>Reset Password - BookaMOT</title>
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -92,43 +92,43 @@ export async function POST(req: NextRequest) {
               <div class="logo">🛡️ BookaMOT</div>
             </div>
             <div class="content">
-              <h2>Redefinir sua senha</h2>
-              <p>Olá,</p>
-              <p>Recebemos uma solicitação para redefinir a senha da sua conta BookaMOT.</p>
-              <p>Clique no botão abaixo para criar uma nova senha:</p>
+              <h2>Reset Your Password</h2>
+              <p>Hello,</p>
+              <p>We received a request to reset the password for your BookaMOT account.</p>
+              <p>Click the button below to create a new password:</p>
               <p style="text-align: center;">
-                <a href="${resetUrl}" class="button">Redefinir Senha</a>
+                <a href="${resetUrl}" class="button">Reset Password</a>
               </p>
-              <p><strong>Este link expira em 1 hora.</strong></p>
-              <p>Se você não solicitou esta redefinição, pode ignorar este e-mail com segurança.</p>
-              <p>Por segurança, nunca compartilhe este link com outras pessoas.</p>
+              <p><strong>This link expires in 1 hour.</strong></p>
+              <p>If you did not request this reset, you can safely ignore this email.</p>
+              <p>For security, never share this link with others.</p>
             </div>
             <div class="footer">
-              <p>Se o botão não funcionar, copie e cole este link no seu navegador:</p>
+              <p>If the button doesn't work, copy and paste this link into your browser:</p>
               <p style="word-break: break-all;">${resetUrl}</p>
-              <p>© 2024 BookaMOT. Todos os direitos reservados.</p>
+              <p>© 2024 BookaMOT. All rights reserved.</p>
             </div>
           </div>
         </body>
       </html>
     `
 
-    // Enviar e-mail
+    // Send email
     await transporter.sendMail({
       from: `"BookaMOT" <${process.env.SMTP_FROM}>`,
       to: email,
-      subject: 'Redefinir sua senha - BookaMOT',
+      subject: 'Reset your password - BookaMOT',
       html: emailHtml,
     })
 
     return NextResponse.json(
-      { message: 'E-mail de redefinição enviado com sucesso' },
+      { message: 'Password reset email sent successfully' },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Erro ao processar solicitação de redefinição:', error)
+    console.error('Error processing reset request:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

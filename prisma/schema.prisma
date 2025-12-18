@@ -51,6 +51,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Email verification for garage owners
+  emailVerificationCode   String?
+  emailVerificationExpiry DateTime?
+
   // Review ratings
   averageRating Float    @default(0)
   totalReviews  Int      @default(0)
@@ -62,6 +66,7 @@ model User {
   garage     Garage?
   reviews    Review[]
   motNotifications MotNotification[]
+  garageApprovals  GarageApprovalLog[] @relation("ApprovedByAdmin")
 }
 
 model VerificationToken {
@@ -84,13 +89,19 @@ model Garage {
   longitude   Float?
   description String?
   website     String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean  @default(false) // Inactive by default, activated after approval
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // MOT Testing Authorization
   motLicenseNumber String  @unique
   dvlaApproved     Boolean @default(false)
+
+  // Admin Approval Status
+  approvalStatus   GarageApprovalStatus @default(PENDING)
+  approvedAt       DateTime?
+  approvedById     String?
+  rejectionReason  String?
 
   // Business Hours
   openingHours Json? // Store as JSON: {"monday": {"open": "09:00", "close": "17:00"}, ...}
@@ -111,6 +122,7 @@ model Garage {
   schedules    GarageSchedule[]
   scheduleExceptions GarageScheduleException[]
   timeSlotBlocks GarageTimeSlotBlock[]
+  approvalLogs GarageApprovalLog[]
 }
 
 // GarageAvailability model removed - replaced by optimized system
@@ -280,6 +292,13 @@ enum UserRole {
   ADMIN
 }
 
+enum GarageApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  INFO_REQUESTED
+}
+
 enum FuelType {
   PETROL
   DIESEL
@@ -311,7 +330,7 @@ enum MotOutcome {
   REFUSED
 }
 
-// Novo modelo otimizado para horários de funcionamento das garagens
+// Optimized model for garage opening hours
 model GarageSchedule {
   id        String   @id @default(cuid())
   garageId  String
@@ -329,15 +348,15 @@ model GarageSchedule {
   @@unique([garageId, dayOfWeek])
 }
 
-// Modelo para exceções de horário (feriados, dias especiais)
+// Model for schedule exceptions (holidays, special days)
 model GarageScheduleException {
   id        String   @id @default(cuid())
   garageId  String
-  date      DateTime // Data específica da exceção
-  isClosed  Boolean  @default(true) // Se true, garagem fechada neste dia
-  openTime  String?  // Horário especial de abertura (se não fechado)
-  closeTime String?  // Horário especial de fechamento (se não fechado)
-  reason    String?  // Motivo da exceção (feriado, manutenção, etc.)
+  date      DateTime // Specific date of the exception
+  isClosed  Boolean  @default(true) // If true, garage is closed on this day
+  openTime  String?  // Special opening time (if not closed)
+  closeTime String?  // Special closing time (if not closed)
+  reason    String?  // Reason for exception (holiday, maintenance, etc.)
   createdAt DateTime @default(now())
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
@@ -345,16 +364,31 @@ model GarageScheduleException {
   @@unique([garageId, date])
 }
 
-// Modelo simplificado para bloqueios específicos de horários
+// Simplified model for specific time slot blocks
 model GarageTimeSlotBlock {
   id        String   @id @default(cuid())
   garageId  String
   date      DateTime
   timeSlot  String   // e.g., "09:00"
-  reason    String?  // Motivo do bloqueio
+  reason    String?  // Reason for blocking
   createdAt DateTime @default(now())
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
 
   @@unique([garageId, date, timeSlot])
+}
+
+// Garage approval/rejection history log
+model GarageApprovalLog {
+  id            String               @id @default(cuid())
+  garageId      String
+  action        GarageApprovalStatus
+  reason        String?              // Reason for action (required for rejection)
+  adminId       String
+  createdAt     DateTime             @default(now())
+
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  admin  User   @relation("ApprovedByAdmin", fields: [adminId], references: [id])
+
+  @@index([garageId])
 }

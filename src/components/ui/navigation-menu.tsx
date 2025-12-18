@@ -25,25 +25,25 @@ const customerNavigation: NavigationItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    description: 'Visão geral da conta'
+    description: 'Account overview'
   },
   {
     name: 'Bookings',
     href: '/bookings',
     icon: BookOpen,
-    description: 'Suas reservas de MOT'
+    description: 'Your MOT bookings'
   },
   {
     name: 'Vehicles',
     href: '/vehicles',
     icon: Car,
-    description: 'Seus veículos'
+    description: 'Your vehicles'
   },
   {
     name: 'Reviews',
     href: '/reviews',
     icon: Star,
-    description: 'Avaliações e comentários'
+    description: 'Reviews and comments'
   }
 ]
 
@@ -52,37 +52,37 @@ const garageNavigation: NavigationItem[] = [
     name: 'Dashboard',
     href: '/garage-admin/dashboard',
     icon: LayoutDashboard,
-    description: 'Painel administrativo'
+    description: 'Admin dashboard'
   },
   {
     name: 'Calendar',
     href: '/garage-admin/calendar',
     icon: Calendar,
-    description: 'Agenda de reservas'
+    description: 'Booking schedule'
   },
   {
     name: 'Bookings',
     href: '/garage-admin/bookings',
     icon: BookOpen,
-    description: 'Gerenciar reservas'
+    description: 'Manage bookings'
   },
   {
     name: 'Customers',
     href: '/garage-admin/customers',
     icon: Users,
-    description: 'Clientes da oficina'
+    description: 'Garage customers'
   },
   {
     name: 'Vehicles',
     href: '/garage-admin/vehicles',
     icon: Car,
-    description: 'Veículos atendidos'
+    description: 'Serviced vehicles'
   },
   {
     name: 'Reviews',
     href: '/garage-admin/reviews',
     icon: Star,
-    description: 'Avaliações recebidas'
+    description: 'Received reviews'
   }
 ]
 

@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
 
-// Função otimizada para calcular disponibilidade dinamicamente
+// Optimized function to dynamically calculate availability
 export async function getAvailableTimeSlotsOptimized(garageId: string, date: Date) {
   const dayOfWeek = date.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   
-  // Buscar horário de funcionamento da garagem para o dia da semana
+  // Get garage opening hours for the day of the week
   const schedule = await prisma.garageSchedule.findUnique({
     where: {
       garageId_dayOfWeek: {
@@ -14,12 +14,12 @@ export async function getAvailableTimeSlotsOptimized(garageId: string, date: Dat
     }
   })
   
-  // Se não há horário definido ou garagem fechada, retornar array vazio
+  // If no schedule defined or garage is closed, return empty array
   if (!schedule || !schedule.isOpen) {
     return []
   }
   
-  // Verificar se há exceção para esta data específica
+  // Check if there's an exception for this specific date
   const startOfDay = new Date(date)
   startOfDay.setHours(0, 0, 0, 0)
   
@@ -35,20 +35,20 @@ export async function getAvailableTimeSlotsOptimized(garageId: string, date: Dat
     }
   })
   
-  // Se há exceção e garagem está fechada, retornar array vazio
+  // If there's an exception and garage is closed, return empty array
   if (exception && exception.isClosed) {
     return []
   }
   
-  // Usar horários da exceção se existir, senão usar horário padrão
+  // Use exception hours if they exist, otherwise use default hours
   const openTime = exception?.openTime || schedule.openTime
   const closeTime = exception?.closeTime || schedule.closeTime
   const slotDuration = schedule.slotDuration
   
-  // Gerar slots de tempo baseado no horário de funcionamento
+  // Generate time slots based on opening hours
   const timeSlots = generateTimeSlots(openTime, closeTime, slotDuration)
   
-  // Buscar agendamentos existentes para o dia
+  // Get existing bookings for the day
   const existingBookings = await prisma.booking.findMany({
     where: {
       garageId,
@@ -65,7 +65,7 @@ export async function getAvailableTimeSlotsOptimized(garageId: string, date: Dat
     }
   })
   
-  // Buscar bloqueios específicos para o dia
+  // Get specific blocks for the day
   const blockedSlots = await prisma.garageTimeSlotBlock.findMany({
     where: {
       garageId,
@@ -83,13 +83,13 @@ export async function getAvailableTimeSlotsOptimized(garageId: string, date: Dat
   const blockedTimeSlots = blockedSlots.map((block: { timeSlot: string }) => block.timeSlot)
   const unavailableSlots = [...bookedTimeSlots, ...blockedTimeSlots]
   
-  // Filtrar slots disponíveis
+  // Filter available slots
   const availableSlots = timeSlots.filter(slot => !unavailableSlots.includes(slot))
   
   return availableSlots
 }
 
-// Função auxiliar para gerar slots de tempo
+// Helper function to generate time slots
 function generateTimeSlots(openTime: string, closeTime: string, durationMinutes: number): string[] {
   const slots: string[] = []
   
@@ -109,7 +109,7 @@ function generateTimeSlots(openTime: string, closeTime: string, durationMinutes:
   return slots
 }
 
-// Função para criar horário padrão para uma garagem
+// Function to create default schedule for a garage
 export async function createDefaultScheduleForGarage(garageId: string) {
   const defaultSchedule = [
     { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '17:00' }, // Monday
@@ -138,40 +138,40 @@ export async function createDefaultScheduleForGarage(garageId: string) {
   }
 }
 
-// Função para migrar dados existentes
+// Function to migrate existing data
 export async function migrateExistingAvailabilityData() {
-  console.log('🔄 Iniciando migração de dados de disponibilidade...')
+  console.log('🔄 Starting availability data migration...')
   
-  // Buscar todas as garagens
+  // Get all garages
   const garages = await prisma.garage.findMany({
     select: { id: true, name: true }
   })
   
   for (const garage of garages) {
-    console.log(`📝 Criando horário padrão para ${garage.name}...`)
+    console.log(`📝 Creating default schedule for ${garage.name}...`)
     await createDefaultScheduleForGarage(garage.id)
   }
   
-  console.log('✅ Migração concluída!')
+  console.log('✅ Migration completed!')
 }
 
-// Função para comparar performance
+// Function to compare performance
 export async function comparePerformance(garageId: string, date: Date) {
-  console.time('Método Original')
+  console.time('Original Method')
   const originalSlots = await getOriginalAvailableTimeSlots(garageId, date)
-  console.timeEnd('Método Original')
+  console.timeEnd('Original Method')
   
-  console.time('Método Otimizado')
+  console.time('Optimized Method')
   const optimizedSlots = await getAvailableTimeSlotsOptimized(garageId, date)
-  console.timeEnd('Método Otimizado')
+  console.timeEnd('Optimized Method')
   
-  console.log('Slots originais:', originalSlots)
-  console.log('Slots otimizados:', optimizedSlots)
+  console.log('Original slots:', originalSlots)
+  console.log('Optimized slots:', optimizedSlots)
   
   return { originalSlots, optimizedSlots }
 }
 
-// Função original para comparação
+// Original function for comparison
 async function getOriginalAvailableTimeSlots(garageId: string, date: Date) {
   const startOfDay = new Date(date)
   startOfDay.setHours(0, 0, 0, 0)

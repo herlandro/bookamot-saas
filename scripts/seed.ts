@@ -123,7 +123,34 @@ async function seedDatabase() {
       }
     })
     garages.push({ id: garage.id, name: garage.name, motPrice: garage.motPrice })
+
+    // Create garage schedules (Monday = 1, Tuesday = 2, ..., Sunday = 0)
+    const scheduleData = [
+      { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Monday
+      { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Tuesday
+      { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Wednesday
+      { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Thursday
+      { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Friday
+      { dayOfWeek: 6, isOpen: true, openTime: '09:00', closeTime: '13:00', slotDuration: 60 }, // Saturday
+      { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '17:00', slotDuration: 60 }, // Sunday (closed)
+    ]
+
+    try {
+      for (const schedule of scheduleData) {
+        await prisma.garageSchedule.create({
+          data: {
+            garageId: garage.id,
+            ...schedule
+          }
+        })
+      }
+    } catch (error) {
+      console.error(`❌ Erro ao criar schedules para garagem ${garage.name}:`, error)
+      throw error
+    }
   }
+  
+  console.log(`✅ Criados schedules para ${garages.length} garagens`)
 
   const vehicles: Array<{ id: string; ownerId: string }> = []
   for (let i = 0; i < customers.length; i++) {

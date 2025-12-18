@@ -6,21 +6,21 @@ import { getUserById, updateUser } from '@/lib/db/users';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    // Aguardar a Promise params antes de acessar suas propriedades
+    // Await the params Promise before accessing its properties
     const userId = (await params).id;
     
     if (!session) {
       return NextResponse.json(
-        { error: 'Não autorizado' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Verificar se o usuário está tentando acessar seu próprio perfil
-    // ou se é um administrador
+    // Check if user is accessing their own profile
+    // or is an administrator
     if (session.user.id !== userId && session.user.role !== 'ADMIN') {
       return NextResponse.json(
-        { error: 'Acesso negado' },
+        { error: 'Access denied' },
         { status: 403 }
       );
     }
@@ -29,16 +29,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Usuário não encontrado' },
+        { error: 'User not found' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error('Erro ao buscar usuário:', error);
+    console.error('Error fetching user:', error);
     return NextResponse.json(
-      { error: 'Erro ao buscar dados do usuário' },
+      { error: 'Error fetching user data' },
       { status: 500 }
     );
   }
@@ -51,16 +51,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     
     if (!session) {
       return NextResponse.json(
-        { error: 'Não autorizado' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Verificar se o usuário está atualizando seu próprio perfil
-    // ou se é um administrador
+    // Check if user is updating their own profile
+    // or is an administrator
     if (session.user.id !== userId && session.user.role !== 'ADMIN') {
       return NextResponse.json(
-        { error: 'Acesso negado' },
+        { error: 'Access denied' },
         { status: 403 }
       );
     }
@@ -68,29 +68,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const data = await request.json();
     const { name, phone } = data;
 
-    // Validar dados
+    // Validate data
     if (name && typeof name !== 'string') {
       return NextResponse.json(
-        { error: 'Nome inválido' },
+        { error: 'Invalid name' },
         { status: 400 }
       );
     }
 
     if (phone && typeof phone !== 'string') {
       return NextResponse.json(
-        { error: 'Telefone inválido' },
+        { error: 'Invalid phone' },
         { status: 400 }
       );
     }
 
-    // Atualizar usuário
+    // Update user
     const updatedUser = await updateUser(userId, { name, phone });
 
     return NextResponse.json(updatedUser);
   } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
+    console.error('Error updating user:', error);
     return NextResponse.json(
-      { error: 'Erro ao atualizar dados do usuário' },
+      { error: 'Error updating user data' },
       { status: 500 }
     );
   }

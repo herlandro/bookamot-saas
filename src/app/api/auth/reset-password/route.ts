@@ -5,13 +5,13 @@ import { resetPasswordRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
-    // Verificar rate limiting
+    // Check rate limiting
     const rateLimitResult = resetPasswordRateLimit(req)
     if (!rateLimitResult.success) {
       const resetTime = new Date(rateLimitResult.resetTime!)
       return NextResponse.json(
         { 
-          error: 'Muitas tentativas. Tente novamente em 15 minutos.',
+          error: 'Too many attempts. Please try again in 15 minutes.',
           resetTime: resetTime.toISOString()
         },
         { status: 429 }
@@ -22,27 +22,27 @@ export async function POST(req: NextRequest) {
 
     if (!token || !password) {
       return NextResponse.json(
-        { error: 'Token e senha são obrigatórios' },
+        { error: 'Token and password are required' },
         { status: 400 }
       )
     }
 
-    // Validar força da senha
+    // Validate password strength
     if (password.length < 8) {
       return NextResponse.json(
-        { error: 'A senha deve ter pelo menos 8 caracteres' },
+        { error: 'Password must be at least 8 characters long' },
         { status: 400 }
       )
     }
 
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
       return NextResponse.json(
-        { error: 'A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número' },
+        { error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' },
         { status: 400 }
       )
     }
 
-    // Buscar usuário com o token válido
+    // Find user with valid token
     const user = await prisma.user.findFirst({
       where: {
         AND: [
@@ -54,15 +54,15 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Token inválido ou expirado' },
+        { error: 'Invalid or expired token' },
         { status: 400 }
       )
     }
 
-    // Hash da nova senha
+    // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Atualizar senha e limpar token de reset
+    // Update password and clear reset token
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -73,13 +73,13 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(
-      { message: 'Senha redefinida com sucesso' },
+      { message: 'Password reset successfully' },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Erro ao redefinir senha:', error)
+    console.error('Error resetting password:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

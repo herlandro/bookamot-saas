@@ -154,21 +154,21 @@ export default function AddVehiclePage() {
           try {
             const errorBody = await response.json()
             const status = response.status
-            let message = 'Não foi possível validar automaticamente os dados.'
+            let message = 'Could not automatically validate the data.'
             if (status === 400 && errorBody?.code === 'INVALID_FORMAT') {
-              message = 'Formato de matrícula inválido. Verifique e tente novamente.'
+              message = 'Invalid registration format. Please check and try again.'
             } else if (status === 404 || errorBody?.code === 'NOT_FOUND') {
-              message = 'Veículo não encontrado. Preencha manualmente os campos.'
+              message = 'Vehicle not found. Please fill in the fields manually.'
             } else if (status === 429 || errorBody?.code === 'RATE_LIMIT') {
-              message = 'Limite de requisições excedido. Aguarde e tente novamente.'
+              message = 'Request limit exceeded. Please wait and try again.'
             } else if (status === 504 || errorBody?.code === 'TIMEOUT') {
-              message = 'Tempo de resposta do DVSA esgotado. Tente novamente.'
+              message = 'DVSA response timeout. Please try again.'
             } else if (status === 503 || errorBody?.code === 'DVSA_UNAVAILABLE') {
-              message = 'Serviço DVSA indisponível. Preencha manualmente os campos.'
+              message = 'DVSA service unavailable. Please fill in the fields manually.'
             } else if (status === 403 || errorBody?.code === 'AUTH_ERROR') {
-              message = 'Falha de autenticação DVSA. Preencha manualmente os campos.'
+              message = 'DVSA authentication failed. Please fill in the fields manually.'
             } else if (status === 500 || errorBody?.code === 'MISCONFIGURED_ENDPOINT') {
-              message = 'Erro de configuração: URL base do DVSA incorreta.'
+              message = 'Configuration error: Incorrect DVSA base URL.'
             } else if (errorBody?.error_message || errorBody?.error) {
               message = errorBody?.error_message || errorBody?.error
             }
@@ -192,7 +192,7 @@ export default function AddVehiclePage() {
 
     if (!success) {
       if (!lookupError) {
-        setLookupError('Não foi possível validar automaticamente após várias tentativas. Preencha os campos manualmente.')
+        setLookupError('Could not automatically validate after several attempts. Please fill in the fields manually.')
       }
       setShowAllFields(true)
       setManualFillRequired(true)
@@ -201,9 +201,9 @@ export default function AddVehiclePage() {
     setValidatingReg(false)
   }
   
-  // Armazenar o último valor de registro validado
+  // Store the last validated registration value
 
-  // Manipulador para quando o campo de registro perde o foco
+  // Handler for when the registration field loses focus
   const handleRegistrationBlur = () => {
     if (formData.registration && formData.registration !== lastValidatedReg) {
       validateRegistration(formData.registration)

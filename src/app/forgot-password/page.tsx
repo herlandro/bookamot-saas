@@ -31,10 +31,10 @@ export default function ForgotPassword() {
       if (response.ok) {
         setIsEmailSent(true)
       } else {
-        setError(data.error || 'Ocorreu um erro. Tente novamente.')
+        setError(data.error || 'An error occurred. Please try again.')
       }
     } catch (error) {
-      setError('Ocorreu um erro. Tente novamente.')
+      setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
                 O link expira em 1 hora.
               </p>
               <p className="text-sm text-muted-foreground">
-                Não recebeu o e-mail? Verifique sua pasta de spam ou{' '}
+                Didn't receive the email? Check your spam folder or{' '}
                 <button
                   onClick={() => {
                     setIsEmailSent(false)

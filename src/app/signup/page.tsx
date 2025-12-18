@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Shield, Eye, EyeOff, Mail, Lock, User, Building, Loader2 } from 'lucide-react'
+import { Shield, Eye, EyeOff, Mail, Lock, User, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -12,9 +13,6 @@ export default function SignUp() {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'customer', // customer or garage
-    garageName: '',
-    address: '',
     phone: ''
   })
   const [showPassword, setShowPassword] = useState(false)
@@ -57,9 +55,7 @@ export default function SignUp() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: formData.userType === 'garage' ? 'GARAGE_OWNER' : 'CUSTOMER',
-          garageName: formData.userType === 'garage' ? formData.garageName : undefined,
-          address: formData.userType === 'garage' ? formData.address : undefined,
+          role: 'CUSTOMER',
           phone: formData.phone || undefined,
         }),
       })
@@ -85,8 +81,7 @@ export default function SignUp() {
         } else {
           // Sign-in successful, redirect based on role
           setStatusMessage('Success! Redirecting...')
-          const redirectUrl = formData.userType === 'garage' ? '/garage-admin/calendar' : '/onboarding'
-          router.push(redirectUrl)
+          router.push('/onboarding')
         }
       } else {
         setError(data.error || 'An error occurred during registration')
@@ -117,6 +112,15 @@ export default function SignUp() {
               sign in to your existing account
             </Link>
           </p>
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => router.push('/garage-admin/signup')}
+            >
+              I'm a garage owner
+            </Button>
+          </div>
         </div>
         <div className="bg-card py-8 px-6 shadow-xl rounded-lg border border-border">
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -133,42 +137,9 @@ export default function SignUp() {
               </div>
             )}
 
-            {/* User Type Selection */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Account Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, userType: 'customer' }))}
-                  className={`flex items-center justify-center px-4 py-3 border rounded-md text-sm font-medium ${
-                    formData.userType === 'customer'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Customer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, userType: 'garage' }))}
-                  className={`flex items-center justify-center px-4 py-3 border rounded-md text-sm font-medium ${
-                    formData.userType === 'garage'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <Building className="h-4 w-4 mr-2" />
-                  Garage
-                </button>
-              </div>
-            </div>
-            
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-                {formData.userType === 'garage' ? 'Contact Name' : 'Full Name'}
+                Full Name
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -187,81 +158,21 @@ export default function SignUp() {
               </div>
             </div>
 
-            {/* Phone Number field for customers */}
-            {formData.userType === 'customer' && (
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-                  Phone Number
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter phone number"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                />
-              </div>
-            )}
-
-            {formData.userType === 'garage' && (
-              <>
-                <div>
-                  <label htmlFor="garageName" className="block text-sm font-medium text-slate-700">
-                    Garage Name
-                  </label>
-                  <div className="mt-1 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Building className="h-5 w-5 text-slate-400" />
-                    </div>
-                    <input
-                      id="garageName"
-                      name="garageName"
-                      type="text"
-                      required
-                      className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="Enter garage name"
-                      value={formData.garageName}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-slate-700">
-                    Address
-                  </label>
-                  <input
-                    id="address"
-                    name="address"
-                    type="text"
-                    required
-                    className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter garage address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-                    Phone Number
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter phone number"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </>
-            )}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
+                Phone Number
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Enter phone number"
+                value={formData.phone}
+                onChange={handleInputChange}
+              />
+            </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700">
@@ -382,6 +293,13 @@ export default function SignUp() {
             </div>
           </form>
         </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => router.push('/')}
+        >
+          Back to Home
+        </Button>
       </div>
     </div>
   )

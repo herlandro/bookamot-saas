@@ -1,43 +1,33 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Info } from 'lucide-react';
 
-// Importar o componente da página de administração de garagem
+// Import the garage admin page component
 import GarageAdminPage from './garage-admin/calendar/page';
 
-// Importar o componente Dashboard
+// Import the Dashboard component
 import Dashboard from './dashboard/page';
 
 export default function HomePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [showMessage, setShowMessage] = useState(false);
 
-  // Se o usuário estiver autenticado
+  // If user is authenticated
   if (status === 'authenticated') {
-    // Se for proprietário de garagem, renderizar a página de administração de garagem
+    // If garage owner, render the garage admin page
     if (session?.user?.role === 'GARAGE_OWNER') {
       return <GarageAdminPage />;
     }
-    // Se for cliente, renderizar o dashboard
+    // If customer, render the dashboard
     return <Dashboard />;
   }
 
   const handleBookMOT = () => {
-    // Show message to user
-    setShowMessage(true);
-
-    // Auto-close message and redirect after 3 seconds
-    setTimeout(() => {
-      setShowMessage(false);
-      router.push('/signup');
-    }, 3000);
+    router.push('/signup');
   };
 
   // Conteúdo principal da página
@@ -53,26 +43,10 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Registration Required Message */}
-      {showMessage && (
-        <div className="w-full max-w-lg mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-start gap-3">
-            <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-foreground font-medium">Registration Required</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                To book an MOT, you need to create an account first. Redirecting you to sign in...
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Book MOT Button */}
       <div className="w-full max-w-md">
         <Button
           onClick={handleBookMOT}
-          disabled={showMessage}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-4 text-lg font-medium"
           size="lg"
         >
@@ -87,7 +61,7 @@ export default function HomePage() {
     </>
   );
 
-  // Renderiza com ou sem barra lateral dependendo se o usuário está logado
+  // Render with or without sidebar depending on whether user is logged in
   if (session) {
     return (
       <MainLayout>

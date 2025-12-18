@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verificar autenticação
+    // Check authentication
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -17,7 +17,7 @@ export async function POST(
 
     const vehicleId = (await params).id
 
-    // Verificar se o veículo existe e pertence ao usuário
+    // Check if vehicle exists and belongs to user
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: vehicleId,
@@ -65,7 +65,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verificar autenticação
+    // Check authentication
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -73,7 +73,7 @@ export async function GET(
 
     const vehicleId = (await params).id
 
-    // Verificar se o veículo existe e pertence ao usuário
+    // Check if vehicle exists and belongs to user
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: vehicleId,

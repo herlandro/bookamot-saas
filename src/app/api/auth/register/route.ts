@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { UserRole } from '@prisma/client'
 import { geocodeAddress } from '@/lib/geocoding'
+import { generateVerificationCode, sendGarageVerificationEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +114,8 @@ export async function POST(request: NextRequest) {
 
       console.log(`📍 Extracted: city="${city}", postcode="${postcode}", coords=${coords ? `(${coords.lat}, ${coords.lng})` : 'null'}`)
 
+      console.log('📝 Creating garage with data:', { garageName, address, city, postcode, phone, email, ownerId: user.id })
+      
       const garage = await prisma.garage.create({
         data: {
           name: garageName,
@@ -125,10 +128,13 @@ export async function POST(request: NextRequest) {
           email,
           ownerId: user.id,
           motLicenseNumber: `MOT-${Date.now()}`, // Generate temporary license number
-          dvlaApproved: true, // Auto-approved by default
-          isActive: true, // Active by default
+          dvlaApproved: false, // Requires admin approval
+          isActive: false, // Inactive until approved
+          // approvalStatus defaults to PENDING in schema
         }
       })
+      
+      console.log('✅ Garage created:', garage.id)
 
       // Create default schedules for the garage (Monday-Friday 09:00-17:30, Saturday 09:00-13:00, Sunday closed)
       const defaultSchedules = [
@@ -148,7 +154,38 @@ export async function POST(request: NextRequest) {
         }))
       })
 
-      console.log(`✅ Created garage "${garageName}" with default schedules`)
+      // Generate verification code and send email
+      const verificationCode = generateVerificationCode()
+      const verificationExpiry = new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerificationCode: verificationCode,
+          emailVerificationExpiry: verificationExpiry,
+        }
+      })
+
+      // Send verification email
+      try {
+        await sendGarageVerificationEmail(email, garageName, verificationCode)
+        console.log(`📧 Verification email sent to ${email}`)
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError)
+        // Continue anyway - user can request resend
+      }
+
+      console.log(`✅ Created garage "${garageName}" with default schedules (pending approval)`)
+
+      return NextResponse.json(
+        {
+          message: 'Garage account created successfully. Please verify your email.',
+          user,
+          requiresEmailVerification: true,
+          garageName: garage.name,
+        },
+        { status: 201 }
+      )
     }
 
     return NextResponse.json(
@@ -160,8 +197,25 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Registration error:', error)
+    
+    // Provide more specific error message for debugging
+    let errorMessage = 'Internal server error'
+    if (error instanceof Error) {
+      console.error('Error details:', error.message)
+      console.error('Error stack:', error.stack)
+      
+      // Check for specific Prisma errors
+      if (error.message.includes('Unique constraint')) {
+        errorMessage = 'This email or garage is already registered'
+      } else if (error.message.includes('Foreign key constraint')) {
+        errorMessage = 'Database relationship error'
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = error.message
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

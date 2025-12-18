@@ -19,15 +19,15 @@ function ResetPasswordPageContent() {
   const [success, setSuccess] = useState(false)
   const [tokenValid, setTokenValid] = useState<boolean | null>(null)
 
-  // Validar token ao carregar a página
+  // Validate token on page load
   useEffect(() => {
     if (!token) {
-      setError('Token de redefinição não encontrado')
+      setError('Reset token not found')
       setTokenValid(false)
       return
     }
 
-    // Verificar se o token é válido
+    // Check if token is valid
     const validateToken = async () => {
       try {
         const response = await fetch('/api/auth/validate-reset-token', {

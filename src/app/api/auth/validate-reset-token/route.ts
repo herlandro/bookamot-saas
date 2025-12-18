@@ -7,12 +7,12 @@ export async function POST(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { error: 'Token é obrigatório' },
+        { error: 'Token is required' },
         { status: 400 }
       )
     }
 
-    // Buscar usuário com o token
+    // Find user with the token
     const user = await prisma.user.findFirst({
       where: {
         AND: [
@@ -24,19 +24,19 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Token inválido ou expirado' },
+        { error: 'Invalid or expired token' },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { message: 'Token válido' },
+      { message: 'Token is valid' },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Erro ao validar token:', error)
+    console.error('Error validating token:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

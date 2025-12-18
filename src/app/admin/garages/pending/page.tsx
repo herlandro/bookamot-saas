@@ -8,15 +8,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { Search, Check, X, Loader2, Building2 } from 'lucide-react';
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
+import { 
+  Search, Check, X, Loader2, Building2, Eye, Mail, Phone, MapPin, 
+  Calendar, Clock, MessageSquare, History, AlertCircle, CheckCircle2, HelpCircle
+} from 'lucide-react';
 import { format } from 'date-fns';
+
+interface ApprovalLog {
+  id: string;
+  action: string;
+  reason: string | null;
+  createdAt: string;
+  admin: { name: string | null; email: string };
+}
 
 interface Garage {
   id: string;
@@ -28,7 +42,17 @@ interface Garage {
   address: string;
   motPrice: number;
   createdAt: string;
-  owner: { name: string; email: string; phone: string };
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'INFO_REQUESTED';
+  rejectionReason: string | null;
+  owner: { 
+    id: string;
+    name: string | null; 
+    email: string; 
+    phone: string | null;
+    emailVerified: string | null;
+    createdAt: string;
+  };
+  approvalLogs: ApprovalLog[];
 }
 
 export default function PendingGaragesPage() {
@@ -38,11 +62,23 @@ export default function PendingGaragesPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [actionGarage, setActionGarage] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
-  const [processing, setProcessing] = useState(false);
+  const [total, setTotal] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Detail modal state
+  const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // Action modal state
+  const [actionModal, setActionModal] = useState<{
+    garage: Garage;
+    action: 'approve' | 'reject' | 'request_info';
+  } | null>(null);
+  const [actionReason, setActionReason] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   const fetchGarages = useCallback(async (isInitial = false) => {
     if (isInitial) {
@@ -51,12 +87,18 @@ export default function PendingGaragesPage() {
       setSearching(true);
     }
     try {
-      const params = new URLSearchParams({ page: page.toString(), limit: '10', search });
+      const params = new URLSearchParams({ 
+        page: page.toString(), 
+        limit: '10', 
+        search,
+        status: statusFilter 
+      });
       const response = await fetch(`/api/admin/garages/pending?${params}`);
       if (response.ok) {
         const data = await response.json();
         setGarages(data.garages);
         setTotalPages(data.pagination.totalPages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error('Error fetching garages:', error);
@@ -64,7 +106,7 @@ export default function PendingGaragesPage() {
       setInitialLoading(false);
       setSearching(false);
     }
-  }, [page, search]);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -72,30 +114,59 @@ export default function PendingGaragesPage() {
       router.push('/admin/login');
       return;
     }
-    // Only show initial loading spinner on first load
     const isInitial = initialLoading && garages.length === 0;
     fetchGarages(isInitial);
   }, [session, status, router, fetchGarages]);
 
   const handleAction = async () => {
-    if (!actionGarage) return;
+    if (!actionModal) return;
+    
+    if ((actionModal.action === 'reject' || actionModal.action === 'request_info') && !actionReason.trim()) {
+      return;
+    }
+
     setProcessing(true);
     try {
-      if (actionGarage.action === 'approve') {
-        await fetch(`/api/admin/garages/${actionGarage.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isActive: true })
-        });
-      } else {
-        await fetch(`/api/admin/garages/${actionGarage.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/admin/garages/${actionModal.garage.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: actionModal.action,
+          reason: actionReason.trim() || undefined
+        })
+      });
+
+      if (response.ok) {
+        fetchGarages();
+        setActionModal(null);
+        setActionReason('');
+        setShowDetailModal(false);
+        setSelectedGarage(null);
       }
-      fetchGarages();
     } catch (error) {
       console.error('Error processing garage:', error);
     } finally {
       setProcessing(false);
-      setActionGarage(null);
+    }
+  };
+
+  const openDetailModal = (garage: Garage) => {
+    setSelectedGarage(garage);
+    setShowDetailModal(true);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+      case 'INFO_REQUESTED':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Info Requested</Badge>;
+      case 'APPROVED':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
+      case 'REJECTED':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -113,36 +184,56 @@ export default function PendingGaragesPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            Pending Garage Activations
+            Garage Approvals
           </h1>
           <p className="text-muted-foreground">Review and approve new garage registrations</p>
         </div>
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Pending Garages ({garages.length})</CardTitle>
-              <div className="relative w-64">
-                {searching ? (
-                  <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-                ) : (
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                )}
-                <Input
-                  ref={searchInputRef}
-                  placeholder="Search garages..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  className="pl-9"
-                />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                Pending Garages
+                <Badge variant="secondary">{total}</Badge>
+              </CardTitle>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Pending</SelectItem>
+                    <SelectItem value="PENDING">New Requests</SelectItem>
+                    <SelectItem value="INFO_REQUESTED">Info Requested</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative flex-1 sm:w-64">
+                  {searching ? (
+                    <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+                  ) : (
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  )}
+                  <Input
+                    ref={searchInputRef}
+                    placeholder="Search garages..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             {garages.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-12 text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{search ? 'No pending garages found matching your search criteria.' : 'No pending garages'}</p>
+                <p className="text-lg font-medium">No pending garages</p>
+                <p className="text-sm">
+                  {search 
+                    ? 'No garages found matching your search criteria.' 
+                    : 'All garage registrations have been processed.'}
+                </p>
               </div>
             ) : (
               <Table>
@@ -151,14 +242,14 @@ export default function PendingGaragesPage() {
                     <TableHead>Garage</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>MOT Price</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Registered</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {garages.map((garage) => (
-                    <TableRow key={garage.id}>
+                    <TableRow key={garage.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDetailModal(garage)}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{garage.name}</p>
@@ -166,22 +257,46 @@ export default function PendingGaragesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{garage.owner.name}</p>
-                        <p className="text-sm text-muted-foreground">{garage.owner.email}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-medium">{garage.owner.name || 'N/A'}</p>
+                            <p className="text-sm text-muted-foreground">{garage.owner.email}</p>
+                          </div>
+                          {garage.owner.emailVerified && (
+                            <span title="Email verified">
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <p>{garage.city}</p>
                         <p className="text-sm text-muted-foreground">{garage.postcode}</p>
                       </TableCell>
-                      <TableCell>£{garage.motPrice.toFixed(2)}</TableCell>
+                      <TableCell>{getStatusBadge(garage.approvalStatus)}</TableCell>
                       <TableCell>{format(new Date(garage.createdAt), 'dd MMM yyyy')}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline" className="text-green-600 hover:bg-green-50" onClick={() => setActionGarage({ id: garage.id, action: 'approve' })}>
-                          <Check className="h-4 w-4 mr-1" /> Approve
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50" onClick={() => setActionGarage({ id: garage.id, action: 'reject' })}>
-                          <X className="h-4 w-4 mr-1" /> Reject
-                        </Button>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button size="sm" variant="ghost" onClick={() => openDetailModal(garage)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-green-600 hover:bg-green-50" 
+                            onClick={() => setActionModal({ garage, action: 'approve' })}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600 hover:bg-red-50" 
+                            onClick={() => setActionModal({ garage, action: 'reject' })}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -204,34 +319,219 @@ export default function PendingGaragesPage() {
           </CardContent>
         </Card>
 
-        {/* Confirmation Dialog */}
-        <AlertDialog open={!!actionGarage} onOpenChange={() => setActionGarage(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {actionGarage?.action === 'approve' ? 'Approve Garage' : 'Reject Garage'}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {actionGarage?.action === 'approve'
-                  ? 'This will activate the garage and allow them to receive bookings.'
-                  : 'This will permanently delete the garage registration.'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
+        {/* Detail Modal */}
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            {selectedGarage && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-3">
+                    <Building2 className="h-5 w-5" />
+                    {selectedGarage.name}
+                    {getStatusBadge(selectedGarage.approvalStatus)}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Registered on {format(new Date(selectedGarage.createdAt), 'dd MMMM yyyy \'at\' HH:mm')}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 py-4">
+                  {/* Garage Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" /> Email
+                      </p>
+                      <p className="text-sm">{selectedGarage.email}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> Phone
+                      </p>
+                      <p className="text-sm">{selectedGarage.phone}</p>
+                    </div>
+                    <div className="space-y-1 col-span-2">
+                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> Address
+                      </p>
+                      <p className="text-sm">{selectedGarage.address}</p>
+                      <p className="text-sm text-muted-foreground">{selectedGarage.city}, {selectedGarage.postcode}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">MOT Price</p>
+                      <p className="text-sm">£{selectedGarage.motPrice.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {/* Owner Info */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Owner Information</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Name</p>
+                        <p className="text-sm">{selectedGarage.owner.name || 'N/A'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Email</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm">{selectedGarage.owner.email}</p>
+                          {selectedGarage.owner.emailVerified ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">Verified</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">Unverified</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                        <p className="text-sm">{selectedGarage.owner.phone || 'N/A'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Account Created</p>
+                        <p className="text-sm">{format(new Date(selectedGarage.owner.createdAt), 'dd MMM yyyy')}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previous Info Request */}
+                  {selectedGarage.approvalStatus === 'INFO_REQUESTED' && selectedGarage.rejectionReason && (
+                    <div className="border-t pt-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <HelpCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-blue-800">Information Requested</h4>
+                            <p className="text-sm text-blue-700 mt-1">{selectedGarage.rejectionReason}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Approval History */}
+                  {selectedGarage.approvalLogs && selectedGarage.approvalLogs.length > 0 && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <History className="h-4 w-4" /> Approval History
+                      </h4>
+                      <div className="space-y-3">
+                        {selectedGarage.approvalLogs.map((log) => (
+                          <div key={log.id} className="flex items-start gap-3 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{log.action.replace('_', ' ')}</span>
+                                <span className="text-muted-foreground">
+                                  by {log.admin.name || log.admin.email}
+                                </span>
+                              </div>
+                              {log.reason && (
+                                <p className="text-muted-foreground mt-1">&ldquo;{log.reason}&rdquo;</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(log.createdAt), 'dd MMM yyyy \'at\' HH:mm')}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="text-blue-600 hover:bg-blue-50"
+                    onClick={() => setActionModal({ garage: selectedGarage, action: 'request_info' })}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Request Info
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="text-red-600 hover:bg-red-50"
+                    onClick={() => setActionModal({ garage: selectedGarage, action: 'reject' })}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => setActionModal({ garage: selectedGarage, action: 'approve' })}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Action Confirmation Modal */}
+        <Dialog open={!!actionModal} onOpenChange={() => { setActionModal(null); setActionReason(''); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {actionModal?.action === 'approve' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                {actionModal?.action === 'reject' && <AlertCircle className="h-5 w-5 text-red-600" />}
+                {actionModal?.action === 'request_info' && <MessageSquare className="h-5 w-5 text-blue-600" />}
+                {actionModal?.action === 'approve' && 'Approve Garage'}
+                {actionModal?.action === 'reject' && 'Reject Garage'}
+                {actionModal?.action === 'request_info' && 'Request Additional Information'}
+              </DialogTitle>
+              <DialogDescription>
+                {actionModal?.action === 'approve' && (
+                  <>This will activate <strong>{actionModal.garage.name}</strong> and allow them to receive bookings. An approval email will be sent to the owner.</>
+                )}
+                {actionModal?.action === 'reject' && (
+                  <>This will reject the registration of <strong>{actionModal?.garage.name}</strong>. Please provide a reason for rejection.</>
+                )}
+                {actionModal?.action === 'request_info' && (
+                  <>Request additional information from <strong>{actionModal?.garage.name}</strong> before making a decision.</>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {(actionModal?.action === 'reject' || actionModal?.action === 'request_info') && (
+              <div className="py-4">
+                <label className="text-sm font-medium mb-2 block">
+                  {actionModal.action === 'reject' ? 'Rejection Reason *' : 'Information Needed *'}
+                </label>
+                <Textarea
+                  placeholder={actionModal.action === 'reject' 
+                    ? 'Please explain why this garage registration is being rejected...'
+                    : 'Specify what additional information you need from this garage...'}
+                  value={actionReason}
+                  onChange={(e) => setActionReason(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setActionModal(null); setActionReason(''); }} disabled={processing}>
+                Cancel
+              </Button>
+              <Button
                 onClick={handleAction}
-                disabled={processing}
-                className={actionGarage?.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+                disabled={processing || ((actionModal?.action === 'reject' || actionModal?.action === 'request_info') && !actionReason.trim())}
+                className={
+                  actionModal?.action === 'approve' ? 'bg-green-600 hover:bg-green-700' :
+                  actionModal?.action === 'reject' ? 'bg-red-600 hover:bg-red-700' :
+                  'bg-blue-600 hover:bg-blue-700'
+                }
               >
-                {processing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {actionGarage?.action === 'approve' ? 'Approve' : 'Reject'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                {processing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {actionModal?.action === 'approve' && 'Approve'}
+                {actionModal?.action === 'reject' && 'Reject'}
+                {actionModal?.action === 'request_info' && 'Send Request'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
 }
-

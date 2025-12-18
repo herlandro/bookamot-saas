@@ -85,9 +85,9 @@ export async function GET(
           advisory: 0
         },
         details: [
-          'Sistema de freios com vazamento crítico',
-          'Pneu traseiro esquerdo abaixo do limite legal',
-          'Farol principal direito não funcional'
+          'Brake system with critical leak',
+          'Left rear tyre below legal limit',
+          'Right main headlight not functional'
         ]
       },
       {
@@ -104,10 +104,10 @@ export async function GET(
           advisory: 3
         },
         details: [
-          'Correia do alternador com desgaste',
-          'Óleo da transmissão próximo ao limite',
-          'Pneus dianteiros com desgaste irregular',
-          'Bateria com baixa capacidade'
+          'Alternator belt worn',
+          'Transmission oil near limit',
+          'Front tyres with uneven wear',
+          'Battery with low capacity'
         ]
       },
       {

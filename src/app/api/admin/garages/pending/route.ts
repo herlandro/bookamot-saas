@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { GarageApprovalStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,14 +16,22 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || 'PENDING' // PENDING, INFO_REQUESTED, or all
+
+    // Build where clause based on status filter
+    const statusFilter = status === 'all' 
+      ? { approvalStatus: { in: [GarageApprovalStatus.PENDING, GarageApprovalStatus.INFO_REQUESTED] } }
+      : { approvalStatus: status as GarageApprovalStatus }
 
     const where = {
-      isActive: false,
+      ...statusFilter,
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
           { email: { contains: search, mode: 'insensitive' as const } },
-          { city: { contains: search, mode: 'insensitive' as const } }
+          { city: { contains: search, mode: 'insensitive' as const } },
+          { owner: { name: { contains: search, mode: 'insensitive' as const } } },
+          { owner: { email: { contains: search, mode: 'insensitive' as const } } }
         ]
       })
     }
@@ -31,7 +40,23 @@ export async function GET(request: NextRequest) {
       prisma.garage.findMany({
         where,
         include: {
-          owner: { select: { name: true, email: true, phone: true } }
+          owner: { 
+            select: { 
+              id: true, 
+              name: true, 
+              email: true, 
+              phone: true, 
+              emailVerified: true,
+              createdAt: true 
+            } 
+          },
+          approvalLogs: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+            include: {
+              admin: { select: { name: true, email: true } }
+            }
+          }
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,

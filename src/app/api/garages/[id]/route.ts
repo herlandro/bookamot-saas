@@ -31,7 +31,7 @@ export async function GET(
       )
     }
 
-    // Buscar avaliações reais do banco de dados
+    // Fetch actual reviews from database
     const reviews = await prisma.review.findMany({
       where: {
         garageId: garage.id
@@ -45,7 +45,7 @@ export async function GET(
     const reviewCount = reviews.length
     const rating = reviewCount > 0
       ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviewCount
-      : 0 // Se não houver avaliações, a média é 0
+      : 0 // If there are no reviews, average is 0
 
     return NextResponse.json({
       id: garage.id,
