@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { EmailType } from '@prisma/client'
 import type { Booking, User, Garage, Vehicle } from '@prisma/client'
+import { sendBookingEmail } from './booking-email-service'
 
 type BookingWithRelations = Booking & {
   customer: Pick<User, 'id' | 'name' | 'email' | 'phone'>

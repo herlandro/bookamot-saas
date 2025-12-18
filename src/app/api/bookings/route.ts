@@ -196,6 +196,7 @@ export async function POST(request: NextRequest) {
       include: {
         garage: {
           select: {
+            id: true,
             name: true,
             address: true,
             city: true,
@@ -206,6 +207,7 @@ export async function POST(request: NextRequest) {
         },
         vehicle: {
           select: {
+            id: true,
             registration: true,
             make: true,
             model: true,
@@ -214,6 +216,7 @@ export async function POST(request: NextRequest) {
         },
         customer: {
           select: {
+            id: true,
             name: true,
             email: true,
             phone: true
