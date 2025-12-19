@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { getAppVersion } from '@/lib/version'
 
 interface ServiceWorkerState {
   isSupported: boolean
@@ -23,20 +22,48 @@ export function useServiceWorker() {
     registration: null,
   })
 
+  const isDebugEnabled = useCallback(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem('debug:refresh-loop') === '1'
+    } catch {
+      return false
+    }
+  }, [])
+
+  const debug = useCallback(
+    (...args: unknown[]) => {
+      if (isDebugEnabled()) console.debug(...args)
+    },
+    [isDebugEnabled]
+  )
+
+  const reloadOnce = useCallback(
+    (reason: string) => {
+      try {
+        if (typeof window === 'undefined') return
+        if (window.sessionStorage.getItem('sw:reloaded') === '1') {
+          debug('[SW] reload skipped (already reloaded)', { reason })
+          return
+        }
+        window.sessionStorage.setItem('sw:reloaded', '1')
+      } catch {}
+      debug('[SW] reloading page', { reason })
+      window.location.reload()
+    },
+    [debug]
+  )
+
   const checkForUpdates = useCallback(async () => {
     if (!state.isSupported || !state.registration) return
 
     try {
-      const registration = await state.registration.update()
-      
-      if (registration) {
-        // Verifica se há um novo Service Worker esperando
-        if (registration.waiting) {
-          setState((prev) => ({
-            ...prev,
-            isUpdateAvailable: true,
-          }))
-        }
+      await state.registration.update()
+
+      if (state.registration.waiting) {
+        setState((prev) => ({
+          ...prev,
+          isUpdateAvailable: true,
+        }))
       }
     } catch (error) {
       console.error('[SW] Error checking for updates:', error)
@@ -51,9 +78,9 @@ export function useServiceWorker() {
     
     // Recarrega a página após um pequeno delay
     setTimeout(() => {
-      window.location.reload()
+      reloadOnce('skipWaiting')
     }, 100)
-  }, [state.registration])
+  }, [reloadOnce, state.registration])
 
   useEffect(() => {
     if (!state.isSupported) return
@@ -63,6 +90,7 @@ export function useServiceWorker() {
     const registerServiceWorker = async () => {
       try {
         // Registra o Service Worker
+        debug('[SW] registering /sw.js')
         registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
         })
@@ -74,8 +102,23 @@ export function useServiceWorker() {
         }))
 
         // Verifica atualizações periodicamente (a cada 5 minutos)
+        const checkForUpdatesLocal = async () => {
+          if (!registration) return
+          try {
+            await registration.update()
+            if (registration.waiting) {
+              setState((prev) => ({
+                ...prev,
+                isUpdateAvailable: true,
+              }))
+            }
+          } catch (error) {
+            console.error('[SW] Error checking for updates:', error)
+          }
+        }
+
         const updateInterval = setInterval(() => {
-          checkForUpdates()
+          checkForUpdatesLocal()
         }, 5 * 60 * 1000)
 
         // Listener para quando um novo Service Worker está esperando
@@ -83,14 +126,20 @@ export function useServiceWorker() {
           const newWorker = registration?.installing
           
           if (newWorker) {
+            debug('[SW] updatefound: installing new worker')
             setState((prev) => ({
               ...prev,
               isInstalling: true,
             }))
 
             newWorker.addEventListener('statechange', () => {
+              debug('[SW] worker statechange', { state: newWorker.state })
               if (newWorker.state === 'installed') {
                 if (registration?.waiting) {
+                  const isFirstInstall =
+                    typeof window !== 'undefined' && !navigator.serviceWorker.controller
+                  if (isFirstInstall) return
+
                   // Há um novo Service Worker esperando
                   setState((prev) => ({
                     ...prev,
@@ -112,7 +161,7 @@ export function useServiceWorker() {
         // Listener para quando o Service Worker assume controle
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           // Nova versão assumiu controle, recarrega a página
-          window.location.reload()
+          reloadOnce('controllerchange')
         })
 
         return () => {
@@ -129,12 +178,12 @@ export function useServiceWorker() {
     return () => {
       // Não fazemos unregister aqui para manter o SW ativo
     }
-  }, [state.isSupported])
+  }, [debug, reloadOnce, state.isSupported])
 
   return {
     ...state,
+    canUpdateNow: !!state.registration?.waiting,
     checkForUpdates,
     skipWaiting,
   }
 }
-

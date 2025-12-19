@@ -20,20 +20,24 @@ const packageJson = JSON.parse(
 const buildHash = crypto.randomBytes(8).toString('hex')
 const buildTimestamp = Date.now().toString()
 const appVersion = packageJson.version || '0.1.0'
+const buildVersion = `${appVersion}-${buildHash.substring(0, 8)}`
+const cacheName = `bookamot-cache-${buildVersion}`
 
 // Lê o template do Service Worker
 const swTemplatePath = path.join(__dirname, '../public/sw.js')
 let swContent = fs.readFileSync(swTemplatePath, 'utf8')
 
 // Substitui as variáveis
-swContent = swContent.replace(/\{\{BUILD_VERSION\}\}/g, `${appVersion}-${buildHash.substring(0, 8)}`)
-swContent = swContent.replace(/\{\{BUILD_TIMESTAMP\}\}/g, buildTimestamp)
+swContent = swContent
+  .replace(/const BUILD_VERSION = '.*?'/, `const BUILD_VERSION = '${buildVersion}'`)
+  .replace(/const BUILD_TIMESTAMP = '.*?'/, `const BUILD_TIMESTAMP = '${buildTimestamp}'`)
+  .replace(/const CACHE_NAME = '.*?'/, `const CACHE_NAME = '${cacheName}'`)
 
 // Escreve o Service Worker gerado
 fs.writeFileSync(swTemplatePath, swContent, 'utf8')
 
 console.log('✅ Service Worker gerado com sucesso!')
-console.log(`   Versão: ${appVersion}-${buildHash.substring(0, 8)}`)
+console.log(`   Versão: ${buildVersion}`)
 console.log(`   Timestamp: ${buildTimestamp}`)
 
 // Gera arquivo .env.local com as variáveis de build
@@ -47,4 +51,3 @@ const envPath = path.join(__dirname, '../.env.local')
 fs.writeFileSync(envPath, envContent, 'utf8')
 
 console.log('✅ Variáveis de build salvas em .env.local')
-

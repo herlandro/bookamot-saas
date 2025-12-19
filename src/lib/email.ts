@@ -106,9 +106,26 @@ export async function sendGarageVerificationEmail(
 export async function sendGarageApprovalEmail(
   email: string,
   garageName: string,
-  ownerName: string
+  ownerName: string,
+  approvedAt?: Date,
+  approvedBy?: string
 ): Promise<void> {
   const loginUrl = `${process.env.NEXTAUTH_URL}/garage-admin/signin`
+  const approvalDate = approvedAt ? new Date(approvedAt).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : new Date().toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
   
   const content = `
     <div class="content">
@@ -119,21 +136,39 @@ export async function sendGarageApprovalEmail(
       <div class="success-box">
         <strong>✅ Status: Approved and Active</strong>
         <p style="margin: 10px 0 0 0;">Your garage can now receive customer bookings!</p>
+        <p style="margin: 10px 0 0 0; font-size: 0.9em;">
+          Approved on: ${approvalDate}
+          ${approvedBy ? `<br>Approved by: ${approvedBy}` : ''}
+        </p>
       </div>
       
-      <p>You can now access your admin panel to:</p>
+      <p>Your garage is now fully activated with access to all features:</p>
       <ul>
-        <li>Manage your opening hours</li>
-        <li>View and confirm bookings</li>
-        <li>Update garage information</li>
-        <li>Track customer reviews</li>
+        <li>✅ Receive and manage customer bookings</li>
+        <li>✅ Set and update opening hours</li>
+        <li>✅ View booking history and analytics</li>
+        <li>✅ Update garage information and pricing</li>
+        <li>✅ Track customer reviews and ratings</li>
+        <li>✅ Manage MOT test results</li>
       </ul>
       
       <p style="text-align: center;">
         <a href="${loginUrl}" class="button">Access Admin Panel</a>
       </p>
       
-      <p>Welcome to BookaMOT!</p>
+      <div class="info-box">
+        <strong>📋 Next Steps:</strong>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+          <li>Log in to your admin panel using your registered email</li>
+          <li>Set up your opening hours and availability</li>
+          <li>Review and confirm incoming bookings</li>
+          <li>Keep your garage information up to date</li>
+        </ul>
+      </div>
+      
+      <p>Welcome to BookaMOT! We're excited to have you on board.</p>
+      
+      <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
     </div>
   `
 

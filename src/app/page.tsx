@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { MainLayout } from '@/components/layout/main-layout';
 
 // Import the garage admin page component
 import GarageAdminPage from './garage-admin/calendar/page';
@@ -15,6 +14,15 @@ import Dashboard from './dashboard/page';
 export default function HomePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   // If user is authenticated
   if (status === 'authenticated') {
@@ -28,6 +36,10 @@ export default function HomePage() {
 
   const handleBookMOT = () => {
     router.push('/signup');
+  };
+
+  const handleRegisterGarage = () => {
+    router.push('/garage-admin/signup');
   };
 
   // Conteúdo principal da página
@@ -44,13 +56,21 @@ export default function HomePage() {
       </div>
 
       {/* Book MOT Button */}
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-3">
         <Button
           onClick={handleBookMOT}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-4 text-lg font-medium"
           size="lg"
         >
           I want to book an MOT
+        </Button>
+        <Button
+          onClick={handleRegisterGarage}
+          variant="outline"
+          className="w-full border-border text-foreground hover:bg-muted rounded-full px-8 py-4 text-lg font-medium"
+          size="lg"
+        >
+          I want to register my garage
         </Button>
       </div>
 
@@ -61,34 +81,24 @@ export default function HomePage() {
     </>
   );
 
-  // Render with or without sidebar depending on whether user is logged in
-  if (session) {
-    return (
-      <MainLayout>
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-          {pageContent}
-        </div>
-      </MainLayout>
-    );
-  } else {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Header */}
-        <header className="flex justify-end p-6">
-          <Button 
-            variant="outline" 
-            className="border-border text-foreground hover:bg-muted"
-            onClick={() => router.push('/signin')}
-          >
-            Sign in
-          </Button>
-        </header>
+  // Render pre-login page (status is 'unauthenticated')
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="flex justify-end p-6">
+        <Button 
+          variant="outline" 
+          className="border-border text-foreground hover:bg-muted"
+          onClick={() => router.push('/signin')}
+        >
+          Sign in
+        </Button>
+      </header>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-          {pageContent}
-        </div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+        {pageContent}
       </div>
-    );
-  }
+    </div>
+  );
 }

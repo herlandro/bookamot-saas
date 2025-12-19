@@ -8,18 +8,28 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next()
   const pathname = request.nextUrl.pathname
 
+  const isServiceWorker = pathname === '/sw.js'
+
+  if (isServiceWorker) {
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+  }
+
   // Headers de cache para recursos estáticos
   if (
-    pathname.startsWith('/_next/static/') ||
-    pathname.startsWith('/_next/image') ||
-    pathname.match(/\.(js|css|woff|woff2|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)$/)
+    !isServiceWorker &&
+    (
+      pathname.startsWith('/_next/static/') ||
+      pathname.startsWith('/_next/image') ||
+      pathname.match(/\.(js|css|woff|woff2|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)$/)
+    )
   ) {
     // Cache por 1 ano para recursos estáticos (com validação)
     response.headers.set(
       'Cache-Control',
       'public, max-age=31536000, immutable, stale-while-revalidate=86400'
     )
-    response.headers.set('ETag', `"${Date.now()}"`)
   }
   
   // Headers para páginas HTML
@@ -61,4 +71,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
-

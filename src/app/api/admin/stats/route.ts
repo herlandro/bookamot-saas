@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { GarageApprovalStatus } from '@prisma/client'
 
 export async function GET() {
   try {
@@ -31,7 +32,13 @@ export async function GET() {
       prisma.booking.count(),
       prisma.vehicle.count(),
       prisma.review.count(),
-      prisma.garage.count({ where: { isActive: false } }),
+      prisma.garage.count({ 
+        where: { 
+          approvalStatus: { 
+            in: [GarageApprovalStatus.PENDING, GarageApprovalStatus.INFO_REQUESTED] 
+          } 
+        } 
+      }),
       prisma.booking.groupBy({
         by: ['status'],
         _count: { status: true }

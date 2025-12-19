@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -169,7 +170,28 @@ export default function AdminDashboard() {
             <AnalyticsOverviewCard title="Bookings" value={data.overview.totalBookings} icon={CalendarCheck} color="purple" />
             <AnalyticsOverviewCard title="Vehicles" value={data.overview.totalVehicles} icon={Car} color="orange" />
             <AnalyticsOverviewCard title="Reviews" value={data.overview.totalReviews} icon={Star} color="yellow" description={`Avg: ${data.overview.averageRating.toFixed(1)} ⭐`} />
-            <AnalyticsOverviewCard title="Pending" value={data.overview.pendingGarages} icon={Clock} color="red" description="Garages awaiting approval" />
+            {data.overview.pendingGarages > 0 ? (
+              <Link href="/admin/garages/pending" className="block">
+                <div className="relative">
+                  <AnalyticsOverviewCard 
+                    title="Pending" 
+                    value={data.overview.pendingGarages} 
+                    icon={Clock} 
+                    color="red" 
+                    description="Garages awaiting approval"
+                  />
+                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+                </div>
+              </Link>
+            ) : (
+              <AnalyticsOverviewCard 
+                title="Pending" 
+                value={data.overview.pendingGarages} 
+                icon={Clock} 
+                color="red" 
+                description="Garages awaiting approval"
+              />
+            )}
           </div>
 
           {/* Charts Row */}

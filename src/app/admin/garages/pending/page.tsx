@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/select';
 import { 
   Search, Check, X, Loader2, Building2, Eye, Mail, Phone, MapPin, 
-  Calendar, Clock, MessageSquare, History, AlertCircle, CheckCircle2, HelpCircle
+  Calendar, Clock, MessageSquare, History, AlertCircle, CheckCircle2, HelpCircle,
+  Globe, FileText, Map
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -40,7 +41,14 @@ interface Garage {
   city: string;
   postcode: string;
   address: string;
+  description: string | null;
+  website: string | null;
+  motLicenseNumber: string;
   motPrice: number;
+  retestPrice: number;
+  latitude: number | null;
+  longitude: number | null;
+  openingHours: any; // JSON object
   createdAt: string;
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'INFO_REQUESTED';
   rejectionReason: string | null;
@@ -356,11 +364,67 @@ export default function PendingGaragesPage() {
                       </p>
                       <p className="text-sm">{selectedGarage.address}</p>
                       <p className="text-sm text-muted-foreground">{selectedGarage.city}, {selectedGarage.postcode}</p>
+                      {selectedGarage.latitude && selectedGarage.longitude && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Map className="h-3 w-3" />
+                          Coordinates: {selectedGarage.latitude.toFixed(6)}, {selectedGarage.longitude.toFixed(6)}
+                        </p>
+                      )}
+                    </div>
+                    {selectedGarage.website && (
+                      <div className="space-y-1 col-span-2">
+                        <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                          <Globe className="h-3 w-3" /> Website
+                        </p>
+                        <a 
+                          href={selectedGarage.website.startsWith('http') ? selectedGarage.website : `https://${selectedGarage.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          {selectedGarage.website}
+                        </a>
+                      </div>
+                    )}
+                    {selectedGarage.description && (
+                      <div className="space-y-1 col-span-2">
+                        <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                          <FileText className="h-3 w-3" /> Description
+                        </p>
+                        <p className="text-sm">{selectedGarage.description}</p>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">MOT License Number</p>
+                      <p className="text-sm font-mono">{selectedGarage.motLicenseNumber}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">MOT Price</p>
                       <p className="text-sm">£{selectedGarage.motPrice.toFixed(2)}</p>
                     </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Retest Price</p>
+                      <p className="text-sm">£{selectedGarage.retestPrice.toFixed(2)}</p>
+                    </div>
+                    {selectedGarage.openingHours && (
+                      <div className="space-y-1 col-span-2">
+                        <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Opening Hours
+                        </p>
+                        <div className="text-sm space-y-1">
+                          {Object.entries(selectedGarage.openingHours as Record<string, any>).map(([day, hours]: [string, any]) => (
+                            <div key={day} className="flex justify-between">
+                              <span className="capitalize font-medium">{day}:</span>
+                              <span>
+                                {hours?.open && hours?.close 
+                                  ? `${hours.open} - ${hours.close}`
+                                  : 'Closed'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Owner Info */}

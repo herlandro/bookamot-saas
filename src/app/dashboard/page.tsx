@@ -70,8 +70,15 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    
     if (status === 'loading') return
     if (!session) {
       router.push('/signin')
@@ -85,7 +92,7 @@ export default function Dashboard() {
     }
 
     fetchDashboardData()
-  }, [session, status, router])
+  }, [session, status, router, mounted])
 
   const fetchDashboardData = async () => {
     try {
@@ -211,7 +218,7 @@ export default function Dashboard() {
     }
   }
 
-  if (status === 'loading' || isLoading) {
+  if (!mounted || status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-red-600" />

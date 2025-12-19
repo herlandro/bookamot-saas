@@ -7,6 +7,7 @@ import { Sun, Moon, Menu } from 'lucide-react'
 import { NavigationMenu } from './navigation-menu'
 import { AvatarDropdown } from './avatar-dropdown'
 import { NotificationsDropdown } from './notifications-dropdown'
+import { AdminNotificationsDropdown } from './admin-notifications-dropdown'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -60,9 +61,12 @@ export function Header({ onMenuClick, showMenuButton = true, onBookingClick }: H
 
         {/* Right Side */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Notifications - Only for garage owners */}
+          {/* Notifications - For garage owners and admins */}
           {session.user.role === 'GARAGE_OWNER' && (
             <NotificationsDropdown onBookingClick={onBookingClick} />
+          )}
+          {session.user.role === 'ADMIN' && (
+            <AdminNotificationsDropdown />
           )}
 
           {/* Theme Toggle */}

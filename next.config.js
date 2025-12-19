@@ -44,15 +44,6 @@ const nextConfig = {
       },
     ]
   },
-  // Gera nomes de arquivos com hash para cache busting
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.output.filename = (pathData) => {
-        return `static/chunks/${pathData.chunk?.name || 'chunk'}-[contenthash].js`
-      }
-    }
-    return config
-  },
 };
 
 export default nextConfig;

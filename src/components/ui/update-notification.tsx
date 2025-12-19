@@ -11,16 +11,18 @@ import { getAppVersion } from '@/lib/version'
  * Componente de notificação de atualização disponível
  */
 export function UpdateNotification() {
-  const { isUpdateAvailable, skipWaiting } = useServiceWorker()
+  const { isUpdateAvailable, canUpdateNow, skipWaiting } = useServiceWorker()
   const [isVisible, setIsVisible] = useState(false)
   const [currentVersion, setCurrentVersion] = useState<string>('')
 
   useEffect(() => {
-    if (isUpdateAvailable) {
+    if (isUpdateAvailable && canUpdateNow) {
       setCurrentVersion(getAppVersion())
       setIsVisible(true)
+      return
     }
-  }, [isUpdateAvailable])
+    if (!isUpdateAvailable) setIsVisible(false)
+  }, [canUpdateNow, isUpdateAvailable])
 
   const handleUpdate = () => {
     skipWaiting()
@@ -49,6 +51,7 @@ export function UpdateNotification() {
               onClick={handleUpdate}
               size="sm"
               className="bg-primary hover:bg-primary/90"
+              disabled={!canUpdateNow}
             >
               <RefreshCw className="h-3 w-3 mr-2" />
               Update Now
@@ -67,4 +70,3 @@ export function UpdateNotification() {
     </div>
   )
 }
-

@@ -166,7 +166,20 @@ export async function PATCH(
 
       switch (action) {
         case 'approve':
-          await sendGarageApprovalEmail(ownerEmail, garage.name, ownerName)
+          // Get admin name for email
+          const admin = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { name: true, email: true }
+          })
+          const adminName = admin?.name || admin?.email || 'Administrator'
+          
+          await sendGarageApprovalEmail(
+            ownerEmail, 
+            garage.name, 
+            ownerName,
+            updateData.approvedAt,
+            adminName
+          )
           console.log(`📧 Approval email sent to ${ownerEmail}`)
           break
 
