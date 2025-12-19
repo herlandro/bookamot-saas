@@ -43,8 +43,28 @@ export async function createUser(data: CreateUserData) {
 export async function getUserByEmail(email: string) {
   return await prisma.user.findUnique({
     where: { email },
-    include: {
-      garage: true,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      phone: true,
+      createdAt: true,
+      emailVerified: true,
+      garage: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          city: true,
+          postcode: true,
+          phone: true,
+          email: true,
+          isActive: true,
+          dvlaApproved: true,
+          approvalStatus: true,
+        }
+      }
     }
   })
 }

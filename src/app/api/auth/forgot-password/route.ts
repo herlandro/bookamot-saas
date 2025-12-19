@@ -40,8 +40,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user exists
+    // Using select to avoid issues if emailVerificationCode columns don't exist yet
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+      }
     })
 
     // For security, always return success even if user doesn't exist

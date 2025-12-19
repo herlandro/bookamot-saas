@@ -14,9 +14,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user with garage
+    // Using select to explicitly get only needed fields
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { garage: true }
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        garage: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      }
     })
 
     if (!user) {

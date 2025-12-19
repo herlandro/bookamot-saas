@@ -44,8 +44,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
+    // Using select to avoid issues if emailVerificationCode columns don't exist yet
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      }
     })
 
     if (existingUser) {

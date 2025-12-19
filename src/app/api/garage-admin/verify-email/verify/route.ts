@@ -13,9 +13,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
+    // Using select to explicitly get only needed fields (including emailVerificationCode if it exists)
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { garage: true }
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        emailVerificationCode: true,
+        emailVerificationExpiry: true,
+        garage: {
+          select: {
+            id: true,
+            name: true,
+            approvalStatus: true,
+          }
+        }
+      }
     })
 
     if (!user) {
@@ -32,7 +46,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if code exists
+    // Check if code exists (defensive check in case columns don't exist)
     if (!user.emailVerificationCode || !user.emailVerificationExpiry) {
       return NextResponse.json(
         { error: 'No verification code found. Please request a new code.' },
