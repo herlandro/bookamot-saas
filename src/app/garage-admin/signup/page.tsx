@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Shield, Eye, EyeOff, Mail, Lock, User, Building, Loader2, MapPin, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Building, Loader2, MapPin, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -211,13 +211,7 @@ export default function GarageSignUp() {
     <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="flex justify-center">
-            <div className="flex items-center">
-              <Shield className="h-12 w-12 text-primary mr-3" />
-              <h1 className="text-3xl font-bold text-foreground">Garage Admin</h1>
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
+          <h2 className="text-center text-3xl font-extrabold text-foreground">
             Create your garage account
           </h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
@@ -446,13 +440,11 @@ export default function GarageSignUp() {
             </div>
           </form>
         </div>
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => router.push('/')}
-        >
-          Back to Home
-        </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          <Link href="/" className="font-medium text-primary hover:text-primary/90">
+            Back to Home
+          </Link>
+        </p>
       </div>
 
       {/* Email Verification Modal */}
