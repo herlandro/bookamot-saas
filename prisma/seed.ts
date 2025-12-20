@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, FuelType, BookingStatus, PaymentStatus, ReviewerType } from '@prisma/client'
+import { PrismaClient, UserRole, FuelType, BookingStatus, PaymentStatus, ReviewerType, GarageApprovalStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -291,6 +291,7 @@ async function main() {
   console.log('🏢 Creating 10 garages with owners...')
   const garagePassword = await hashPassword('garage123')
   const garages: any[] = []
+  const now = new Date()
 
   for (let i = 0; i < GARAGE_DATA.length; i++) {
     const garageInfo = GARAGE_DATA[i]
@@ -327,6 +328,10 @@ async function main() {
         motLicenseNumber: `MOT-${String(i + 1).padStart(6, '0')}`,
         dvlaApproved: true,
         isActive: true,
+        // Approval fields - garages in seed are pre-approved
+        approvalStatus: GarageApprovalStatus.APPROVED,
+        approvedAt: now,
+        approvedById: adminUser.id,
         motPrice: garageInfo.motPrice, // Use unique price from GARAGE_DATA
         retestPrice: Math.round(garageInfo.motPrice * 0.5 * 100) / 100, // Retest is 50% of MOT price
         ownerId: owner.id,

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { PrismaClient, UserRole, FuelType, BookingStatus, PaymentStatus } from '@prisma/client'
+import { PrismaClient, UserRole, FuelType, BookingStatus, PaymentStatus, GarageApprovalStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -88,6 +88,8 @@ async function seedDatabase() {
     data: { name: 'Admin', email: 'admin@bookamot.co.uk', password: await hash('admin123!'), role: UserRole.ADMIN }
   })
   console.log(`👤 Admin: ${admin.email}`)
+  
+  const now = new Date()
 
   const customerPwd = await hash('password123')
   const customers: Array<{ id: string; name: string; email: string }> = []
@@ -117,6 +119,10 @@ async function seedDatabase() {
         motLicenseNumber: `MOT-${String(i+1).padStart(6,'0')}`,
         dvlaApproved: true,
         isActive: true,
+        // Approval fields - garages in seed are pre-approved
+        approvalStatus: GarageApprovalStatus.APPROVED,
+        approvedAt: now,
+        approvedById: admin.id,
         motPrice: g.motPrice,
         retestPrice: Math.round(g.motPrice*50)/100,
         ownerId: owner.id

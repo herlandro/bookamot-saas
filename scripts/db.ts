@@ -86,7 +86,7 @@ async function resetDatabase() {
   
   try {
     // Run the seed script
-    execSync('tsx resources/prisma/seed.ts', { stdio: 'inherit' })
+    execSync('tsx prisma/seed.ts', { stdio: 'inherit' })
     
     console.log('\n✨ Database reset completed successfully!')
     console.log('\n🎉 Your database is now clean and seeded with fresh data!')
