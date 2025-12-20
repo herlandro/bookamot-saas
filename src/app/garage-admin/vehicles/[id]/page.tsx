@@ -79,6 +79,8 @@ interface VehicleDetail {
 export default function VehicleDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const params = useParams();
   const vehicleId = params.id as string;
 
@@ -88,18 +90,18 @@ export default function VehicleDetailPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchVehicleDetails();
-  }, [session, status, router, vehicleId]);
+  }, [userId, userRole, status, router, vehicleId]);
 
   const fetchVehicleDetails = async () => {
     try {

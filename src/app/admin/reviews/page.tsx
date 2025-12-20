@@ -32,6 +32,8 @@ interface Review {
 export default function ReviewsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -65,12 +67,12 @@ export default function ReviewsPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!userId || userRole !== 'ADMIN') {
       router.push('/admin/login');
       return;
     }
     fetchReviews();
-  }, [session, status, router, fetchReviews]);
+  }, [userId, userRole, status, router, fetchReviews]);
 
   const handleDelete = async () => {
     if (!deleteId) return;

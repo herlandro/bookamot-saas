@@ -58,6 +58,8 @@ interface DashboardStats {
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
+  const userRole = session?.user?.role
   const [bookings, setBookings] = useState<Booking[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [stats, setStats] = useState<DashboardStats>({
@@ -80,19 +82,19 @@ export default function Dashboard() {
     if (!mounted) return
     
     if (status === 'loading') return
-    if (!session) {
+    if (!userId) {
       router.push('/signin')
       return
     }
 
     // Redirect garage owners to their admin dashboard
-    if (session.user?.role === 'GARAGE_OWNER') {
+    if (userRole === 'GARAGE_OWNER') {
       router.push('/')
       return
     }
 
     fetchDashboardData()
-  }, [session, status, router, mounted])
+  }, [userId, userRole, status, router, mounted])
 
   const fetchDashboardData = async () => {
     try {

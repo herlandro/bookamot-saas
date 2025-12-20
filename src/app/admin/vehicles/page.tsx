@@ -31,6 +31,8 @@ interface Vehicle {
 export default function VehiclesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -65,14 +67,14 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!userId || userRole !== 'ADMIN') {
       router.push('/admin/login');
       return;
     }
     // Only show initial loading spinner on first load
     const isInitial = initialLoading && vehicles.length === 0;
     fetchVehicles(isInitial);
-  }, [session, status, router, fetchVehicles]);
+  }, [userId, userRole, status, router, fetchVehicles]);
 
   const getMotStatus = (expiry: string | null) => {
     if (!expiry) return { label: 'Unknown', variant: 'secondary' as const };
@@ -192,4 +194,3 @@ export default function VehiclesPage() {
     </AdminLayout>
   );
 }
-

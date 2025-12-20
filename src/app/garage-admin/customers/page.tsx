@@ -47,6 +47,8 @@ interface Customer {
 export default function CustomersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,19 +87,19 @@ export default function CustomersPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, status, router, currentPage, debouncedSearchTerm, filters]);
+  }, [userId, userRole, status, router, currentPage, debouncedSearchTerm, filters]);
 
   const fetchCustomers = async () => {
     try {

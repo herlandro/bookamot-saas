@@ -50,6 +50,8 @@ interface CustomerDetail {
 export default function CustomerDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const params = useParams();
   const customerId = params.id as string;
 
@@ -62,19 +64,19 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchCustomerDetails();
     fetchCustomerReviews();
-  }, [session, status, router, customerId]);
+  }, [userId, userRole, status, router, customerId]);
 
   const fetchCustomerDetails = async () => {
     try {

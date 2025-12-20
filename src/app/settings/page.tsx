@@ -12,14 +12,15 @@ import { getAppVersion, getBuildDate } from '@/lib/version'
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session?.user?.id) {
+    if (!userId) {
       router.push('/signin')
       return
     }
-  }, [session, status, router])
+  }, [userId, status, router])
 
   if (status === 'loading') {
     return (

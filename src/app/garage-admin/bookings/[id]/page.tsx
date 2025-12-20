@@ -42,6 +42,8 @@ interface Booking {
 export default function BookingDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const bookingId = React.use(params).id;
   
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -54,18 +56,18 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchBooking();
-  }, [session, status, router, bookingId]);
+  }, [userId, userRole, status, router, bookingId]);
 
   const fetchBooking = async () => {
     try {

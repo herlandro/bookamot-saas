@@ -47,6 +47,8 @@ const defaultOpeningHours: OpeningHours = {
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [settings, setSettings] = useState<GarageSettings | null>(null);
   const [openingHours, setOpeningHours] = useState<OpeningHours>(defaultOpeningHours);
   const [loading, setLoading] = useState(true);
@@ -55,18 +57,18 @@ export default function SettingsPage() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchSettings();
-  }, [session, status, router]);
+  }, [userId, userRole, status, router]);
 
   const fetchSettings = async () => {
     try {

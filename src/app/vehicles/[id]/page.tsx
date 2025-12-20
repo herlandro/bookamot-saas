@@ -48,6 +48,7 @@ interface MileageData {
 export default function VehicleDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
 
   // Handle both Promise and direct params
   const [vehicleId, setVehicleId] = useState<string | null>(null)
@@ -78,12 +79,12 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     if (status === 'loading' || !vehicleId) return
-    if (!session) {
+    if (!userId) {
       router.push('/signin')
       return
     }
     fetchVehicleData()
-  }, [session, status, vehicleId, router])
+  }, [userId, status, vehicleId, router])
 
   const fetchVehicleData = async () => {
     try {

@@ -25,6 +25,8 @@ interface Customer {
 export default function CustomersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -59,14 +61,14 @@ export default function CustomersPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!userId || userRole !== 'ADMIN') {
       router.push('/admin/login');
       return;
     }
     // Only show initial loading spinner on first load
     const isInitial = initialLoading && customers.length === 0;
     fetchCustomers(isInitial);
-  }, [session, status, router, fetchCustomers]);
+  }, [userId, userRole, status, router, fetchCustomers]);
 
   if (status === 'loading' || initialLoading) {
     return (
@@ -179,4 +181,3 @@ export default function CustomersPage() {
     </AdminLayout>
   );
 }
-

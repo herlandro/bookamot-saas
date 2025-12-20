@@ -36,6 +36,8 @@ interface Booking {
 export default function BookingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,18 +48,18 @@ export default function BookingsPage() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchBookings();
-  }, [session, status, router, activeTab, currentPage]);
+  }, [userId, userRole, status, router, activeTab, currentPage]);
 
   const fetchBookings = async () => {
     try {

@@ -30,6 +30,8 @@ interface Vehicle {
 export default function VehiclesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,19 +63,19 @@ export default function VehiclesPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchVehicles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, status, router, currentPage, debouncedSearchTerm, filters]);
+  }, [userId, userRole, status, router, currentPage, debouncedSearchTerm, filters]);
 
   const fetchVehicles = async () => {
     try {

@@ -32,17 +32,19 @@ export interface Notification {
 
 export function useNotifications() {
   const { data: session, status } = useSession()
+  const userId = session?.user?.id
+  const userRole = session?.user?.role
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const fetchNotifications = useCallback(async () => {
-    if (status === 'loading' || !session?.user) {
+    if (status === 'loading' || !userId) {
       return
     }
 
     // Only fetch for garage owners
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       setNotifications([])
       setUnreadCount(0)
       setLoading(false)
@@ -63,7 +65,7 @@ export function useNotifications() {
     } finally {
       setLoading(false)
     }
-  }, [session, status])
+  }, [status, userId, userRole])
 
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
@@ -115,4 +117,3 @@ export function useNotifications() {
     refresh: fetchNotifications,
   }
 }
-

@@ -26,6 +26,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const isProd = process.env.NODE_ENV === "production"
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -38,10 +40,14 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <AuthSessionProvider>
-            <VersionCheckProvider>
-              {children}
-              <UpdateNotification />
-            </VersionCheckProvider>
+            {isProd ? (
+              <VersionCheckProvider>
+                {children}
+                <UpdateNotification />
+              </VersionCheckProvider>
+            ) : (
+              <>{children}</>
+            )}
           </AuthSessionProvider>
         </ThemeProvider>
       </body>

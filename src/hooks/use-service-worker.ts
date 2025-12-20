@@ -14,8 +14,10 @@ interface ServiceWorkerState {
  * Hook para gerenciar Service Worker e detectar atualizações
  */
 export function useServiceWorker() {
+  const isProd =
+    typeof process !== 'undefined' && process.env.NODE_ENV === 'production'
   const [state, setState] = useState<ServiceWorkerState>({
-    isSupported: typeof window !== 'undefined' && 'serviceWorker' in navigator,
+    isSupported: typeof window !== 'undefined' && isProd && 'serviceWorker' in navigator,
     isInstalled: false,
     isUpdateAvailable: false,
     isInstalling: false,
@@ -83,6 +85,7 @@ export function useServiceWorker() {
   }, [reloadOnce, state.registration])
 
   useEffect(() => {
+    if (!state.isSupported) return
     if (!state.isSupported) return
 
     let registration: ServiceWorkerRegistration | null = null

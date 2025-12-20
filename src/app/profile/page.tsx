@@ -29,6 +29,7 @@ interface UserProfile {
 export default function ProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -60,13 +61,14 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session?.user?.id) {
+    if (!userId) {
       router.push('/signin')
       return
     }
 
-    fetchUserProfile(session.user.id)
-  }, [session?.user?.id, status, router])
+    if (userProfile?.id === userId) return
+    fetchUserProfile(userId)
+  }, [status, router, userId, userProfile?.id])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -77,7 +79,7 @@ export default function ProfilePage() {
     })
   }
 
-  if (status === 'loading' || isLoading) {
+  if ((!userProfile && status === 'loading') || (!userProfile && isLoading)) {
     return (
       <MainLayout>
         <div className="min-h-screen bg-background">

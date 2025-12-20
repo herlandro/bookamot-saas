@@ -4,9 +4,9 @@
  * NÃO edite este arquivo diretamente - edite o template e execute o build
  */
 
-const CACHE_NAME = 'bookamot-cache-0.1.0-07490d88'
-const BUILD_VERSION = '0.1.0-07490d88'
-const BUILD_TIMESTAMP = '1766143488916'
+const CACHE_NAME = 'bookamot-cache-0.1.0-a19ae37a'
+const BUILD_VERSION = '0.1.0-a19ae37a'
+const BUILD_TIMESTAMP = '1766192034572'
 
 // Recursos que devem ser sempre buscados da rede
 const NETWORK_FIRST = [
@@ -69,26 +69,27 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
-  
-  // Ignora requisições que não são GET
+
   if (request.method !== 'GET') {
     return
   }
-  
-  // Estratégia Network First para APIs
-  if (NETWORK_FIRST.some((path) => url.pathname.startsWith(path))) {
+
+  if (request.mode === 'navigate') {
     event.respondWith(networkFirstStrategy(request))
     return
   }
-  
-  // Estratégia Cache First para recursos estáticos
+
+  if (NETWORK_FIRST.some((path) => url.pathname.startsWith(path))) {
+    event.respondWith(fetch(request))
+    return
+  }
+
   if (CACHE_FIRST.some((path) => url.pathname.startsWith(path))) {
     event.respondWith(cacheFirstStrategy(request))
     return
   }
-  
-  // Estratégia Network First para páginas
-  event.respondWith(networkFirstStrategy(request))
+
+  event.respondWith(fetch(request))
 })
 
 /**
@@ -98,30 +99,22 @@ self.addEventListener('fetch', (event) => {
 async function networkFirstStrategy(request) {
   try {
     const response = await fetch(request)
-    
-    // Cache apenas respostas válidas
-    if (response && response.status === 200) {
-      const cache = await caches.open(CACHE_NAME)
-      cache.put(request, response.clone())
-    }
-    
     return response
   } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url)
-    
+    console.log('[SW] Network failed:', request.url)
+
     const cachedResponse = await caches.match(request)
     if (cachedResponse) {
       return cachedResponse
     }
-    
-    // Se for uma navegação e não houver cache, retorna página offline
+
     if (request.mode === 'navigate') {
       const offlinePage = await caches.match('/offline')
       if (offlinePage) {
         return offlinePage
       }
     }
-    
+
     throw error
   }
 }

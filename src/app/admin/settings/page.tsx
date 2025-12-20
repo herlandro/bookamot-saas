@@ -12,18 +12,20 @@ import { Switch } from '@/components/ui/switch'
 export default function AdminSettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
+  const userRole = session?.user?.role
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session?.user?.id) {
+    if (!userId) {
       router.push('/admin/login')
       return
     }
-    if (session.user.role !== 'ADMIN') {
+    if (userRole !== 'ADMIN') {
       router.push('/dashboard')
       return
     }
-  }, [session, status, router])
+  }, [userId, userRole, status, router])
 
   if (status === 'loading') {
     return (

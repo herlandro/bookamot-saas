@@ -40,14 +40,26 @@ console.log('✅ Service Worker gerado com sucesso!')
 console.log(`   Versão: ${buildVersion}`)
 console.log(`   Timestamp: ${buildTimestamp}`)
 
-// Gera arquivo .env.local com as variáveis de build
-const envContent = `# Build variables (gerado automaticamente)
-NEXT_PUBLIC_APP_VERSION=${appVersion}
-NEXT_PUBLIC_BUILD_HASH=${buildHash}
-NEXT_PUBLIC_BUILD_TIMESTAMP=${buildTimestamp}
-`
-
 const envPath = path.join(__dirname, '../.env.local')
+let existingEnv = ''
+try {
+  existingEnv = fs.readFileSync(envPath, 'utf8')
+} catch {}
+
+const existingLines = existingEnv
+  .split('\n')
+  .filter((line) => line.trim().length > 0)
+  .filter((line) => !line.startsWith('NEXT_PUBLIC_APP_VERSION='))
+  .filter((line) => !line.startsWith('NEXT_PUBLIC_BUILD_HASH='))
+  .filter((line) => !line.startsWith('NEXT_PUBLIC_BUILD_TIMESTAMP='))
+
+const buildLines = [
+  'NEXT_PUBLIC_APP_VERSION=' + appVersion,
+  'NEXT_PUBLIC_BUILD_HASH=' + buildHash,
+  'NEXT_PUBLIC_BUILD_TIMESTAMP=' + buildTimestamp,
+]
+
+const envContent = [...existingLines, ...buildLines].join('\n') + '\n'
 fs.writeFileSync(envPath, envContent, 'utf8')
 
 console.log('✅ Variáveis de build salvas em .env.local')

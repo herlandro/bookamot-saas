@@ -2,21 +2,35 @@
 
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
-// Import the garage admin page component
-import GarageAdminPage from './garage-admin/calendar/page';
-
-// Import the Dashboard component
-import Dashboard from './dashboard/page';
 
 export default function HomePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    if (!userId) return;
+
+    if (userRole === 'ADMIN') {
+      router.replace('/admin/dashboard');
+      return;
+    }
+
+    if (userRole === 'GARAGE_OWNER') {
+      router.replace('/garage-admin/calendar');
+      return;
+    }
+
+    router.replace('/dashboard');
+  }, [router, status, userId, userRole]);
 
   // Show loading state while checking authentication
-  if (status === 'loading') {
+  if (status === 'loading' && !userId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -26,12 +40,11 @@ export default function HomePage() {
 
   // If user is authenticated
   if (status === 'authenticated') {
-    // If garage owner, render the garage admin page
-    if (session?.user?.role === 'GARAGE_OWNER') {
-      return <GarageAdminPage />;
-    }
-    // If customer, render the dashboard
-    return <Dashboard />;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   const handleBookMOT = () => {

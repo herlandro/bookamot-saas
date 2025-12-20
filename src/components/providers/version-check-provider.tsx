@@ -9,6 +9,10 @@ import { getAppVersion } from '@/lib/version'
  */
 export function VersionCheckProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      return
+    }
+
     const isDebugEnabled = () => {
       try {
         return typeof window !== 'undefined' && window.localStorage.getItem('debug:refresh-loop') === '1'

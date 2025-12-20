@@ -43,6 +43,7 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
   const id = React.use(params).id
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
   const [booking, setBooking] = useState<Booking | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -51,13 +52,13 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session?.user?.id) {
+    if (!userId) {
       router.push('/signin')
       return
     }
 
     fetchBooking()
-  }, [session, status, router, id])
+  }, [userId, status, router, id])
   
   useEffect(() => {
     if (status === 'unauthenticated') {

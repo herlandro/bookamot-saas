@@ -36,6 +36,8 @@ interface Garage {
 export default function GaragesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [garages, setGarages] = useState<Garage[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -72,14 +74,14 @@ export default function GaragesPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!userId || userRole !== 'ADMIN') {
       router.push('/admin/login');
       return;
     }
     // Only show initial loading spinner on first load
     const isInitial = initialLoading && garages.length === 0;
     fetchGarages(isInitial);
-  }, [session, status, router, fetchGarages]);
+  }, [userId, userRole, status, router, fetchGarages]);
 
   const toggleActive = async (id: string, currentActive: boolean) => {
     setTogglingId(id);

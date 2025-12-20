@@ -31,6 +31,7 @@ export default function EditBookingPage({ params }: { params: Promise<{ id: stri
   const { id } = React.use(params)
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
   const [booking, setBooking] = useState<Booking | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -42,13 +43,13 @@ export default function EditBookingPage({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session) {
+    if (!userId) {
       router.push('/signin')
       return
     }
 
     fetchBooking()
-  }, [session, status, router, id])
+  }, [userId, status, router, id])
 
   const fetchBooking = async () => {
     try {

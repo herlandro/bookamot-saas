@@ -60,6 +60,8 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentEntities, setRecentEntities] = useState<{
@@ -73,19 +75,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (!userId) {
       router.push('/admin/login');
       return;
     }
 
-    if (session.user.role !== 'ADMIN') {
+    if (userRole !== 'ADMIN') {
       router.push('/dashboard');
       return;
     }
 
     fetchData();
     fetchRecentEntities();
-  }, [session, status, router]);
+  }, [userId, userRole, status, router]);
 
   const fetchData = async () => {
     try {

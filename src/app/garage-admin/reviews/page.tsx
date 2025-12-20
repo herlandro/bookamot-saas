@@ -41,6 +41,8 @@ interface PaginationData {
 export default function ReviewsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
@@ -58,19 +60,19 @@ export default function ReviewsPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchReviews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, status, router, currentPage, searchTerm, filterType, sortBy, sortOrder]);
+  }, [userId, userRole, status, router, currentPage, searchTerm, filterType, sortBy, sortOrder]);
 
   const fetchReviews = async () => {
     try {

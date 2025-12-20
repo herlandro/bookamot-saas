@@ -43,6 +43,7 @@ interface Booking {
 export default function BookingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -57,13 +58,13 @@ export default function BookingsPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session?.user?.id) {
+    if (!userId) {
       router.push('/signin')
       return
     }
 
     fetchBookings()
-  }, [session, status, router, currentPage, statusFilter, searchTerm])
+  }, [userId, status, router, currentPage, statusFilter, searchTerm])
 
   // Reset to first page when filters change
   useEffect(() => {

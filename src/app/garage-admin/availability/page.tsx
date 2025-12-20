@@ -59,6 +59,8 @@ const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'Jul
 export default function AvailabilityPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const userId = session?.user?.id
+  const userRole = session?.user?.role
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [schedules, setSchedules] = useState<GarageSchedule[]>([])
@@ -79,16 +81,16 @@ export default function AvailabilityPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session) {
+    if (!userId) {
       router.push('/signin')
       return
     }
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard')
       return
     }
     fetchData()
-  }, [session, status, router])
+  }, [userId, userRole, status, router])
 
   const fetchData = async () => {
     setLoading(true)

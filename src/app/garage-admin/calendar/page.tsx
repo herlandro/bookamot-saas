@@ -42,6 +42,8 @@ interface GarageStats {
 function GarageAdminPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
   const { openBookingModal, booking: contextBooking, isOpen: contextIsOpen, setIsOpen: setContextIsOpen } = useBookingModal();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<GarageStats | null>(null);
@@ -58,19 +60,19 @@ function GarageAdminPageContent() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (!userId) {
       router.push('/signin');
       return;
     }
 
-    if (session.user.role !== 'GARAGE_OWNER') {
+    if (userRole !== 'GARAGE_OWNER') {
       router.push('/dashboard');
       return;
     }
 
     fetchBookings();
     fetchStats();
-  }, [session, status, router, selectedDate]);
+  }, [userId, userRole, status, router, selectedDate]);
 
   const fetchBookings = async () => {
     try {
