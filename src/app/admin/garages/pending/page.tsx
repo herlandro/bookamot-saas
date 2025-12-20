@@ -73,9 +73,15 @@ export default function PendingGaragesPage() {
   const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [region, setRegion] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'name' | 'city' | 'postcode' | 'id'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Detail modal state
@@ -96,27 +102,54 @@ export default function PendingGaragesPage() {
     } else {
       setSearching(true);
     }
+    setErrorMessage(null);
     try {
-      const params = new URLSearchParams({ 
-        page: page.toString(), 
-        limit: '10', 
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
         search,
-        status: statusFilter 
+        status: statusFilter,
+        region,
+        dateFrom,
+        dateTo,
+        sortBy,
+        sortOrder,
       });
       const response = await fetch(`/api/admin/garages/pending?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setGarages(data.garages);
-        setTotalPages(data.pagination.totalPages);
-        setTotal(data.pagination.total);
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        setErrorMessage(err?.error || 'Falha ao buscar garagens pendentes');
+        setGarages([]);
+        setTotalPages(1);
+        setTotal(0);
+        return;
       }
+      const data = await response.json();
+      setGarages(data.garages || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotal(data.pagination?.total || 0);
     } catch (error) {
-      console.error('Error fetching garages:', error);
+      setErrorMessage('Falha ao buscar garagens pendentes');
+      setGarages([]);
+      setTotalPages(1);
+      setTotal(0);
     } finally {
       setInitialLoading(false);
       setSearching(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, region, dateFrom, dateTo, sortBy, sortOrder]);
+
+  const toggleSort = (column: 'createdAt' | 'name' | 'city' | 'postcode' | 'id') => {
+    setPage(1);
+    setSortBy((prev) => {
+      if (prev === column) {
+        setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setSortOrder('asc');
+      return column;
+    });
+  };
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -168,13 +201,13 @@ export default function PendingGaragesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pendente</Badge>;
       case 'INFO_REQUESTED':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Info Requested</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Info solicitada</Badge>;
       case 'APPROVED':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Aprovada</Badge>;
       case 'REJECTED':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejeitada</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -206,18 +239,42 @@ export default function PendingGaragesPage() {
                 Pending Garages
                 <Badge variant="secondary">{total}</Badge>
               </CardTitle>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Pending</SelectItem>
-                    <SelectItem value="PENDING">New Requests</SelectItem>
-                    <SelectItem value="INFO_REQUESTED">Info Requested</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="relative flex-1 sm:w-64">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+                    <SelectTrigger className="w-full sm:w-44">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Pendentes</SelectItem>
+                      <SelectItem value="PENDING">Novas</SelectItem>
+                      <SelectItem value="INFO_REQUESTED">Info solicitada</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    placeholder="Região (cidade/CEP)"
+                    value={region}
+                    onChange={(e) => { setRegion(e.target.value); setPage(1); }}
+                    className="w-full sm:w-52"
+                  />
+
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                    className="w-full sm:w-40"
+                  />
+
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                    className="w-full sm:w-40"
+                  />
+                </div>
+
+                <div className="relative w-full sm:w-64">
                   {searching ? (
                     <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
                   ) : (
@@ -225,7 +282,7 @@ export default function PendingGaragesPage() {
                   )}
                   <Input
                     ref={searchInputRef}
-                    placeholder="Search garages..."
+                    placeholder="Buscar..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                     className="pl-9"
@@ -235,6 +292,18 @@ export default function PendingGaragesPage() {
             </div>
           </CardHeader>
           <CardContent>
+            {errorMessage && (
+              <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5" />
+                  <span>{errorMessage}</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => fetchGarages(true)}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+
             {garages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -249,41 +318,70 @@ export default function PendingGaragesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Garage</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Registered</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1"
+                        onClick={() => toggleSort('id')}
+                      >
+                        ID
+                        {sortBy === 'id' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1"
+                        onClick={() => toggleSort('name')}
+                      >
+                        Nome
+                        {sortBy === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1"
+                        onClick={() => toggleSort('city')}
+                      >
+                        Endereço
+                        {sortBy === 'city' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1"
+                        onClick={() => toggleSort('createdAt')}
+                      >
+                        Submetido em
+                        {sortBy === 'createdAt' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {garages.map((garage) => (
                     <TableRow key={garage.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDetailModal(garage)}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{garage.name}</p>
-                          <p className="text-sm text-muted-foreground">{garage.email}</p>
-                        </div>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="font-mono text-xs text-muted-foreground">{garage.id}</span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="font-medium">{garage.owner.name || 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">{garage.owner.email}</p>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium leading-tight">{garage.name}</p>
+                            {getStatusBadge(garage.approvalStatus)}
                           </div>
-                          {garage.owner.emailVerified && (
-                            <span title="Email verified">
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            </span>
-                          )}
+                          <p className="text-xs text-muted-foreground md:hidden font-mono">{garage.id}</p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <p>{garage.city}</p>
-                        <p className="text-sm text-muted-foreground">{garage.postcode}</p>
+                        <div className="space-y-1">
+                          <p className="text-sm">{garage.address}</p>
+                          <p className="text-xs text-muted-foreground">{garage.city}, {garage.postcode}</p>
+                        </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(garage.approvalStatus)}</TableCell>
                       <TableCell>{format(new Date(garage.createdAt), 'dd MMM yyyy')}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>

@@ -4,9 +4,9 @@
  * NÃO edite este arquivo diretamente - edite o template e execute o build
  */
 
-const CACHE_NAME = 'bookamot-cache-0.1.0-a19ae37a'
-const BUILD_VERSION = '0.1.0-a19ae37a'
-const BUILD_TIMESTAMP = '1766192034572'
+const CACHE_NAME = 'bookamot-cache-0.1.0-af0e9c35'
+const BUILD_VERSION = '0.1.0-af0e9c35'
+const BUILD_TIMESTAMP = '1766220953946'
 
 // Recursos que devem ser sempre buscados da rede
 const NETWORK_FIRST = [
