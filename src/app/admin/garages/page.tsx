@@ -119,24 +119,24 @@ export default function GaragesPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            Gerenciamento de Garagens
+            Garages Management
           </h1>
-          <p className="text-muted-foreground">Visualize e gerencie todas as garagens registradas</p>
+          <p className="text-muted-foreground">View and manage all registered garages</p>
         </div>
 
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <CardTitle>Todas as Garagens ({total})</CardTitle>
+              <CardTitle>All Garages ({total})</CardTitle>
               <div className="flex items-center gap-2">
                 <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
                   <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filtrar por status" />
+                    <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas as garagens</SelectItem>
-                    <SelectItem value="active">Ativas</SelectItem>
-                    <SelectItem value="inactive">Inativas</SelectItem>
+                    <SelectItem value="all">All garages</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="APPROVED">Approved</SelectItem>
                     <SelectItem value="REJECTED">Rejected</SelectItem>
                     <SelectItem value="PENDING">Pending</SelectItem>
@@ -151,7 +151,7 @@ export default function GaragesPage() {
                   )}
                   <Input
                     ref={searchInputRef}
-                    placeholder="Buscar garagens..."
+                    placeholder="Search garages..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                     className="pl-9"
@@ -164,14 +164,14 @@ export default function GaragesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Garagem</TableHead>
-                  <TableHead>Proprietário</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Estatísticas</TableHead>
-                  <TableHead>Status DVLA</TableHead>
+                  <TableHead>Garage</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stats</TableHead>
+                  <TableHead>DVLA Status</TableHead>
                   <TableHead>Approval Status</TableHead>
-                  <TableHead>Ativa</TableHead>
+                  <TableHead>Active</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,8 +179,8 @@ export default function GaragesPage() {
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       {search || statusFilter !== 'all'
-                        ? 'Nenhuma garagem encontrada com os critérios de busca.'
-                        : 'Nenhuma garagem registrada ainda.'}
+                        ? 'No garages found matching your search criteria.'
+                        : 'No garages registered yet.'}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -204,7 +204,7 @@ export default function GaragesPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={garage.dvlaApproved ? 'default' : 'destructive'}>
-                          {garage.dvlaApproved ? 'Aprovado' : 'Pendente'}
+                          {garage.dvlaApproved ? 'Approved' : 'Pending'}
                         </Badge>
                       </TableCell>
                       <TableCell>
