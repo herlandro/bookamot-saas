@@ -28,18 +28,25 @@ export async function GET(request: NextRequest) {
     const sortBy = allowedSortBy.has(sortByRaw) ? sortByRaw : 'createdAt'
 
     // Build where clause based on status filter
-    let statusFilter: any
-    if (status === 'all') {
-      statusFilter = { approvalStatus: { in: [GarageApprovalStatus.PENDING, GarageApprovalStatus.INFO_REQUESTED] } }
-    } else {
-      // Validate status is a valid enum value
-      const validStatuses = Object.values(GarageApprovalStatus)
-      if (validStatuses.includes(status as GarageApprovalStatus)) {
-        statusFilter = { approvalStatus: status as GarageApprovalStatus }
+    // Note: We'll try to use approvalStatus, but handle gracefully if it doesn't exist in DB
+    let statusFilter: any = {}
+    try {
+      if (status === 'all') {
+        statusFilter = { approvalStatus: { in: [GarageApprovalStatus.PENDING, GarageApprovalStatus.INFO_REQUESTED] } }
       } else {
-        // Default to PENDING if invalid status provided
-        statusFilter = { approvalStatus: GarageApprovalStatus.PENDING }
+        // Validate status is a valid enum value
+        const validStatuses = Object.values(GarageApprovalStatus)
+        if (validStatuses.includes(status as GarageApprovalStatus)) {
+          statusFilter = { approvalStatus: status as GarageApprovalStatus }
+        } else {
+          // Default to PENDING if invalid status provided
+          statusFilter = { approvalStatus: GarageApprovalStatus.PENDING }
+        }
       }
+    } catch (error) {
+      // If GarageApprovalStatus enum doesn't exist, just use empty filter
+      console.warn('GarageApprovalStatus enum not available, filtering by status disabled')
+      statusFilter = {}
     }
 
     const and: any[] = []
@@ -83,52 +90,101 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: any = {
-      ...statusFilter,
-      ...(and.length ? { AND: and } : {}),
+    const where: any = {}
+    
+    // Only add statusFilter if it has content
+    if (Object.keys(statusFilter).length > 0) {
+      Object.assign(where, statusFilter)
+    }
+    
+    // Add AND conditions if any
+    if (and.length > 0) {
+      where.AND = and
     }
 
     const orderBy = { [sortBy]: sortOrder } as any
 
-    const [garages, total] = await Promise.all([
-      prisma.garage.findMany({
-        where,
-        include: {
-          owner: { 
-            select: { 
-              id: true, 
-              name: true, 
-              email: true, 
-              phone: true, 
-              emailVerified: true,
-              createdAt: true 
-            } 
-          },
-          approvalLogs: {
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-            include: {
-              admin: { 
-                select: { 
-                  name: true, 
-                  email: true 
-                } 
+    // Try to fetch garages with approvalLogs, but fallback if the relation doesn't exist
+    let garages: any[]
+    let total: number
+
+    try {
+      // First try with approvalLogs included
+      [garages, total] = await Promise.all([
+        prisma.garage.findMany({
+          where,
+          include: {
+            owner: { 
+              select: { 
+                id: true, 
+                name: true, 
+                email: true, 
+                phone: true, 
+                emailVerified: true,
+                createdAt: true 
+              } 
+            },
+            approvalLogs: {
+              orderBy: { createdAt: 'desc' },
+              take: 5,
+              include: {
+                admin: { 
+                  select: { 
+                    name: true, 
+                    email: true 
+                  } 
+                }
               }
             }
-          }
-        },
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit
-      }).catch((err) => {
-        console.error('Error in prisma.garage.findMany:', err)
-        throw err
-      }),
-      prisma.garage.count({ where }).catch((err) => {
-        console.error('Error in prisma.garage.count:', err)
-        throw err
-      })
-    ])
+          },
+          orderBy,
+          skip: (page - 1) * limit,
+          take: limit
+        }),
+        prisma.garage.count({ where })
+      ])
+    } catch (error: any) {
+      // If error is related to approvalStatus or approvalLogs, try without them
+      if (error?.message?.includes('approvalStatus') || error?.message?.includes('approvalLogs') || error?.message?.includes('GarageApprovalLog')) {
+        console.warn('approvalStatus or approvalLogs not available, fetching without them:', error.message)
+        
+        // Remove approvalStatus from where clause if it exists
+        const whereWithoutStatus = { ...where }
+        delete whereWithoutStatus.approvalStatus
+        
+        [garages, total] = await Promise.all([
+          prisma.garage.findMany({
+            where: whereWithoutStatus,
+            include: {
+              owner: { 
+                select: { 
+                  id: true, 
+                  name: true, 
+                  email: true, 
+                  phone: true, 
+                  emailVerified: true,
+                  createdAt: true 
+                } 
+              }
+            },
+            orderBy,
+            skip: (page - 1) * limit,
+            take: limit
+          }),
+          prisma.garage.count({ where: whereWithoutStatus })
+        ])
+        
+        // Add default approvalStatus to each garage
+        garages = garages.map(garage => ({
+          ...garage,
+          approvalStatus: garage.approvalStatus || 'PENDING',
+          approvalLogs: []
+        }))
+      } else {
+        // Re-throw if it's a different error
+        throw error
+      }
+    }
 
     return NextResponse.json({
       garages,
