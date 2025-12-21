@@ -36,10 +36,11 @@ export async function GET(request: NextRequest) {
     const sortBy = allowedSortBy.has(sortByRaw) ? sortByRaw : "createdAt";
 
     // Build where clause based on status filter
-    // Note: We'll try to use approvalStatus, but handle gracefully if it doesn't exist in DB
+    // Always filter to show only PENDING and INFO_REQUESTED garages (not APPROVED or REJECTED)
     let statusFilter: any = {};
     try {
       if (status === "all") {
+        // Default: show only PENDING and INFO_REQUESTED (not APPROVED or REJECTED)
         statusFilter = {
           approvalStatus: {
             in: [
@@ -52,18 +53,37 @@ export async function GET(request: NextRequest) {
         // Validate status is a valid enum value
         const validStatuses = Object.values(GarageApprovalStatus);
         if (validStatuses.includes(status as GarageApprovalStatus)) {
-          statusFilter = { approvalStatus: status as GarageApprovalStatus };
+          const statusValue = status as GarageApprovalStatus;
+          // Only allow PENDING or INFO_REQUESTED in pending garages page
+          if (statusValue === GarageApprovalStatus.PENDING || statusValue === GarageApprovalStatus.INFO_REQUESTED) {
+            statusFilter = { approvalStatus: statusValue };
+          } else {
+            // If trying to filter by APPROVED or REJECTED, return empty (they shouldn't be in pending page)
+            statusFilter = { approvalStatus: { in: [] } }; // Empty result
+          }
         } else {
           // Default to PENDING if invalid status provided
           statusFilter = { approvalStatus: GarageApprovalStatus.PENDING };
         }
       }
     } catch (error) {
-      // If GarageApprovalStatus enum doesn't exist, just use empty filter
+      // If GarageApprovalStatus enum doesn't exist, use string values directly
+      // Always filter to exclude APPROVED and REJECTED
       console.warn(
-        "GarageApprovalStatus enum not available, filtering by status disabled",
+        "GarageApprovalStatus enum not available, using string values",
       );
-      statusFilter = {};
+      if (status === "all") {
+        statusFilter = {
+          approvalStatus: {
+            in: ["PENDING", "INFO_REQUESTED"],
+          },
+        };
+      } else if (status === "PENDING" || status === "INFO_REQUESTED") {
+        statusFilter = { approvalStatus: status };
+      } else {
+        // Default to PENDING
+        statusFilter = { approvalStatus: "PENDING" };
+      }
     }
 
     const and: any[] = [];
@@ -115,10 +135,9 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: any = {};
 
-    // Only add statusFilter if it has content
-    if (Object.keys(statusFilter).length > 0) {
-      Object.assign(where, statusFilter);
-    }
+    // Always add statusFilter - it should always have content
+    // This ensures we only show PENDING and INFO_REQUESTED garages (not APPROVED or REJECTED)
+    Object.assign(where, statusFilter);
 
     // Add AND conditions if any
     if (and.length > 0) {
@@ -167,27 +186,25 @@ export async function GET(request: NextRequest) {
         prisma.garage.count({ where }),
       ]);
     } catch (error: any) {
-      // If error is related to approvalStatus or approvalLogs, try without them
-      if (
-        error?.message?.includes("approvalStatus") ||
-        error?.message?.includes("approvalLogs") ||
-        error?.message?.includes("GarageApprovalLog")
-      ) {
+      // Check if error is specifically about approvalLogs (relation) or approvalStatus (field)
+      const isApprovalLogsError = error?.message?.includes("approvalLogs") || 
+                                   error?.message?.includes("GarageApprovalLog");
+      const isApprovalStatusError = error?.message?.includes("approvalStatus") &&
+                                    !isApprovalLogsError;
+
+      if (isApprovalLogsError) {
+        // If error is only about approvalLogs, retry without it but keep approvalStatus filter
         console.warn(
-          "approvalStatus or approvalLogs not available, fetching without them:",
+          "approvalLogs not available, fetching without logs:",
           error.message,
         );
 
-        // Remove approvalStatus from where clause if it exists
-        const whereWithoutStatus: any = {};
-        if (where.AND) {
-          whereWithoutStatus.AND = where.AND;
-        }
-        // Don't copy approvalStatus
+        // Keep the where clause as is (including approvalStatus filter)
+        const whereWithoutLogs = { ...where };
 
         [garages, total] = await Promise.all([
           prisma.garage.findMany({
-            where: whereWithoutStatus,
+            where: whereWithoutLogs,
             include: {
               owner: {
                 select: {
@@ -204,7 +221,50 @@ export async function GET(request: NextRequest) {
             skip: (page - 1) * limit,
             take: limit,
           }),
-          prisma.garage.count({ where: whereWithoutStatus }),
+          prisma.garage.count({ where: whereWithoutLogs }),
+        ]);
+
+        // Add empty approvalLogs array
+        garages = garages.map((garage) => ({
+          ...garage,
+          approvalLogs: [],
+        }));
+      } else if (isApprovalStatusError) {
+        // If error is about approvalStatus field not existing, use fallback
+        console.warn(
+          "approvalStatus field not available, using fallback filter:",
+          error.message,
+        );
+
+        // Fallback: filter by isActive = false (pending garages are typically inactive)
+        // This is not perfect but better than showing all garages
+        const whereFallback: any = {
+          isActive: false,
+        };
+        if (where.AND) {
+          whereFallback.AND = where.AND;
+        }
+
+        [garages, total] = await Promise.all([
+          prisma.garage.findMany({
+            where: whereFallback,
+            include: {
+              owner: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  emailVerified: true,
+                  createdAt: true,
+                },
+              },
+            },
+            orderBy,
+            skip: (page - 1) * limit,
+            take: limit,
+          }),
+          prisma.garage.count({ where: whereFallback }),
         ]);
 
         // Add default approvalStatus to each garage
