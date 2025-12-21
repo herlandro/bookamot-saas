@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { GarageApprovalStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,8 +18,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || 'all'
 
-    const where = {
-      ...(status !== 'all' && { isActive: status === 'active' }),
+    const where: any = {
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
@@ -28,10 +28,31 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Filtro de status: 'all', 'active', 'inactive', 'approved', 'rejected', 'pending', 'info_requested'
+    if (status !== 'all') {
+      if (status === 'active') {
+        where.isActive = true
+      } else if (status === 'inactive') {
+        where.isActive = false
+      } else if (['APPROVED', 'REJECTED', 'PENDING', 'INFO_REQUESTED'].includes(status)) {
+        where.approvalStatus = status as GarageApprovalStatus
+      }
+    }
+
     const [garages, total] = await Promise.all([
       prisma.garage.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          city: true,
+          postcode: true,
+          motPrice: true,
+          isActive: true,
+          dvlaApproved: true,
+          approvalStatus: true,
+          createdAt: true,
           owner: { select: { name: true, email: true } },
           _count: { select: { bookings: true, reviews: true } }
         },

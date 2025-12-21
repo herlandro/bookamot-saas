@@ -27,6 +27,7 @@ interface Garage {
   motPrice: number;
   isActive: boolean;
   dvlaApproved: boolean;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'INFO_REQUESTED';
   rating: number;
   createdAt: string;
   owner: { name: string; email: string };
@@ -60,7 +61,12 @@ export default function GaragesPage() {
       const response = await fetch(`/api/admin/garages?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setGarages(data.garages);
+        // Garantir que approvalStatus está presente em todas as garagens
+        const garagesWithStatus = data.garages.map((garage: any) => ({
+          ...garage,
+          approvalStatus: garage.approvalStatus || 'PENDING'
+        }));
+        setGarages(garagesWithStatus);
         setTotalPages(data.pagination.totalPages);
         setTotal(data.pagination.total);
       }
@@ -113,24 +119,28 @@ export default function GaragesPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            Garages Management
+            Gerenciamento de Garagens
           </h1>
-          <p className="text-muted-foreground">View and manage all registered garages</p>
+          <p className="text-muted-foreground">Visualize e gerencie todas as garagens registradas</p>
         </div>
 
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <CardTitle>All Garages ({total})</CardTitle>
+              <CardTitle>Todas as Garagens ({total})</CardTitle>
               <div className="flex items-center gap-2">
                 <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Status" />
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filtrar por status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="all">Todas as garagens</SelectItem>
+                    <SelectItem value="active">Ativas</SelectItem>
+                    <SelectItem value="inactive">Inativas</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="INFO_REQUESTED">Info Requested</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="relative w-64">
@@ -141,7 +151,7 @@ export default function GaragesPage() {
                   )}
                   <Input
                     ref={searchInputRef}
-                    placeholder="Search garages..."
+                    placeholder="Buscar garagens..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                     className="pl-9"
@@ -154,14 +164,14 @@ export default function GaragesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Garage</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stats</TableHead>
-                  <TableHead>DVLA Status</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Active</TableHead>
+                  <TableHead>Garagem</TableHead>
+                  <TableHead>Proprietário</TableHead>
+                  <TableHead>Localização</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Estatísticas</TableHead>
+                  <TableHead>Status DVLA</TableHead>
+                  <TableHead>Approval Status</TableHead>
+                  <TableHead>Ativa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -169,8 +179,8 @@ export default function GaragesPage() {
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       {search || statusFilter !== 'all'
-                        ? 'No garages found matching your search criteria.'
-                        : 'No garages registered yet.'}
+                        ? 'Nenhuma garagem encontrada com os critérios de busca.'
+                        : 'Nenhuma garagem registrada ainda.'}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -194,13 +204,31 @@ export default function GaragesPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={garage.dvlaApproved ? 'default' : 'destructive'}>
-                          {garage.dvlaApproved ? 'Approved' : 'Pending'}
+                          {garage.dvlaApproved ? 'Aprovado' : 'Pendente'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={garage.isActive ? 'default' : 'secondary'}>
-                          {garage.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
+                        {!garage.approvalStatus || garage.approvalStatus === 'PENDING' ? (
+                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                            Pending
+                          </Badge>
+                        ) : garage.approvalStatus === 'APPROVED' ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            Approved
+                          </Badge>
+                        ) : garage.approvalStatus === 'REJECTED' ? (
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                            Rejected
+                          </Badge>
+                        ) : garage.approvalStatus === 'INFO_REQUESTED' ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            Info Requested
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">
+                            {garage.approvalStatus}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Switch

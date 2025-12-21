@@ -180,7 +180,12 @@ export default function PendingGaragesPage() {
       });
 
       if (response.ok) {
-        fetchGarages();
+        // Se a ação foi rejeitar, redirecionar para a listagem principal
+        if (actionModal.action === 'reject') {
+          router.push('/admin/garages');
+        } else {
+          fetchGarages();
+        }
         setActionModal(null);
         setActionReason('');
         setShowDetailModal(false);
