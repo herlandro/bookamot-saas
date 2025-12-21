@@ -28,9 +28,19 @@ export async function GET(request: NextRequest) {
     const sortBy = allowedSortBy.has(sortByRaw) ? sortByRaw : 'createdAt'
 
     // Build where clause based on status filter
-    const statusFilter = status === 'all' 
-      ? { approvalStatus: { in: [GarageApprovalStatus.PENDING, GarageApprovalStatus.INFO_REQUESTED] } }
-      : { approvalStatus: status as GarageApprovalStatus }
+    let statusFilter: any
+    if (status === 'all') {
+      statusFilter = { approvalStatus: { in: [GarageApprovalStatus.PENDING, GarageApprovalStatus.INFO_REQUESTED] } }
+    } else {
+      // Validate status is a valid enum value
+      const validStatuses = Object.values(GarageApprovalStatus)
+      if (validStatuses.includes(status as GarageApprovalStatus)) {
+        statusFilter = { approvalStatus: status as GarageApprovalStatus }
+      } else {
+        // Default to PENDING if invalid status provided
+        statusFilter = { approvalStatus: GarageApprovalStatus.PENDING }
+      }
+    }
 
     const and: any[] = []
 
@@ -72,6 +82,7 @@ export async function GET(request: NextRequest) {
       if (createdAt.gte || createdAt.lte) and.push({ createdAt })
     }
 
+    // Build where clause
     const where: any = {
       ...statusFilter,
       ...(and.length ? { AND: and } : {}),
@@ -97,15 +108,26 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: 'desc' },
             take: 5,
             include: {
-              admin: { select: { name: true, email: true } }
+              admin: { 
+                select: { 
+                  name: true, 
+                  email: true 
+                } 
+              }
             }
           }
         },
         orderBy,
         skip: (page - 1) * limit,
         take: limit
+      }).catch((err) => {
+        console.error('Error in prisma.garage.findMany:', err)
+        throw err
       }),
-      prisma.garage.count({ where })
+      prisma.garage.count({ where }).catch((err) => {
+        console.error('Error in prisma.garage.count:', err)
+        throw err
+      })
     ])
 
     return NextResponse.json({
@@ -119,6 +141,14 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching pending garages:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
+    }, { status: 500 })
   }
 }
