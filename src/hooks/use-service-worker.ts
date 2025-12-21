@@ -85,7 +85,35 @@ export function useServiceWorker() {
   }, [reloadOnce, state.registration])
 
   useEffect(() => {
-    if (!state.isSupported) return
+    if (typeof window === 'undefined') return
+    if (isProd) return
+    if (!('serviceWorker' in navigator)) return
+
+    const cleanDevServiceWorkerOnce = async () => {
+      try {
+        if (window.sessionStorage.getItem('sw:dev-cleaned') === '1') return
+        window.sessionStorage.setItem('sw:dev-cleaned', '1')
+      } catch {
+        return
+      }
+
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map((r) => r.unregister()))
+      } catch {}
+
+      try {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map((name) => caches.delete(name)))
+      } catch {}
+
+      window.location.reload()
+    }
+
+    cleanDevServiceWorkerOnce()
+  }, [isProd])
+
+  useEffect(() => {
     if (!state.isSupported) return
 
     let registration: ServiceWorkerRegistration | null = null

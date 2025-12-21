@@ -69,27 +69,26 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
-
+  
+  // Ignora requisições que não são GET
   if (request.method !== 'GET') {
     return
   }
-
-  if (request.mode === 'navigate') {
+  
+  // Estratégia Network First para APIs
+  if (NETWORK_FIRST.some((path) => url.pathname.startsWith(path))) {
     event.respondWith(networkFirstStrategy(request))
     return
   }
-
-  if (NETWORK_FIRST.some((path) => url.pathname.startsWith(path))) {
-    event.respondWith(fetch(request))
-    return
-  }
-
+  
+  // Estratégia Cache First para recursos estáticos
   if (CACHE_FIRST.some((path) => url.pathname.startsWith(path))) {
     event.respondWith(cacheFirstStrategy(request))
     return
   }
-
-  event.respondWith(fetch(request))
+  
+  // Estratégia Network First para páginas
+  event.respondWith(networkFirstStrategy(request))
 })
 
 /**
@@ -99,22 +98,30 @@ self.addEventListener('fetch', (event) => {
 async function networkFirstStrategy(request) {
   try {
     const response = await fetch(request)
+    
+    // Cache apenas respostas válidas
+    if (response && response.status === 200) {
+      const cache = await caches.open(CACHE_NAME)
+      cache.put(request, response.clone())
+    }
+    
     return response
   } catch (error) {
-    console.log('[SW] Network failed:', request.url)
-
+    console.log('[SW] Network failed, trying cache:', request.url)
+    
     const cachedResponse = await caches.match(request)
     if (cachedResponse) {
       return cachedResponse
     }
-
+    
+    // Se for uma navegação e não houver cache, retorna página offline
     if (request.mode === 'navigate') {
       const offlinePage = await caches.match('/offline')
       if (offlinePage) {
         return offlinePage
       }
     }
-
+    
     throw error
   }
 }

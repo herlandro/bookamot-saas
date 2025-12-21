@@ -106,13 +106,14 @@ const COLORS = ['Black', 'White', 'Silver', 'Blue', 'Red', 'Grey', 'Green', 'Yel
 
 const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
 
-// December 2025 dates for bookings (excluding Sundays)
-const DECEMBER_2025_DATES: Date[] = []
-for (let day = 1; day <= 31; day++) {
-  const date = new Date(2025, 11, day) // Month is 0-indexed, so 11 = December
-  // Skip Sundays (day 0) - garages are closed
-  if (date.getDay() !== 0) {
-    DECEMBER_2025_DATES.push(date)
+const BOOKING_DATES: Date[] = []
+const bookingYear = new Date().getFullYear()
+const bookingMonth = 11
+const bookingDays = [22, 23, 24, 26, 29, 30]
+for (const day of bookingDays) {
+  const date = new Date(bookingYear, bookingMonth, day)
+  if (date.getMonth() === bookingMonth && date.getDay() !== 0) {
+    BOOKING_DATES.push(date)
   }
 }
 
@@ -138,7 +139,7 @@ function tryBookSlot(garageId: string, date: Date, timeSlot: string): boolean {
 function getAvailableSlot(garageId: string, blockedDays: Set<string>): { date: Date, timeSlot: string } | null {
   // Try up to 100 times to find an available slot
   for (let attempt = 0; attempt < 100; attempt++) {
-    const date = DECEMBER_2025_DATES[Math.floor(Math.random() * DECEMBER_2025_DATES.length)]
+    const date = BOOKING_DATES[Math.floor(Math.random() * BOOKING_DATES.length)]
     const dateKey = formatDateKey(date)
 
     // Skip blocked days
@@ -371,55 +372,25 @@ async function main() {
   }
   console.log(`✅ Created ${garages.length} garages with schedules\n`)
 
-  // Create schedule exceptions (Christmas block + random blocked days)
+  // Create schedule exceptions
   console.log('📅 Creating schedule exceptions...')
-  const CHRISTMAS_2025 = new Date(2025, 11, 25) // December 25, 2025
+  const christmasDate = new Date(bookingYear, bookingMonth, 25)
   const garageBlockedDays: Map<string, Set<string>> = new Map()
   let exceptionCount = 0
 
   for (const garage of garages) {
     const blockedDays = new Set<string>()
 
-    // Block Christmas Day for all garages
-    await prisma.garageScheduleException.create({
-      data: {
-        garageId: garage.id,
-        date: CHRISTMAS_2025,
-        isClosed: true,
-        reason: 'Christmas Day - Closed'
-      }
-    })
-    blockedDays.add(formatDateKey(CHRISTMAS_2025))
-    exceptionCount++
-
-    // Add 5-10 random blocked days in December 2025 (excluding Christmas and Sundays)
-    const numRandomBlocks = Math.floor(Math.random() * 6) + 5 // 5-10 blocks
-    const availableDays = DECEMBER_2025_DATES.filter(d => formatDateKey(d) !== formatDateKey(CHRISTMAS_2025))
-
-    // Shuffle and pick random days
-    const shuffledDays = [...availableDays].sort(() => Math.random() - 0.5)
-    const daysToBlock = shuffledDays.slice(0, numRandomBlocks)
-
-    for (const blockDate of daysToBlock) {
-      const reasons = [
-        'Staff Training Day',
-        'Equipment Maintenance',
-        'Bank Holiday',
-        'Owner Holiday',
-        'Deep Cleaning',
-        'System Upgrade',
-        'Annual Inspection'
-      ]
-
+    if (christmasDate) {
       await prisma.garageScheduleException.create({
         data: {
           garageId: garage.id,
-          date: blockDate,
+          date: christmasDate,
           isClosed: true,
-          reason: reasons[Math.floor(Math.random() * reasons.length)]
+          reason: 'Christmas Day - Closed'
         }
       })
-      blockedDays.add(formatDateKey(blockDate))
+      blockedDays.add(formatDateKey(christmasDate))
       exceptionCount++
     }
 
@@ -427,8 +398,7 @@ async function main() {
   }
   console.log(`✅ Created ${exceptionCount} schedule exceptions\n`)
 
-  // Create bookings - 5-10 per customer in December 2025
-  console.log('📅 Creating bookings in December 2025...')
+  console.log('📅 Creating bookings...')
   const bookingStatuses = [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.NO_SHOW]
 
   let bookingCount = 0
@@ -613,4 +583,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
-

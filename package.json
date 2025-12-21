@@ -13,7 +13,7 @@
     "db": "tsx scripts/db.ts",
     "db:clean": "tsx scripts/db.ts clean",
     "db:reset": "tsx scripts/db.ts reset",
-    "db:seed": "tsx scripts/seed.ts",
+    "db:seed": "tsx prisma/seed.ts",
     "db:list": "tsx scripts/db.ts list",
     "db:add-email-columns": "node scripts/add-email-verification-columns.js",
     "booking:complete": "tsx scripts/booking.ts complete",

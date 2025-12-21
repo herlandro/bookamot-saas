@@ -38,33 +38,33 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  phone         String?
-  password      String?
-  resetToken    String?
+  id               String    @id @default(cuid())
+  name             String?
+  email            String    @unique
+  emailVerified    DateTime?
+  image            String?
+  phone            String?
+  password         String?
+  resetToken       String?
   resetTokenExpiry DateTime?
-  role          UserRole  @default(CUSTOMER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role             UserRole  @default(CUSTOMER)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Email verification for garage owners
   emailVerificationCode   String?
   emailVerificationExpiry DateTime?
 
   // Review ratings
-  averageRating Float    @default(0)
-  totalReviews  Int      @default(0)
+  averageRating Float @default(0)
+  totalReviews  Int   @default(0)
 
-  accounts   Account[]
-  sessions   Session[]
-  vehicles   Vehicle[]
-  bookings   Booking[]
-  garage     Garage?
-  reviews    Review[]
+  accounts         Account[]
+  sessions         Session[]
+  vehicles         Vehicle[]
+  bookings         Booking[]
+  garage           Garage?
+  reviews          Review[]
   motNotifications MotNotification[]
   garageApprovals  GarageApprovalLog[] @relation("ApprovedByAdmin")
 }
@@ -98,31 +98,31 @@ model Garage {
   dvlaApproved     Boolean @default(false)
 
   // Admin Approval Status
-  approvalStatus   GarageApprovalStatus @default(PENDING)
-  approvedAt       DateTime?
-  approvedById     String?
-  rejectionReason  String?
+  approvalStatus  GarageApprovalStatus @default(PENDING)
+  approvedAt      DateTime?
+  approvedById    String?
+  rejectionReason String?
 
   // Business Hours
   openingHours Json? // Store as JSON: {"monday": {"open": "09:00", "close": "17:00"}, ...}
 
   // Pricing
-  motPrice     Float   @default(54.85) // Maximum MOT price in UK
-  retestPrice  Float   @default(27.43) // Partial retest price
+  motPrice    Float @default(54.85) // Maximum MOT price in UK
+  retestPrice Float @default(27.43) // Partial retest price
 
   // Review ratings
-  averageRating Float    @default(0)
-  totalReviews  Int      @default(0)
+  averageRating Float @default(0)
+  totalReviews  Int   @default(0)
 
   // Relations
-  ownerId      String  @unique
-  owner        User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  bookings     Booking[]
-  reviews      Review[]
-  schedules    GarageSchedule[]
+  ownerId            String                    @unique
+  owner              User                      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings           Booking[]
+  reviews            Review[]
+  schedules          GarageSchedule[]
   scheduleExceptions GarageScheduleException[]
-  timeSlotBlocks GarageTimeSlotBlock[]
-  approvalLogs GarageApprovalLog[]
+  timeSlotBlocks     GarageTimeSlotBlock[]
+  approvalLogs       GarageApprovalLog[]
 }
 
 // GarageAvailability model removed - replaced by optimized system
@@ -142,10 +142,10 @@ model Vehicle {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  ownerId  String
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  bookings Booking[]
-  motHistory MotHistory[]
+  ownerId          String
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings         Booking[]
+  motHistory       MotHistory[]
   motNotifications MotNotification[]
 
   // Composite unique constraint: same user cannot register same vehicle twice
@@ -154,15 +154,15 @@ model Vehicle {
 }
 
 model Booking {
-  id          String        @id @default(cuid())
-  bookingRef  String        @unique @default(cuid())
-  date        DateTime
-  timeSlot    String
-  status      BookingStatus @default(PENDING)
-  totalPrice  Float
-  notes       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id         String        @id @default(cuid())
+  bookingRef String        @unique @default(cuid())
+  date       DateTime
+  timeSlot   String
+  status     BookingStatus @default(PENDING)
+  totalPrice Float
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   // Relations
   customerId String
@@ -173,75 +173,75 @@ model Booking {
   vehicle    Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   // Payment
-  paymentStatus PaymentStatus @default(PENDING)
+  paymentStatus         PaymentStatus @default(PENDING)
   stripePaymentIntentId String?
-  paidAt        DateTime?
+  paidAt                DateTime?
 
   // MOT Result
-  motResult MotResult?
-  reviews   Review[]
-  emailLogs EmailLog[]
+  motResult       MotResult?
+  reviews         Review[]
+  emailLogs       EmailLog[]
   scheduledEmails ScheduledEmail[]
 }
 
 model MotResult {
-  id               String     @id @default(cuid())
-  bookingId        String     @unique
-  result           MotOutcome
-  certificateNumber String?   @unique
-  expiryDate       DateTime?
-  mileage          Int?
-  advisories       String?    // JSON string of advisory items
-  minorDefects     String?    // JSON string of minor defects
-  majorDefects     String?    // JSON string of major defects
-  dangerousDefects String?    // JSON string of dangerous defects
-  testDate         DateTime   @default(now())
-  createdAt        DateTime   @default(now())
+  id                String     @id @default(cuid())
+  bookingId         String     @unique
+  result            MotOutcome
+  certificateNumber String?    @unique
+  expiryDate        DateTime?
+  mileage           Int?
+  advisories        String? // JSON string of advisory items
+  minorDefects      String? // JSON string of minor defects
+  majorDefects      String? // JSON string of major defects
+  dangerousDefects  String? // JSON string of dangerous defects
+  testDate          DateTime   @default(now())
+  createdAt         DateTime   @default(now())
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 model MotHistory {
-  id                String     @id @default(cuid())
-  vehicleId         String
-  testDate          DateTime
-  result            MotOutcome
-  certificateNumber String?
-  expiryDate        DateTime?
-  mileage           Int?
-  odometerUnit      String?    // MI or KM
-  odometerResultType String?   // READ, UNREADABLE, NOT_AVAILABLE
-  testLocation      String?
-  testNumber        String?    @unique
-  dataSource        String?    // DVSA or other source
+  id                 String     @id @default(cuid())
+  vehicleId          String
+  testDate           DateTime
+  result             MotOutcome
+  certificateNumber  String?
+  expiryDate         DateTime?
+  mileage            Int?
+  odometerUnit       String? // MI or KM
+  odometerResultType String? // READ, UNREADABLE, NOT_AVAILABLE
+  testLocation       String?
+  testNumber         String?    @unique
+  dataSource         String? // DVSA or other source
 
   // Defect counts
-  dangerousDefects  Int        @default(0)
-  majorDefects      Int        @default(0)
-  minorDefects      Int        @default(0)
-  advisoryDefects   Int        @default(0)
-  prsDefects        Int        @default(0)  // PRS = Presented for Rectification
+  dangerousDefects Int @default(0)
+  majorDefects     Int @default(0)
+  minorDefects     Int @default(0)
+  advisoryDefects  Int @default(0)
+  prsDefects       Int @default(0) // PRS = Presented for Rectification
 
   // Defect details (JSON array of defect objects)
-  defectDetails     String?    // JSON string of defect details
+  defectDetails String? // JSON string of defect details
 
   // Vehicle info at time of test
   registrationAtTimeOfTest String?
 
   // Additional metadata
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 }
 
 model Review {
-  id            String       @id @default(cuid())
-  rating        Int          // 1-5 stars
-  comment       String?
-  reviewerType  ReviewerType // CUSTOMER or GARAGE
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           String       @id @default(cuid())
+  rating       Int // 1-5 stars
+  comment      String?
+  reviewerType ReviewerType // CUSTOMER or GARAGE
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // Relations
   customerId String
@@ -256,17 +256,17 @@ model Review {
 }
 
 model MotNotification {
-  id            String   @id @default(cuid())
-  vehicleId     String
-  userId        String
-  type          NotificationType // EXPIRING_SOON, EXPIRED, FAILED
-  title         String
-  message       String
+  id              String           @id @default(cuid())
+  vehicleId       String
+  userId          String
+  type            NotificationType // EXPIRING_SOON, EXPIRED, FAILED
+  title           String
+  message         String
   daysUntilExpiry Int?
-  isRead        Boolean  @default(false)
-  sentAt        DateTime @default(now())
-  readAt        DateTime?
-  createdAt     DateTime @default(now())
+  isRead          Boolean          @default(false)
+  sentAt          DateTime         @default(now())
+  readAt          DateTime?
+  createdAt       DateTime         @default(now())
 
   // Relations
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
@@ -334,16 +334,16 @@ enum MotOutcome {
 
 // Optimized model for garage opening hours
 model GarageSchedule {
-  id        String   @id @default(cuid())
-  garageId  String
-  dayOfWeek Int      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  isOpen    Boolean  @default(true)
-  openTime  String   // e.g., "09:00"
-  closeTime String   // e.g., "17:00"
-  slotDuration Int   @default(60) // Duration in minutes (60 = 1 hour slots)
-  maxBookingsPerSlot Int @default(1) // Allow multiple bookings per slot if needed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  garageId           String
+  dayOfWeek          Int // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  isOpen             Boolean  @default(true)
+  openTime           String // e.g., "09:00"
+  closeTime          String // e.g., "17:00"
+  slotDuration       Int      @default(60) // Duration in minutes (60 = 1 hour slots)
+  maxBookingsPerSlot Int      @default(1) // Allow multiple bookings per slot if needed
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
 
@@ -356,9 +356,9 @@ model GarageScheduleException {
   garageId  String
   date      DateTime // Specific date of the exception
   isClosed  Boolean  @default(true) // If true, garage is closed on this day
-  openTime  String?  // Special opening time (if not closed)
-  closeTime String?  // Special closing time (if not closed)
-  reason    String?  // Reason for exception (holiday, maintenance, etc.)
+  openTime  String? // Special opening time (if not closed)
+  closeTime String? // Special closing time (if not closed)
+  reason    String? // Reason for exception (holiday, maintenance, etc.)
   createdAt DateTime @default(now())
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
@@ -371,8 +371,8 @@ model GarageTimeSlotBlock {
   id        String   @id @default(cuid())
   garageId  String
   date      DateTime
-  timeSlot  String   // e.g., "09:00"
-  reason    String?  // Reason for blocking
+  timeSlot  String // e.g., "09:00"
+  reason    String? // Reason for blocking
   createdAt DateTime @default(now())
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
@@ -382,12 +382,12 @@ model GarageTimeSlotBlock {
 
 // Garage approval/rejection history log
 model GarageApprovalLog {
-  id            String               @id @default(cuid())
-  garageId      String
-  action        GarageApprovalStatus
-  reason        String?              // Reason for action (required for rejection)
-  adminId       String
-  createdAt     DateTime             @default(now())
+  id        String               @id @default(cuid())
+  garageId  String
+  action    GarageApprovalStatus
+  reason    String? // Reason for action (required for rejection)
+  adminId   String
+  createdAt DateTime             @default(now())
 
   garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
   admin  User   @relation("ApprovedByAdmin", fields: [adminId], references: [id])
@@ -397,18 +397,18 @@ model GarageApprovalLog {
 
 // Email logs for tracking email delivery
 model EmailLog {
-  id            String      @id @default(cuid())
-  bookingId     String?
+  id             String      @id @default(cuid())
+  bookingId      String?
   recipientEmail String
   recipientName  String?
-  emailType     EmailType
-  subject       String
-  status        EmailStatus @default(PENDING)
-  errorMessage  String?
-  retryCount    Int         @default(0)
-  sentAt        DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  emailType      EmailType
+  subject        String
+  status         EmailStatus @default(PENDING)
+  errorMessage   String?
+  retryCount     Int         @default(0)
+  sentAt         DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
@@ -421,23 +421,23 @@ model EmailLog {
 
 // Scheduled email reminders
 model ScheduledEmail {
-  id            String          @id @default(cuid())
-  bookingId     String
-  emailType     ScheduledEmailType
-  scheduledFor  DateTime        // When to send the email
-  status        ScheduledStatus @default(PENDING)
-  sentAt        DateTime?
-  errorMessage  String?
-  retryCount    Int             @default(0)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id           String             @id @default(cuid())
+  bookingId    String
+  emailType    ScheduledEmailType
+  scheduledFor DateTime // When to send the email
+  status       ScheduledStatus    @default(PENDING)
+  sentAt       DateTime?
+  errorMessage String?
+  retryCount   Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
+  @@unique([bookingId, emailType])
   @@index([bookingId])
   @@index([scheduledFor])
   @@index([status])
-  @@unique([bookingId, emailType])
 }
 
 enum EmailType {

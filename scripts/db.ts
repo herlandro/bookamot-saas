@@ -13,6 +13,7 @@
 import { PrismaClient } from '@prisma/client'
 import { execSync } from 'child_process'
 import * as readline from 'readline'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -145,6 +146,175 @@ async function listUsers() {
   }
 }
 
+async function setupDemoData() {
+  const now = new Date()
+
+  const adminEmail = 'admin@bookamot.co.uk'
+  const adminPasswordHash = await bcrypt.hash('admin123!', 12)
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { name: 'Admin', password: adminPasswordHash, role: 'ADMIN' },
+    create: { name: 'Admin', email: adminEmail, password: adminPasswordHash, role: 'ADMIN' },
+  })
+
+  const defaultSchedules = [
+    { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 6, isOpen: true, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '18:00', slotDuration: 60 },
+  ] as const
+
+  const { generateVerificationCode, sendGarageVerificationEmail } = await import('../src/lib/email')
+
+  const garagesToCreate = [
+    {
+      garageName: 'Nosso Contato Garage',
+      ownerName: 'Nosso Contato',
+      email: 'nossocontato@gmail.com',
+      password: 'garage123',
+      address: '45 High Street, Stevenage, SG1 1AA',
+      phone: '01438123456',
+    },
+    {
+      garageName: 'Garagem do Bairro',
+      ownerName: 'Maria Oliveira',
+      email: 'maria.oliveira.garage@gmail.com',
+      password: 'garage456',
+      address: '12 London Road, Hitchin, SG5 1AT',
+      phone: '01438987654',
+    },
+  ]
+
+  for (const spec of garagesToCreate) {
+    const ownerPasswordHash = await bcrypt.hash(spec.password, 12)
+    const owner = await prisma.user.upsert({
+      where: { email: spec.email },
+      update: { name: spec.ownerName, password: ownerPasswordHash, role: 'GARAGE_OWNER' },
+      create: { name: spec.ownerName, email: spec.email, password: ownerPasswordHash, role: 'GARAGE_OWNER' },
+      select: { id: true, email: true, name: true, emailVerified: true },
+    })
+
+    const garage = await prisma.garage.upsert({
+      where: { ownerId: owner.id },
+      update: {
+        name: spec.garageName,
+        email: spec.email,
+        phone: spec.phone,
+        address: spec.address,
+        city: spec.address.split(',').map(p => p.trim()).slice(-2, -1)[0] || 'Unknown',
+        postcode: spec.address.split(',').map(p => p.trim()).slice(-1)[0] || 'N/A',
+        dvlaApproved: false,
+        isActive: false,
+        motLicenseNumber: `MOT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        approvalStatus: 'PENDING',
+        approvedAt: null,
+        approvedById: null,
+        rejectionReason: null,
+      },
+      create: {
+        name: spec.garageName,
+        email: spec.email,
+        phone: spec.phone,
+        address: spec.address,
+        city: spec.address.split(',').map(p => p.trim()).slice(-2, -1)[0] || 'Unknown',
+        postcode: spec.address.split(',').map(p => p.trim()).slice(-1)[0] || 'N/A',
+        dvlaApproved: false,
+        isActive: false,
+        motLicenseNumber: `MOT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ownerId: owner.id,
+      },
+      select: { id: true, name: true, ownerId: true, approvalStatus: true, isActive: true },
+    })
+
+    await prisma.garageSchedule.deleteMany({ where: { garageId: garage.id } })
+    await prisma.garageSchedule.createMany({
+      data: defaultSchedules.map(s => ({ garageId: garage.id, ...s })),
+    })
+
+    const verificationCode = generateVerificationCode()
+    const verificationExpiry = new Date(Date.now() + 30 * 60 * 1000)
+    await prisma.user.update({
+      where: { id: owner.id },
+      data: {
+        emailVerified: null,
+        emailVerificationCode: verificationCode,
+        emailVerificationExpiry: verificationExpiry,
+      },
+    })
+
+    try {
+      await sendGarageVerificationEmail(spec.email, spec.garageName, verificationCode)
+      console.log(`📧 Verification email sent to ${spec.email}`)
+    } catch (error) {
+      console.error(`❌ Failed to send verification email to ${spec.email}:`, error)
+    }
+
+    const userWithCode = await prisma.user.findUnique({
+      where: { id: owner.id },
+      select: { emailVerificationCode: true, emailVerificationExpiry: true },
+    })
+
+    if (!userWithCode?.emailVerificationCode) {
+      throw new Error(`Verification code not present for user ${owner.email}`)
+    }
+
+    await prisma.user.update({
+      where: { id: owner.id },
+      data: {
+        emailVerified: new Date(),
+        emailVerificationCode: null,
+        emailVerificationExpiry: null,
+      },
+    })
+
+    await prisma.garage.update({
+      where: { id: garage.id },
+      data: {
+        approvalStatus: 'APPROVED',
+        approvedAt: now,
+        approvedById: adminUser.id,
+        isActive: true,
+        dvlaApproved: true,
+      },
+    })
+
+    await prisma.garageApprovalLog.create({
+      data: {
+        garageId: garage.id,
+        action: 'APPROVED',
+        reason: 'Auto-approved by setup-demo',
+        adminId: adminUser.id,
+      },
+    })
+
+    const verifiedOwner = await prisma.user.findUnique({
+      where: { id: owner.id },
+      select: { email: true, emailVerified: true },
+    })
+    const activatedGarage = await prisma.garage.findUnique({
+      where: { id: garage.id },
+      select: { name: true, isActive: true, approvalStatus: true },
+    })
+
+    console.log(`✅ Garage ready: ${activatedGarage?.name} | active=${activatedGarage?.isActive} | status=${activatedGarage?.approvalStatus}`)
+    console.log(`✅ Owner verified: ${verifiedOwner?.email} | emailVerified=${Boolean(verifiedOwner?.emailVerified)}`)
+  }
+
+  const customerPasswordHash = await bcrypt.hash('password123', 12)
+  const customer = await prisma.user.upsert({
+    where: { email: 'proffessorteodoro@gmail.com' },
+    update: { name: 'Professor Teodoro', password: customerPasswordHash, role: 'CUSTOMER' },
+    create: { name: 'Professor Teodoro', email: 'proffessorteodoro@gmail.com', password: customerPasswordHash, role: 'CUSTOMER' },
+    select: { id: true, name: true, email: true, role: true },
+  })
+
+  console.log(`✅ Customer user ready: ${customer.email} | role=${customer.role}`)
+}
+
 async function main() {
   const command = process.argv[2]
 
@@ -159,12 +329,16 @@ async function main() {
       case 'list':
         await listUsers()
         break
+      case 'setup-demo':
+        await setupDemoData()
+        break
       default:
         console.log('Usage: npm run db <command>')
         console.log('Commands:')
         console.log('  clean  - Delete all data')
         console.log('  reset  - Delete all data and reseed')
         console.log('  list   - List all users')
+        console.log('  setup-demo - Create demo garages + verify + approve, and a customer user')
     }
   } finally {
     rl.close()
@@ -173,4 +347,3 @@ async function main() {
 }
 
 main().catch(console.error)
-
