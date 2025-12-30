@@ -12,6 +12,8 @@
     "lint": "next lint",
     "db": "tsx scripts/db.ts",
     "db:clean": "tsx scripts/db.ts clean",
+    "db:clean:secure": "tsx scripts/clean-database.ts",
+    "db:clean:dry-run": "tsx scripts/clean-database.ts --dry-run --verbose",
     "db:reset": "tsx scripts/db.ts reset",
     "db:seed": "tsx prisma/seed.ts",
     "db:list": "tsx scripts/db.ts list",
