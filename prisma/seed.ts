@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, FuelType, BookingStatus, PaymentStatus, ReviewerType, GarageApprovalStatus } from '@prisma/client'
+import { PrismaClient, UserRole, FuelType, BookingStatus, PaymentStatus, ReviewerType, GarageApprovalStatus, MotOutcome } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -209,12 +209,16 @@ async function main() {
   // Clear existing data (in correct order to respect foreign keys)
   console.log('🗑️  Cleaning existing data...')
   await prisma.review.deleteMany()
+  await prisma.motNotification.deleteMany()
+  await prisma.emailLog.deleteMany()
+  await prisma.scheduledEmail.deleteMany()
   await prisma.motResult.deleteMany()
   await prisma.booking.deleteMany()
   await prisma.garageTimeSlotBlock.deleteMany()
   await prisma.garageScheduleException.deleteMany()
   await prisma.garageSchedule.deleteMany()
   await prisma.motHistory.deleteMany()
+  await prisma.garageApprovalLog.deleteMany()
   await prisma.vehicle.deleteMany()
   await prisma.garage.deleteMany()
   await prisma.account.deleteMany()
@@ -345,6 +349,16 @@ async function main() {
           saturday: { open: '09:00', close: '13:00' },
           sunday: { open: null, close: null }
         }
+      }
+    })
+
+    // Create approval log entry for this garage
+    await prisma.garageApprovalLog.create({
+      data: {
+        garageId: garage.id,
+        action: GarageApprovalStatus.APPROVED,
+        reason: 'Pre-approved for seed data',
+        adminId: adminUser.id
       }
     })
 
@@ -559,6 +573,106 @@ async function main() {
   }
   console.log(`✅ Updated ratings for ${garageRatings.size} garages and ${customerRatings.size} customers\n`)
 
+  // Create MOT results for some completed bookings
+  console.log('🔧 Creating MOT results for completed bookings...')
+  const completedBookingsForMot = await prisma.booking.findMany({
+    where: { status: BookingStatus.COMPLETED },
+    include: { vehicle: true }
+  })
+
+  let motResultCount = 0
+  for (const booking of completedBookingsForMot) {
+    // 70% chance of creating MOT result
+    if (Math.random() < 0.70) {
+      const result = Math.random() < 0.85 ? MotOutcome.PASS : MotOutcome.FAIL
+      const testDate = new Date(booking.date)
+      testDate.setHours(testDate.getHours() + 2) // MOT test happens 2 hours after booking time
+      
+      // Calculate expiry date (1 year from test date for PASS, null for FAIL)
+      const expiryDate = result === MotOutcome.PASS 
+        ? new Date(testDate)
+        : null
+      if (expiryDate) {
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1)
+      }
+
+      await prisma.motResult.create({
+        data: {
+          bookingId: booking.id,
+          result,
+          certificateNumber: result === MotOutcome.PASS 
+            ? `MOT-${Math.floor(Math.random() * 9000000) + 1000000}` 
+            : null,
+          expiryDate,
+          mileage: booking.vehicle.mileage ? booking.vehicle.mileage + Math.floor(Math.random() * 5000) : null,
+          testDate,
+          // Add some sample defects/advisories for FAIL results
+          advisories: result === MotOutcome.FAIL && Math.random() < 0.5
+            ? JSON.stringify(['Minor wear on brake pads', 'Slight exhaust noise'])
+            : null,
+          minorDefects: result === MotOutcome.FAIL && Math.random() < 0.3
+            ? JSON.stringify(['Brake pad wear approaching limit'])
+            : null
+        }
+      })
+      motResultCount++
+    }
+  }
+  console.log(`✅ Created ${motResultCount} MOT results\n`)
+
+  // Create MOT history for some vehicles (simulating past MOT tests)
+  console.log('📋 Creating MOT history for vehicles...')
+  let motHistoryCount = 0
+  for (const vehicle of allVehicles) {
+    // 40% chance of creating historical MOT records
+    if (Math.random() < 0.40) {
+      const numHistoryRecords = Math.floor(Math.random() * 3) + 1 // 1-3 historical records
+      
+      for (let h = 0; h < numHistoryRecords; h++) {
+        // Create dates in the past (1-3 years ago)
+        const yearsAgo = Math.floor(Math.random() * 3) + 1
+        const testDate = new Date()
+        testDate.setFullYear(testDate.getFullYear() - yearsAgo)
+        testDate.setMonth(Math.floor(Math.random() * 12))
+        testDate.setDate(Math.floor(Math.random() * 28) + 1)
+
+        const result = Math.random() < 0.80 ? MotOutcome.PASS : MotOutcome.FAIL
+        const expiryDate = result === MotOutcome.PASS 
+          ? new Date(testDate)
+          : null
+        if (expiryDate) {
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1)
+        }
+
+        await prisma.motHistory.create({
+          data: {
+            vehicleId: vehicle.id,
+            testDate,
+            result,
+            certificateNumber: result === MotOutcome.PASS 
+              ? `MOT-${Math.floor(Math.random() * 9000000) + 1000000}` 
+              : null,
+            expiryDate,
+            mileage: vehicle.mileage ? Math.max(0, vehicle.mileage - Math.floor(Math.random() * 20000 + 5000)) : null,
+            testLocation: 'DVSA',
+            testNumber: `TEST-${Math.floor(Math.random() * 900000000) + 100000000}`,
+            dataSource: 'DVSA',
+            odometerUnit: 'MI',
+            odometerResultType: 'READ',
+            registrationAtTimeOfTest: vehicle.registration,
+            dangerousDefects: result === MotOutcome.FAIL && Math.random() < 0.1 ? 1 : 0,
+            majorDefects: result === MotOutcome.FAIL && Math.random() < 0.3 ? Math.floor(Math.random() * 2) + 1 : 0,
+            minorDefects: result === MotOutcome.FAIL && Math.random() < 0.5 ? Math.floor(Math.random() * 3) + 1 : 0,
+            advisoryDefects: Math.random() < 0.6 ? Math.floor(Math.random() * 4) : 0,
+            prsDefects: 0
+          }
+        })
+        motHistoryCount++
+      }
+    }
+  }
+  console.log(`✅ Created ${motHistoryCount} MOT history records\n`)
+
   console.log('✨ Database seeding completed successfully!\n')
   console.log('📊 Summary:')
   console.log(`   - 1 admin user`)
@@ -568,6 +682,8 @@ async function main() {
   console.log(`   - ${garages.length} garages`)
   console.log(`   - ${exceptionCount} schedule exceptions`)
   console.log(`   - ${bookingCount} bookings`)
+  console.log(`   - ${motResultCount} MOT results`)
+  console.log(`   - ${motHistoryCount} MOT history records`)
   console.log(`   - ${customerReviewCount + garageReviewCount} reviews (${customerReviewCount} from customers, ${garageReviewCount} from garages)`)
   console.log('\n🔑 Test Credentials:')
   console.log('   Admin: admin@bookamot.co.uk / password: admin123!')
