@@ -73,6 +73,14 @@ export async function PATCH(
 
     const { id } = await params
     
+    // Validate ID
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      return NextResponse.json(
+        { error: 'Invalid garage ID provided' },
+        { status: 400 }
+      )
+    }
+    
     let body: any = {}
     try {
       body = await request.json()
@@ -123,6 +131,35 @@ export async function PATCH(
 
     switch (action) {
       case 'approve':
+        // Validate that admin user ID exists
+        if (!session.user.id) {
+          return NextResponse.json(
+            { error: 'Admin user ID is missing. Please log in again.' },
+            { status: 401 }
+          )
+        }
+        
+        // Verify admin user exists in database
+        try {
+          const adminUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true }
+          })
+          
+          if (!adminUser) {
+            return NextResponse.json(
+              { error: 'Admin user not found. Please log in again.' },
+              { status: 401 }
+            )
+          }
+        } catch (userCheckError) {
+          console.error('Error checking admin user:', userCheckError)
+          return NextResponse.json(
+            { error: 'Failed to verify admin user.' },
+            { status: 500 }
+          )
+        }
+        
         updateData = {
           approvalStatus: GarageApprovalStatus.APPROVED,
           isActive: true,
@@ -177,10 +214,36 @@ export async function PATCH(
         where: { id },
         data: updateData
       })
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database error updating garage:', dbError)
+      
+      // Provide more specific error message
+      let errorMessage = 'Failed to update garage. Please try again.'
+      if (dbError?.code === 'P2002') {
+        errorMessage = 'A garage with this information already exists.'
+      } else if (dbError?.code === 'P2025') {
+        errorMessage = 'Garage not found in database.'
+      } else if (dbError?.code === 'P2003') {
+        // Foreign key constraint failed
+        const field = dbError?.meta?.field_name || 'related field'
+        errorMessage = `Invalid reference: ${field}. Please check that all related records exist.`
+      } else if (dbError?.code === 'P2011') {
+        // Null constraint violation
+        errorMessage = 'Required field is missing. Please check all required fields are provided.'
+      } else if (dbError?.message) {
+        errorMessage = `Database error: ${dbError.message}`
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to update garage. Please try again.' },
+        { 
+          error: errorMessage,
+          success: false,
+          details: process.env.NODE_ENV === 'development' ? {
+            code: dbError?.code,
+            message: dbError?.message,
+            meta: dbError?.meta
+          } : undefined
+        },
         { status: 500 }
       )
     }
@@ -195,9 +258,9 @@ export async function PATCH(
           adminId: session.user.id
         }
       })
-    } catch (logError) {
+    } catch (logError: any) {
       // Log error but don't fail the request - garage was already updated
-      console.error('Failed to create approval log:', logError)
+      console.error('Failed to create approval log (non-critical):', logError)
     }
 
     // Send appropriate email
@@ -210,7 +273,6 @@ export async function PATCH(
 
       if (!ownerEmail) {
         emailError = 'No email address found for garage owner'
-        console.error('❌', emailError)
       } else {
         switch (action) {
           case 'approve':
@@ -229,7 +291,6 @@ export async function PATCH(
               adminName
             )
             emailSent = true
-            console.log(`✅ Approval email sent successfully to ${ownerEmail}`)
             break
 
           case 'reject':
@@ -238,7 +299,6 @@ export async function PATCH(
             } else {
               await sendGarageRejectionEmail(ownerEmail, garage.name, ownerName, reason)
               emailSent = true
-              console.log(`✅ Rejection email sent successfully to ${ownerEmail}`)
             }
             break
 
@@ -248,22 +308,14 @@ export async function PATCH(
             } else {
               await sendGarageInfoRequestEmail(ownerEmail, garage.name, ownerName, reason)
               emailSent = true
-              console.log(`✅ Info request email sent successfully to ${ownerEmail}`)
             }
             break
         }
       }
     } catch (err) {
       emailError = err instanceof Error ? err.message : 'Unknown error occurred while sending email'
-      console.error('❌ Failed to send email notification:', err)
-      // Log detailed error information
-      if (err instanceof Error) {
-        console.error('   Error message:', err.message)
-        console.error('   Error stack:', err.stack)
-      }
+      console.error('Failed to send email notification:', err)
     }
-
-    console.log(`✅ Garage "${garage.name}" ${action}ed by admin ${session.user.email}`)
 
     // Return success response even if email failed (garage status was updated)
     // but include email status in the response
@@ -271,31 +323,50 @@ export async function PATCH(
       ? `Garage ${action === 'request_info' ? 'info requested' : action + 'd'} successfully. Email sent to owner.`
       : `Garage ${action === 'request_info' ? 'info requested' : action + 'd'} successfully, but email could not be sent: ${emailError || 'Unknown error'}`
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
-      garage: updatedGarage,
+      garage: {
+        id: updatedGarage.id,
+        name: updatedGarage.name,
+        approvalStatus: updatedGarage.approvalStatus,
+        isActive: updatedGarage.isActive,
+        dvlaApproved: updatedGarage.dvlaApproved,
+        approvedAt: updatedGarage.approvedAt,
+        approvedById: updatedGarage.approvedById,
+        rejectionReason: updatedGarage.rejectionReason
+      },
       message: responseMessage,
       emailSent,
       emailError: emailError || undefined
-    })
+    }
+
+    return NextResponse.json(responseData, { status: 200 })
   } catch (error) {
-    console.error('Error updating garage:', error)
+    console.error('Unexpected error updating garage:', error)
     
     // Provide more detailed error message
     let errorMessage = 'Internal server error'
+    let errorDetails: any = {}
+    
     if (error instanceof Error) {
       errorMessage = error.message || errorMessage
-      console.error('Error details:', {
+      errorDetails = {
         message: error.message,
         stack: error.stack,
         name: error.name
-      })
+      }
+    } else if (typeof error === 'object' && error !== null) {
+      errorDetails = error
+      if ('message' in error) {
+        errorMessage = String(error.message) || errorMessage
+      }
     }
     
     return NextResponse.json(
       { 
         error: errorMessage,
-        success: false
+        success: false,
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },
       { status: 500 }
     )
@@ -335,8 +406,6 @@ export async function DELETE(
     // if (garage.owner?.id) {
     //   await prisma.user.delete({ where: { id: garage.owner.id } })
     // }
-
-    console.log(`🗑️ Garage "${garage.name}" deleted by admin ${session.user.email}`)
 
     return NextResponse.json({ success: true })
   } catch (error) {

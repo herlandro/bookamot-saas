@@ -163,7 +163,6 @@ export default function PendingGaragesPage() {
 
   const handleAction = async () => {
     if (!actionModal) {
-      console.error('No action modal set');
       return;
     }
     
@@ -177,8 +176,6 @@ export default function PendingGaragesPage() {
     setErrorMessage(null);
     
     try {
-      console.log('Sending action:', actionModal.action, 'for garage:', actionModal.garage.id);
-      
       const response = await fetch(`/api/admin/garages/${actionModal.garage.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -187,8 +184,6 @@ export default function PendingGaragesPage() {
           reason: actionReason.trim() || undefined
         })
       });
-
-      console.log('Response status:', response.status, response.statusText);
 
       let data: any = {};
       try {
@@ -203,8 +198,6 @@ export default function PendingGaragesPage() {
       }
 
       if (response.ok) {
-        console.log('Action successful:', data);
-        
         // Check if email was sent successfully
         if (data.emailSent === false && data.emailError) {
           // Show warning but still proceed with success
@@ -227,14 +220,9 @@ export default function PendingGaragesPage() {
         setSelectedGarage(null);
       } else {
         // Handle error response
-        const errorMsg = data.error || data.message || `Failed to ${actionModal.action} garage. Please try again.`;
+        const errorMsg = data.error || data.message || data.details || `Failed to ${actionModal.action} garage. Please try again.`;
         setErrorMessage(errorMsg);
-        console.error('Error processing garage:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorMsg,
-          data
-        });
+        console.error('Error processing garage:', errorMsg);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
