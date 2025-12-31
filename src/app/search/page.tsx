@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Star, Clock, ArrowLeft, Loader2, X, Calendar } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Clock, Loader2, X, Calendar } from 'lucide-react'
 import { formatCurrency, calculateDistance } from '@/lib/utils'
 import { validateUKRegistration } from '@/lib/validations'
 import { MainLayout } from '@/components/layout/main-layout'
@@ -461,10 +461,6 @@ function SearchPageContent() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
-            <Button variant="outline" size="sm" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
             <div className="flex-1">
               <h1 className="text-2xl font-bold">Find MOT Test Centres</h1>
               <p className="text-muted-foreground mb-4">
@@ -477,7 +473,7 @@ function SearchPageContent() {
                 <div className="relative flex-1">
                   <div className="relative">
                     <Input
-                      placeholder="Vehicle Registration (e.g., AB12 CDE)"
+                      placeholder="Vehicle Registration"
                       value={vehicleRegistration}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVehicleRegistration(e.target.value.toUpperCase())}
                       onBlur={() => {
@@ -529,7 +525,7 @@ function SearchPageContent() {
                 {/* Postcode/City */}
                 <div className="relative flex-1">
                   <Input
-                    placeholder="Postcode or City (e.g., SW1A 1AA, London)"
+                    placeholder="Postcode or City"
                     value={searchLocation}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
                     className="pr-8"
