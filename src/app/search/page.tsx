@@ -437,20 +437,15 @@ function SearchPageContent() {
     }
   }
 
-  // Debounce registration validation
-  useEffect(() => {
+  // Handle Continue button click - validate registration
+  const handleContinue = () => {
     if (!vehicleRegistration.trim()) {
-      setRegistrationError(null)
+      setRegistrationError('Vehicle registration is required')
       setRegistrationValid(false)
       return
     }
-
-    const timer = setTimeout(() => {
-      validateVehicleRegistration(vehicleRegistration)
-    }, 800) // Wait 800ms after user stops typing
-
-    return () => clearTimeout(timer)
-  }, [vehicleRegistration])
+    validateVehicleRegistration(vehicleRegistration)
+  }
 
   if (status === 'loading') {
     return (
@@ -476,55 +471,68 @@ function SearchPageContent() {
                 {/* Vehicle Registration */}
                 <div className="relative flex-1">
                   <label htmlFor="vehicle-registration" className="text-sm font-medium mb-1 block">
-                    Vehicle Registration <span className="text-red-500">*</span>
+                    Vehicle registration number <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <Input
-                      id="vehicle-registration"
-                      placeholder="Vehicle Registration"
-                      value={vehicleRegistration}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setVehicleRegistration(e.target.value.toUpperCase())
-                        // Clear error when user starts typing
-                        if (registrationError && e.target.value.trim()) {
-                          setRegistrationError(null)
-                        }
-                      }}
-                      onBlur={() => {
-                        if (vehicleRegistration.trim()) {
-                          validateVehicleRegistration(vehicleRegistration)
-                        } else {
-                          setRegistrationError('Vehicle registration is required')
-                        }
-                      }}
-                      required
-                      aria-required="true"
-                      aria-invalid={!!registrationError}
-                      aria-describedby={registrationError ? "registration-error" : registrationValid ? "registration-success" : undefined}
-                      className={`pr-8 ${registrationError ? 'border-red-500 focus-visible:ring-red-500' : ''} ${registrationValid ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
-                    />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      {validatingRegistration ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <>
-                          {registrationValid && (
-                            <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                          {vehicleRegistration && (
-                            <button
-                              type="button"
-                              onClick={clearVehicleRegistration}
-                              className="text-muted-foreground hover:text-foreground"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
-                        </>
-                      )}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="vehicle-registration"
+                        placeholder="Vehicle Registration"
+                        value={vehicleRegistration}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setVehicleRegistration(e.target.value.toUpperCase())
+                          // Clear error when user starts typing
+                          if (registrationError && e.target.value.trim()) {
+                            setRegistrationError(null)
+                          }
+                        }}
+                        required
+                        aria-required="true"
+                        aria-invalid={!!registrationError}
+                        aria-describedby={registrationError ? "registration-error" : registrationValid ? "registration-success" : undefined}
+                        className={`pr-8 ${registrationError ? 'border-red-500 focus-visible:ring-red-500' : ''} ${registrationValid ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {validatingRegistration ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            {registrationValid && (
+                              <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                            {vehicleRegistration && (
+                              <button
+                                type="button"
+                                onClick={clearVehicleRegistration}
+                                className="text-muted-foreground hover:text-foreground"
+                                aria-label="Clear vehicle registration"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      type="button"
+                      onClick={handleContinue}
+                      disabled={!vehicleRegistration.trim() || validatingRegistration}
+                      className="sm:w-auto whitespace-nowrap h-10"
+                      aria-label="Continue to validate vehicle registration"
+                      aria-disabled={!vehicleRegistration.trim() || validatingRegistration}
+                    >
+                      {validatingRegistration ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Validating...
+                        </>
+                      ) : (
+                        'Continue'
+                      )}
+                    </Button>
                   </div>
                   {registrationError && (
                     <p id="registration-error" className="text-red-500 text-xs mt-1" role="alert">{registrationError}</p>
