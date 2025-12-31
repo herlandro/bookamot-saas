@@ -180,22 +180,6 @@ function SearchPageContent() {
     }
   }
 
-  const handleSearch = () => {
-    // Validate vehicle registration first
-    if (!vehicleRegistration.trim()) {
-      setRegistrationError('Vehicle registration is required')
-      return
-    }
-
-    if (!registrationValid) {
-      setRegistrationError('Please enter a valid vehicle registration')
-      return
-    }
-
-    if (searchLocation.trim()) {
-      searchGarages()
-    }
-  }
 
   const handleBooking = async (garage: Garage) => {
     if (!vehicleRegistration.trim()) {
@@ -482,11 +466,12 @@ function SearchPageContent() {
               <div className="flex flex-col sm:flex-row gap-3">
                 {/* Vehicle Registration */}
                 <div className="relative flex-1">
-                  <label className="text-sm font-medium mb-1 block">
+                  <label htmlFor="vehicle-registration" className="text-sm font-medium mb-1 block">
                     Vehicle Registration <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Input
+                      id="vehicle-registration"
                       placeholder="Vehicle Registration"
                       value={vehicleRegistration}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -504,6 +489,9 @@ function SearchPageContent() {
                         }
                       }}
                       required
+                      aria-required="true"
+                      aria-invalid={!!registrationError}
+                      aria-describedby={registrationError ? "registration-error" : registrationValid ? "registration-success" : undefined}
                       className={`pr-8 ${registrationError ? 'border-red-500 focus-visible:ring-red-500' : ''} ${registrationValid ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -530,10 +518,10 @@ function SearchPageContent() {
                     </div>
                   </div>
                   {registrationError && (
-                    <p className="text-red-500 text-xs mt-1">{registrationError}</p>
+                    <p id="registration-error" className="text-red-500 text-xs mt-1" role="alert">{registrationError}</p>
                   )}
                   {registrationValid && !registrationError && (
-                    <div className="mt-1">
+                    <div id="registration-success" className="mt-1">
                       <p className="text-green-600 text-xs">Registration validated</p>
                       {vehicleData && (vehicleData.make || vehicleData.model || vehicleData.year) && (
                         <p className="text-green-600 text-xs font-medium mt-0.5">
@@ -544,74 +532,81 @@ function SearchPageContent() {
                   )}
                 </div>
 
-                {/* Postcode/City */}
-                <div className="relative flex-1">
-                  <Input
-                    placeholder="Postcode or City"
-                    value={searchLocation}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
-                    className="pr-8"
-                  />
-                </div>
+                {/* Postcode/City - Conditional */}
+                {registrationValid && (
+                  <div className="relative flex-1">
+                    <label htmlFor="postcode-city" className="text-sm font-medium mb-1 block">
+                      Post Code or City
+                    </label>
+                    <Input
+                      id="postcode-city"
+                      placeholder="Postcode or City"
+                      value={searchLocation}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
+                      className="pr-8"
+                      aria-label="Post Code or City"
+                    />
+                  </div>
+                )}
 
-                {/* Date */}
-                <div className="relative flex-1">
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const newDate = e.target.value
-                      setSelectedDate(newDate)
-                      // Clear time if date is in the future, otherwise set to next full hour
-                      const selectedDateObj = new Date(newDate)
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      selectedDateObj.setHours(0, 0, 0, 0)
-                      if (selectedDateObj > today) {
-                        setSelectedTime('') // Empty time for future dates
-                      } else {
-                        // If date is today, update to next full hour
-                        setSelectedTime(getDefaultTime(newDate))
-                      }
-                      if (searchLocation.trim()) {
-                        searchGarages()
-                      }
-                    }}
-                    className="pr-8"
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+                {/* Date - Conditional */}
+                {registrationValid && (
+                  <div className="relative flex-1">
+                    <label htmlFor="booking-date" className="text-sm font-medium mb-1 block">
+                      Date
+                    </label>
+                    <Input
+                      id="booking-date"
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const newDate = e.target.value
+                        setSelectedDate(newDate)
+                        // Clear time if date is in the future, otherwise set to next full hour
+                        const selectedDateObj = new Date(newDate)
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        selectedDateObj.setHours(0, 0, 0, 0)
+                        if (selectedDateObj > today) {
+                          setSelectedTime('') // Empty time for future dates
+                        } else {
+                          // If date is today, update to next full hour
+                          setSelectedTime(getDefaultTime(newDate))
+                        }
+                        // Auto-search when date changes and location is filled
+                        if (searchLocation.trim()) {
+                          searchGarages()
+                        }
+                      }}
+                      className="pr-8"
+                      min={new Date().toISOString().split('T')[0]}
+                      aria-label="Date"
+                    />
+                  </div>
+                )}
 
-                {/* Time */}
-                <div className="relative flex-1">
-                  <Input
-                    type="time"
-                    value={selectedTime}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setSelectedTime(e.target.value)
-                      if (searchLocation.trim()) {
-                        searchGarages()
-                      }
-                    }}
-                    className="pr-8"
-                  />
-                </div>
-
-                {/* Search Button */}
-                <Button 
-                  onClick={handleSearch} 
-                  disabled={loading || !searchLocation.trim() || !vehicleRegistration.trim() || !registrationValid}
-                  className="sm:w-auto"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Searching...
-                    </>
-                  ) : (
-                    'Search'
-                  )}
-                </Button>
+                {/* Time - Conditional */}
+                {registrationValid && (
+                  <div className="relative flex-1">
+                    <label htmlFor="booking-time" className="text-sm font-medium mb-1 block">
+                      Time
+                    </label>
+                    <Input
+                      id="booking-time"
+                      type="time"
+                      value={selectedTime}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setSelectedTime(e.target.value)
+                        // Auto-search when time changes and location is filled
+                        if (searchLocation.trim()) {
+                          searchGarages()
+                        }
+                      }}
+                      className="pr-8"
+                      aria-label="Time"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
