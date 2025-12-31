@@ -113,6 +113,13 @@ function SearchPageContent() {
     }
   }, [status, router])
 
+  // Clear results when vehicle registration becomes invalid or empty
+  useEffect(() => {
+    if (!registrationValid || !vehicleRegistration.trim()) {
+      setGarages([])
+    }
+  }, [registrationValid, vehicleRegistration])
+
   // Debounce search term to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -126,7 +133,8 @@ function SearchPageContent() {
   useEffect(() => {
     const abortController = new AbortController()
 
-    if (debouncedSearchTerm.trim()) {
+    // Only search if vehicle registration is valid
+    if (debouncedSearchTerm.trim() && registrationValid) {
       searchGarages(abortController)
     } else {
       setGarages([])
@@ -136,10 +144,11 @@ function SearchPageContent() {
       abortController.abort()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, selectedDate, selectedTime])
+  }, [debouncedSearchTerm, selectedDate, selectedTime, registrationValid])
 
   const searchGarages = async (abortController?: AbortController) => {
-    if (!debouncedSearchTerm.trim()) {
+    // Don't search if vehicle registration is not valid
+    if (!registrationValid || !debouncedSearchTerm.trim()) {
       setGarages([])
       return
     }
@@ -612,7 +621,7 @@ function SearchPageContent() {
           </div>
 
           {/* Results */}
-          {garages.length > 0 && (
+          {garages.length > 0 && registrationValid && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold">
                 Found {garages.length} MOT Test Centers
@@ -715,7 +724,7 @@ function SearchPageContent() {
           )}
 
           {/* No Results */}
-          {!loading && garages.length === 0 && searchLocation && (
+          {!loading && garages.length === 0 && searchLocation && registrationValid && (
             <Card className="shadow-xl rounded-lg border border-border">
               <CardContent className="text-center py-12">
                 <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
