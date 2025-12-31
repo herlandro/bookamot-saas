@@ -147,21 +147,6 @@ async function verifyEnvironment(config: Config, logger: Logger): Promise<boolea
 
   logger.debug(`DATABASE_URL: ${maskDatabaseUrl(process.env.DATABASE_URL)}`)
 
-  // Check if in production
-  const isProduction = process.env.NODE_ENV === 'production'
-  
-  if (isProduction && !config.forceProduction) {
-    logger.warn('⚠️  PRODUCTION ENVIRONMENT DETECTED ⚠️')
-    logger.warn('This script is about to delete ALL data from PRODUCTION database!')
-    logger.warn('To proceed, you must use --force-production flag')
-    return false
-  }
-
-  if (isProduction && config.forceProduction) {
-    logger.warn('⚠️  FORCE PRODUCTION MODE ENABLED ⚠️')
-    logger.warn('You are about to delete data from PRODUCTION database!')
-  }
-
   // Test database connection
   try {
     await prisma.$connect()
@@ -391,18 +376,6 @@ async function requestConfirmation(config: Config, logger: Logger): Promise<bool
   if (answer !== 'DELETE ALL DATA') {
     logger.warn('Confirmation failed. Operation cancelled.')
     return false
-  }
-
-  // Additional confirmation for production
-  if (process.env.NODE_ENV === 'production' && config.forceProduction) {
-    console.log('')
-    logger.warn('⚠️  PRODUCTION ENVIRONMENT - ADDITIONAL CONFIRMATION REQUIRED ⚠️')
-    const prodAnswer = await askQuestion('Type "YES DELETE PRODUCTION" to proceed: ')
-    
-    if (prodAnswer !== 'YES DELETE PRODUCTION') {
-      logger.warn('Production confirmation failed. Operation cancelled.')
-      return false
-    }
   }
 
   return true
