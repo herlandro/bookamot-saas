@@ -300,6 +300,10 @@ function SearchPageContent() {
     setRegistrationError(null)
     setRegistrationValid(false)
     setVehicleData(null)
+    // Clear search location and results when registration is cleared
+    setSearchLocation('')
+    setDebouncedSearchTerm('')
+    setGarages([])
   }
 
   const clearSearchLocation = () => {
@@ -485,6 +489,15 @@ function SearchPageContent() {
                           if (registrationError && e.target.value.trim()) {
                             setRegistrationError(null)
                           }
+                          // Clear validation state when field is cleared
+                          if (!e.target.value.trim() && registrationValid) {
+                            setRegistrationValid(false)
+                            setVehicleData(null)
+                            // Clear search location and results
+                            setSearchLocation('')
+                            setDebouncedSearchTerm('')
+                            setGarages([])
+                          }
                         }}
                         required
                         aria-required="true"
@@ -516,23 +529,26 @@ function SearchPageContent() {
                         )}
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      onClick={handleContinue}
-                      disabled={!vehicleRegistration.trim() || validatingRegistration}
-                      className="sm:w-auto whitespace-nowrap h-10"
-                      aria-label="Continue to validate vehicle registration"
-                      aria-disabled={!vehicleRegistration.trim() || validatingRegistration}
-                    >
-                      {validatingRegistration ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Validating...
-                        </>
-                      ) : (
-                        'Continue'
-                      )}
-                    </Button>
+                    {/* Show Continue button only when registration is not valid */}
+                    {!registrationValid && (
+                      <Button
+                        type="button"
+                        onClick={handleContinue}
+                        disabled={!vehicleRegistration.trim() || validatingRegistration}
+                        className="sm:w-auto whitespace-nowrap h-10"
+                        aria-label="Continue to validate vehicle registration"
+                        aria-disabled={!vehicleRegistration.trim() || validatingRegistration}
+                      >
+                        {validatingRegistration ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Validating...
+                          </>
+                        ) : (
+                          'Continue'
+                        )}
+                      </Button>
+                    )}
                   </div>
                   {registrationError && (
                     <p id="registration-error" className="text-red-500 text-xs mt-1" role="alert">{registrationError}</p>
