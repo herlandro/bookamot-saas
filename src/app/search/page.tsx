@@ -181,6 +181,17 @@ function SearchPageContent() {
   }
 
   const handleSearch = () => {
+    // Validate vehicle registration first
+    if (!vehicleRegistration.trim()) {
+      setRegistrationError('Vehicle registration is required')
+      return
+    }
+
+    if (!registrationValid) {
+      setRegistrationError('Please enter a valid vehicle registration')
+      return
+    }
+
     if (searchLocation.trim()) {
       searchGarages()
     }
@@ -471,14 +482,25 @@ function SearchPageContent() {
               <div className="flex flex-col sm:flex-row gap-3">
                 {/* Vehicle Registration */}
                 <div className="relative flex-1">
+                  <label className="text-sm font-medium mb-1 block">
+                    Vehicle Registration <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <Input
                       placeholder="Vehicle Registration"
                       value={vehicleRegistration}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVehicleRegistration(e.target.value.toUpperCase())}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setVehicleRegistration(e.target.value.toUpperCase())
+                        // Clear error when user starts typing
+                        if (registrationError && e.target.value.trim()) {
+                          setRegistrationError(null)
+                        }
+                      }}
                       onBlur={() => {
                         if (vehicleRegistration.trim()) {
                           validateVehicleRegistration(vehicleRegistration)
+                        } else {
+                          setRegistrationError('Vehicle registration is required')
                         }
                       }}
                       required
@@ -578,7 +600,7 @@ function SearchPageContent() {
                 {/* Search Button */}
                 <Button 
                   onClick={handleSearch} 
-                  disabled={loading || !searchLocation.trim()}
+                  disabled={loading || !searchLocation.trim() || !vehicleRegistration.trim() || !registrationValid}
                   className="sm:w-auto"
                 >
                   {loading ? (
