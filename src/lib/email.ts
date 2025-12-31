@@ -1,15 +1,53 @@
 import nodemailer from 'nodemailer'
 
-// Email transporter configuration
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
+// Validate SMTP configuration
+function validateSMTPConfig(): boolean {
+  const required = ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM']
+  const missing = required.filter(key => !process.env[key])
+  
+  if (missing.length > 0) {
+    console.error('❌ Missing SMTP environment variables:', missing.join(', '))
+    return false
+  }
+  
+  return true
+}
+
+// Get or create email transporter (lazy initialization)
+function getTransporter(): nodemailer.Transporter | null {
+  if (!validateSMTPConfig()) {
+    return null
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+    
+    return transporter
+  } catch (error) {
+    console.error('❌ Error creating email transporter:', error)
+    return null
+  }
+}
+
+// Escape HTML to prevent XSS and formatting issues
+function escapeHtml(text: string): string {
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }
+  return text.replace(/[&<>"']/g, (m) => map[m])
+}
 
 // Generate 6-character alphanumeric verification code
 export function generateVerificationCode(): string {
@@ -68,6 +106,14 @@ export async function sendGarageVerificationEmail(
   garageName: string,
   verificationCode: string
 ): Promise<void> {
+  const transporter = getTransporter()
+  
+  if (!transporter) {
+    const errorMsg = 'SMTP transporter not configured. Please check your environment variables.'
+    console.error('❌', errorMsg)
+    throw new Error(errorMsg)
+  }
+
   const content = `
     <div class="content">
       <h2>Email Verification</h2>
@@ -110,6 +156,14 @@ export async function sendGarageApprovalEmail(
   approvedAt?: Date,
   approvedBy?: string
 ): Promise<void> {
+  const transporter = getTransporter()
+  
+  if (!transporter) {
+    const errorMsg = 'SMTP transporter not configured. Please check your environment variables.'
+    console.error('❌', errorMsg)
+    throw new Error(errorMsg)
+  }
+
   const loginUrl = `${process.env.NEXTAUTH_URL}/garage-admin/signin`
   const approvalDate = approvedAt ? new Date(approvedAt).toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -187,15 +241,26 @@ export async function sendGarageRejectionEmail(
   ownerName: string,
   reason: string
 ): Promise<void> {
+  const transporter = getTransporter()
+  
+  if (!transporter) {
+    const errorMsg = 'SMTP transporter not configured. Please check your environment variables.'
+    console.error('❌', errorMsg)
+    throw new Error(errorMsg)
+  }
+
+  // Convert newlines to <br> tags for proper HTML display
+  const formattedReason = escapeHtml(reason).replace(/\n/g, '<br>')
+
   const content = `
     <div class="content">
       <h2>Garage Registration Update</h2>
-      <p>Hello ${ownerName},</p>
-      <p>Unfortunately, we were unable to approve the registration of <strong>${garageName}</strong> at this time.</p>
+      <p>Hello ${escapeHtml(ownerName)},</p>
+      <p>Unfortunately, we were unable to approve the registration of <strong>${escapeHtml(garageName)}</strong> at this time.</p>
       
       <div class="info-box">
         <strong>Reason:</strong>
-        <p style="margin: 10px 0 0 0;">${reason}</p>
+        <p style="margin: 10px 0 0 0;">${formattedReason}</p>
       </div>
       
       <p>If you believe there was an error or would like to provide additional information, please contact us:</p>
@@ -222,15 +287,32 @@ export async function sendGarageInfoRequestEmail(
   ownerName: string,
   requestDetails: string
 ): Promise<void> {
+  const transporter = getTransporter()
+  
+  if (!transporter) {
+    const errorMsg = 'SMTP transporter not configured. Please check your environment variables.'
+    console.error('❌', errorMsg)
+    console.error('   Current env vars:', {
+      SMTP_HOST: process.env.SMTP_HOST ? 'SET' : 'NOT SET',
+      SMTP_USER: process.env.SMTP_USER ? 'SET' : 'NOT SET',
+      SMTP_PASS: process.env.SMTP_PASS ? 'SET' : 'NOT SET',
+      SMTP_FROM: process.env.SMTP_FROM ? 'SET' : 'NOT SET',
+    })
+    throw new Error(errorMsg)
+  }
+
+  // Convert newlines to <br> tags for proper HTML display
+  const formattedDetails = escapeHtml(requestDetails).replace(/\n/g, '<br>')
+
   const content = `
     <div class="content">
       <h2>Additional Information Required</h2>
-      <p>Hello ${ownerName},</p>
-      <p>We are reviewing the registration of <strong>${garageName}</strong> and need some additional information to proceed.</p>
+      <p>Hello ${escapeHtml(ownerName)},</p>
+      <p>We are reviewing the registration of <strong>${escapeHtml(garageName)}</strong> and need some additional information to proceed.</p>
       
       <div class="info-box">
         <strong>Information requested:</strong>
-        <p style="margin: 10px 0 0 0;">${requestDetails}</p>
+        <p style="margin: 10px 0 0 0;">${formattedDetails}</p>
       </div>
       
       <p>Please reply to this email or contact us with the requested information:</p>
@@ -242,10 +324,18 @@ export async function sendGarageInfoRequestEmail(
     </div>
   `
 
-  await transporter.sendMail({
-    from: `"BookaMOT" <${process.env.SMTP_FROM}>`,
-    to: email,
-    subject: 'Additional information required - BookaMOT',
-    html: getEmailTemplate(content, 'Additional Information'),
-  })
+  try {
+    const result = await transporter.sendMail({
+      from: `"BookaMOT" <${process.env.SMTP_FROM}>`,
+      to: email,
+      subject: 'Additional information required - BookaMOT',
+      html: getEmailTemplate(content, 'Additional Information'),
+    })
+    
+    console.log(`✅ Info request email sent successfully to ${email}`)
+    console.log(`   Message ID: ${result.messageId}`)
+  } catch (error) {
+    console.error(`❌ Failed to send info request email to ${email}:`, error)
+    throw error
+  }
 }

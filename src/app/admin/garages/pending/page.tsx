@@ -162,14 +162,23 @@ export default function PendingGaragesPage() {
   }, [userId, userRole, status, router, fetchGarages]);
 
   const handleAction = async () => {
-    if (!actionModal) return;
+    if (!actionModal) {
+      console.error('No action modal set');
+      return;
+    }
     
+    // Validate required fields
     if ((actionModal.action === 'reject' || actionModal.action === 'request_info') && !actionReason.trim()) {
+      setErrorMessage(`${actionModal.action === 'reject' ? 'Rejection reason' : 'Information request'} is required`);
       return;
     }
 
     setProcessing(true);
+    setErrorMessage(null);
+    
     try {
+      console.log('Sending action:', actionModal.action, 'for garage:', actionModal.garage.id);
+      
       const response = await fetch(`/api/admin/garages/${actionModal.garage.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -179,19 +188,57 @@ export default function PendingGaragesPage() {
         })
       });
 
+      console.log('Response status:', response.status, response.statusText);
+
+      let data: any = {};
+      try {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        setErrorMessage('Invalid response from server. Please try again.');
+        return;
+      }
+
       if (response.ok) {
+        console.log('Action successful:', data);
+        
+        // Check if email was sent successfully
+        if (data.emailSent === false && data.emailError) {
+          // Show warning but still proceed with success
+          setErrorMessage(`Garage ${actionModal.action === 'request_info' ? 'info requested' : actionModal.action + 'd'} successfully, but email could not be sent: ${data.emailError}`);
+          // Still proceed with the action
+        }
+        
         // Se a ação foi rejeitar, redirecionar para a listagem principal
         if (actionModal.action === 'reject') {
           router.push('/admin/garages');
         } else {
-          fetchGarages();
+          // Refresh the list
+          await fetchGarages();
         }
+        
+        // Close modals and reset state
         setActionModal(null);
         setActionReason('');
         setShowDetailModal(false);
         setSelectedGarage(null);
+      } else {
+        // Handle error response
+        const errorMsg = data.error || data.message || `Failed to ${actionModal.action} garage. Please try again.`;
+        setErrorMessage(errorMsg);
+        console.error('Error processing garage:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMsg,
+          data
+        });
       }
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      setErrorMessage(errorMsg);
       console.error('Error processing garage:', error);
     } finally {
       setProcessing(false);
@@ -639,7 +686,11 @@ export default function PendingGaragesPage() {
         </Dialog>
 
         {/* Action Confirmation Modal */}
-        <Dialog open={!!actionModal} onOpenChange={() => { setActionModal(null); setActionReason(''); }}>
+        <Dialog open={!!actionModal} onOpenChange={() => { 
+          setActionModal(null); 
+          setActionReason(''); 
+          setErrorMessage(null);
+        }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -673,9 +724,20 @@ export default function PendingGaragesPage() {
                     ? 'Please explain why this garage registration is being rejected...'
                     : 'Specify what additional information you need from this garage...'}
                   value={actionReason}
-                  onChange={(e) => setActionReason(e.target.value)}
+                  onChange={(e) => {
+                    setActionReason(e.target.value);
+                    // Clear error message when user starts typing
+                    if (errorMessage) setErrorMessage(null);
+                  }}
                   rows={4}
                 />
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{errorMessage}</span>
               </div>
             )}
 

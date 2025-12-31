@@ -72,8 +72,26 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const body = await request.json()
+    
+    let body: any = {}
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid request body. Expected JSON.' },
+        { status: 400 }
+      )
+    }
+    
     const { action, reason } = body
+    
+    if (!action) {
+      return NextResponse.json(
+        { error: 'Action is required. Must be: approve, reject, or request_info' },
+        { status: 400 }
+      )
+    }
 
     // Get garage with owner info
     const garage = await prisma.garage.findUnique({
@@ -83,6 +101,15 @@ export async function PATCH(
 
     if (!garage) {
       return NextResponse.json({ error: 'Garage not found' }, { status: 404 })
+    }
+
+    // Validate action
+    const validActions = ['approve', 'reject', 'request_info']
+    if (!validActions.includes(action)) {
+      return NextResponse.json(
+        { error: `Invalid action. Must be one of: ${validActions.join(', ')}` },
+        { status: 400 }
+      )
     }
 
     let updateData: {
@@ -144,70 +171,134 @@ export async function PATCH(
     }
 
     // Update garage
-    const updatedGarage = await prisma.garage.update({
-      where: { id },
-      data: updateData
-    })
+    let updatedGarage
+    try {
+      updatedGarage = await prisma.garage.update({
+        where: { id },
+        data: updateData
+      })
+    } catch (dbError) {
+      console.error('Database error updating garage:', dbError)
+      return NextResponse.json(
+        { error: 'Failed to update garage. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     // Create approval log
-    await prisma.garageApprovalLog.create({
-      data: {
-        garageId: id,
-        action: updateData.approvalStatus,
-        reason: reason || null,
-        adminId: session.user.id
-      }
-    })
+    try {
+      await prisma.garageApprovalLog.create({
+        data: {
+          garageId: id,
+          action: updateData.approvalStatus,
+          reason: reason || null,
+          adminId: session.user.id
+        }
+      })
+    } catch (logError) {
+      // Log error but don't fail the request - garage was already updated
+      console.error('Failed to create approval log:', logError)
+    }
 
     // Send appropriate email
+    let emailSent = false
+    let emailError: string | null = null
+    
     try {
       const ownerName = garage.owner?.name || 'Garage Owner'
       const ownerEmail = garage.owner?.email || garage.email
 
-      switch (action) {
-        case 'approve':
-          // Get admin name for email
-          const admin = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { name: true, email: true }
-          })
-          const adminName = admin?.name || admin?.email || 'Administrator'
-          
-          await sendGarageApprovalEmail(
-            ownerEmail, 
-            garage.name, 
-            ownerName,
-            updateData.approvedAt,
-            adminName
-          )
-          console.log(`📧 Approval email sent to ${ownerEmail}`)
-          break
+      if (!ownerEmail) {
+        emailError = 'No email address found for garage owner'
+        console.error('❌', emailError)
+      } else {
+        switch (action) {
+          case 'approve':
+            // Get admin name for email
+            const admin = await prisma.user.findUnique({
+              where: { id: session.user.id },
+              select: { name: true, email: true }
+            })
+            const adminName = admin?.name || admin?.email || 'Administrator'
+            
+            await sendGarageApprovalEmail(
+              ownerEmail, 
+              garage.name, 
+              ownerName,
+              updateData.approvedAt,
+              adminName
+            )
+            emailSent = true
+            console.log(`✅ Approval email sent successfully to ${ownerEmail}`)
+            break
 
-        case 'reject':
-          await sendGarageRejectionEmail(ownerEmail, garage.name, ownerName, reason)
-          console.log(`📧 Rejection email sent to ${ownerEmail}`)
-          break
+          case 'reject':
+            if (!reason) {
+              emailError = 'Rejection reason is required for sending email'
+            } else {
+              await sendGarageRejectionEmail(ownerEmail, garage.name, ownerName, reason)
+              emailSent = true
+              console.log(`✅ Rejection email sent successfully to ${ownerEmail}`)
+            }
+            break
 
-        case 'request_info':
-          await sendGarageInfoRequestEmail(ownerEmail, garage.name, ownerName, reason)
-          console.log(`📧 Info request email sent to ${ownerEmail}`)
-          break
+          case 'request_info':
+            if (!reason) {
+              emailError = 'Information request details are required for sending email'
+            } else {
+              await sendGarageInfoRequestEmail(ownerEmail, garage.name, ownerName, reason)
+              emailSent = true
+              console.log(`✅ Info request email sent successfully to ${ownerEmail}`)
+            }
+            break
+        }
       }
-    } catch (emailError) {
-      console.error('Failed to send email notification:', emailError)
-      // Don't fail the request if email fails
+    } catch (err) {
+      emailError = err instanceof Error ? err.message : 'Unknown error occurred while sending email'
+      console.error('❌ Failed to send email notification:', err)
+      // Log detailed error information
+      if (err instanceof Error) {
+        console.error('   Error message:', err.message)
+        console.error('   Error stack:', err.stack)
+      }
     }
 
     console.log(`✅ Garage "${garage.name}" ${action}ed by admin ${session.user.email}`)
 
+    // Return success response even if email failed (garage status was updated)
+    // but include email status in the response
+    const responseMessage = emailSent 
+      ? `Garage ${action === 'request_info' ? 'info requested' : action + 'd'} successfully. Email sent to owner.`
+      : `Garage ${action === 'request_info' ? 'info requested' : action + 'd'} successfully, but email could not be sent: ${emailError || 'Unknown error'}`
+
     return NextResponse.json({
       success: true,
       garage: updatedGarage,
-      message: `Garage ${action === 'request_info' ? 'info requested' : action + 'd'} successfully`
+      message: responseMessage,
+      emailSent,
+      emailError: emailError || undefined
     })
   } catch (error) {
     console.error('Error updating garage:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    
+    // Provide more detailed error message
+    let errorMessage = 'Internal server error'
+    if (error instanceof Error) {
+      errorMessage = error.message || errorMessage
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+    }
+    
+    return NextResponse.json(
+      { 
+        error: errorMessage,
+        success: false
+      },
+      { status: 500 }
+    )
   }
 }
 
