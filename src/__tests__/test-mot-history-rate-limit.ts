@@ -20,7 +20,7 @@ class MockResponse {
 }
 
 let calls = 0
-// @ts-ignore
+// @ts-expect-error - Mocking global fetch for testing
 global.fetch = async () => {
   calls += 1
   if (calls === 1) return new MockResponse(429, '', { 'Retry-After': '1' })
