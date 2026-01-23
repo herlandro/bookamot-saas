@@ -112,13 +112,13 @@ function generateTimeSlots(openTime: string, closeTime: string, durationMinutes:
 // Function to create default schedule for a garage
 export async function createDefaultScheduleForGarage(garageId: string) {
   const defaultSchedule = [
-    { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '17:00' }, // Monday
-    { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '17:00' }, // Tuesday
-    { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '17:00' }, // Wednesday
-    { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '17:00' }, // Thursday
-    { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '17:00' }, // Friday
-    { dayOfWeek: 6, isOpen: true, openTime: '09:00', closeTime: '13:00' }, // Saturday (half day)
-    { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '17:00' }, // Sunday (closed)
+    { dayOfWeek: 1, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Monday
+    { dayOfWeek: 2, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Tuesday
+    { dayOfWeek: 3, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Wednesday
+    { dayOfWeek: 4, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Thursday
+    { dayOfWeek: 5, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Friday
+    { dayOfWeek: 6, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Saturday
+    { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Sunday (closed)
   ]
   
   for (const schedule of defaultSchedule) {

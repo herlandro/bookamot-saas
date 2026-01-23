@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import { PrismaClient } from '@prisma/client'
-import { readLocalMotJson, transformDVSAData } from '../src/lib/mot-utils'
+import { readLocalMotJson, transformDVSAData } from '../lib/mot-utils'
 
 const prisma = new PrismaClient()
 

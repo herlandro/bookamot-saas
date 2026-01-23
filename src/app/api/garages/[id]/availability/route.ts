@@ -49,8 +49,33 @@ export async function GET(
       )
     }
 
-    // Generate all possible time slots (9 AM to 5 PM, hourly)
-    const allTimeSlots = generateTimeSlots(9, 17, 60)
+    // Get garage schedule to determine slot duration
+    const dayOfWeek = date.getDay()
+    const schedule = await prisma.garageSchedule.findUnique({
+      where: {
+        garageId_dayOfWeek: {
+          garageId: (await params).id,
+          dayOfWeek
+        }
+      }
+    })
+    
+    // Use schedule slotDuration if available, otherwise default to 30 minutes
+    const slotDuration = schedule?.slotDuration || 30
+    
+    // Get opening hours from schedule or use defaults
+    let openHour = 9
+    let closeHour = 18
+    
+    if (schedule && schedule.isOpen) {
+      const [openH, openM] = schedule.openTime.split(':').map(Number)
+      const [closeH, closeM] = schedule.closeTime.split(':').map(Number)
+      openHour = openH
+      closeHour = closeH + (closeM > 0 ? 1 : 0) // Round up if there are minutes
+    }
+    
+    // Generate all possible time slots based on schedule
+    const allTimeSlots = generateTimeSlots(openHour, closeHour, slotDuration)
 
     // Get existing bookings for this date
     const startOfDay = new Date(date)
@@ -90,10 +115,11 @@ export async function GET(
     
     if (isToday) {
       // If it's today, filter out past time slots
-      const currentHour = now.getHours()
+      const currentMinutes = now.getHours() * 60 + now.getMinutes()
       filteredSlots = availableSlots.filter(slot => {
-        const slotHour = parseInt(slot.split(':')[0])
-        return slotHour > currentHour
+        const [slotHour, slotMinute] = slot.split(':').map(Number)
+        const slotMinutes = slotHour * 60 + slotMinute
+        return slotMinutes > currentMinutes
       })
     }
 

@@ -340,7 +340,7 @@ model GarageSchedule {
   isOpen             Boolean  @default(true)
   openTime           String // e.g., "09:00"
   closeTime          String // e.g., "17:00"
-  slotDuration       Int      @default(60) // Duration in minutes (60 = 1 hour slots)
+  slotDuration       Int      @default(30) // Duration in minutes (30 = 30 minute slots)
   maxBookingsPerSlot Int      @default(1) // Allow multiple bookings per slot if needed
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

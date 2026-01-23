@@ -49,10 +49,21 @@ interface GarageCalendarProps {
   loading?: boolean
 }
 
-const timeSlots = [
-  '09:00', '10:00', '11:00', '12:00', '13:00',
-  '14:00', '15:00', '16:00', '17:00'
-]
+// Generate time slots dynamically (30-minute intervals from 09:00 to 17:00)
+const generateTimeSlotsForCalendar = (): string[] => {
+  const slots: string[] = []
+  const startHour = 9
+  const endHour = 18
+  
+  for (let hour = startHour; hour < endHour; hour++) {
+    slots.push(`${hour.toString().padStart(2, '0')}:00`)
+    slots.push(`${hour.toString().padStart(2, '0')}:30`)
+  }
+  
+  return slots
+}
+
+const timeSlots = generateTimeSlotsForCalendar()
 
 // Using CSS variables for status colors
 const statusColors = {

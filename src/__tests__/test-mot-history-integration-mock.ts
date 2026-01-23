@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { readLocalMotJson, transformDVSAData } from '../src/lib/mot-utils'
+import { readLocalMotJson, transformDVSAData } from '../lib/mot-utils'
 
 ;(async () => {
   const dvsa = await readLocalMotJson('WJ11USE')

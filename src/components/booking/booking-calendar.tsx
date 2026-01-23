@@ -41,8 +41,8 @@ export function BookingCalendar({ garage, vehicle, onBookingSelect, onCancel }: 
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | undefined>()
   const [loading, setLoading] = useState(false)
 
-  // Generate available time slots (9 AM to 5 PM, hourly)
-  const timeSlots = generateTimeSlots(9, 17, 60)
+  // Generate available time slots (9 AM to 6 PM, 30-minute intervals)
+  const timeSlots = generateTimeSlots(9, 18, 30)
 
   // Fetch available slots when date is selected
   useEffect(() => {

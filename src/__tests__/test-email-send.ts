@@ -62,7 +62,7 @@ async function testEmailSending() {
     console.log('')
 
     // Import and test email service
-    const emailService = await import('../src/lib/email/booking-email-service')
+    const emailService = await import('../lib/email/booking-email-service')
     
     console.log('Testing customer confirmation email...')
     try {

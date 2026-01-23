@@ -90,15 +90,20 @@ function toRadians(degrees: number): number {
 export function generateTimeSlots(
   startHour: number = 9,
   endHour: number = 17,
-  intervalMinutes: number = 60
+  intervalMinutes: number = 30
 ): string[] {
   const slots: string[] = []
   
-  for (let hour = startHour; hour < endHour; hour++) {
-    for (let minute = 0; minute < 60; minute += intervalMinutes) {
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-      slots.push(timeString)
-    }
+  // Calculate total minutes from start to end
+  const startMinutes = startHour * 60
+  const endMinutes = endHour * 60
+  
+  // Generate slots in intervals
+  for (let time = startMinutes; time < endMinutes; time += intervalMinutes) {
+    const hours = Math.floor(time / 60)
+    const minutes = time % 60
+    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    slots.push(timeString)
   }
   
   return slots

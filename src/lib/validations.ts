@@ -174,11 +174,15 @@ export function isValidBookingDate(date: Date): boolean {
 }
 
 export function isValidTimeSlot(timeSlot: string): boolean {
-  const validSlots = [
-    '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00'
-  ]
-  return validSlots.includes(timeSlot)
+  // Validate time slot format (HH:MM) and check if minutes are 00 or 30
+  const timeSlotRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/
+  if (!timeSlotRegex.test(timeSlot)) {
+    return false
+  }
+  
+  const [, , minutes] = timeSlot.match(timeSlotRegex) || []
+  // Accept slots at :00 or :30 (30-minute intervals)
+  return minutes === '00' || minutes === '30'
 }
 
 // MOT validation utilities

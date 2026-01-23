@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       await prisma.garageSchedule.upsert({
         where: { garageId_dayOfWeek: { garageId: garage.id, dayOfWeek } },
         update: { isOpen, openTime, closeTime, slotDuration },
-        create: { garageId: garage.id, dayOfWeek, isOpen, openTime, closeTime, slotDuration: slotDuration || 60 }
+        create: { garageId: garage.id, dayOfWeek, isOpen, openTime, closeTime, slotDuration: slotDuration || 30 }
       })
       
       return NextResponse.json({ success: true, message: 'Schedule updated' })

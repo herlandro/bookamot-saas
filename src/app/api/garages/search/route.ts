@@ -31,7 +31,7 @@ function getAvailableTimeSlots(garage: any, date: Date, requestedTime?: string):
   const [closeHour, closeMinute] = schedule.closeTime.split(':').map(Number);
   
   const slots: string[] = [];
-  const slotDuration = schedule.slotDuration || 60; // Default to 60 minutes if not specified
+  const slotDuration = schedule.slotDuration || 30; // Default to 30 minutes if not specified
   
   // Start time in minutes from midnight
   let currentMinutes = openHour * 60 + openMinute;

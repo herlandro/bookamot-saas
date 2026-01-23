@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { fetchWithRetries } from '../src/lib/mot-utils'
+import { fetchWithRetries } from '../lib/mot-utils'
 
 class MockResponse {
   status: number

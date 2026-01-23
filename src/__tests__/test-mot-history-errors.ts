@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { transformDVSAData } from '../src/lib/mot-utils'
+import { transformDVSAData } from '../lib/mot-utils'
 
 function makeDvsaData(firstUsedDate: string, tests: any[]) {
   return { firstUsedDate, motTests: tests }

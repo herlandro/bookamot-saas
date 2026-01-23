@@ -104,7 +104,12 @@ const VEHICLE_DATA = [
 
 const COLORS = ['Black', 'White', 'Silver', 'Blue', 'Red', 'Grey', 'Green', 'Yellow', 'Orange', 'Brown']
 
-const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
+// Generate 30-minute time slots from 09:00 to 17:00
+const TIME_SLOTS: string[] = []
+for (let hour = 9; hour < 18; hour++) {
+  TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:00`)
+  TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:30`)
+}
 
 const BOOKING_DATES: Date[] = []
 const bookingYear = new Date().getFullYear()
@@ -364,13 +369,13 @@ async function main() {
 
     // Create garage schedules (Monday = 1, Tuesday = 2, ..., Sunday = 0)
     const scheduleData = [
-      { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Monday
-      { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Tuesday
-      { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Wednesday
-      { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Thursday
-      { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Friday
-      { dayOfWeek: 6, isOpen: true, openTime: '09:00', closeTime: '13:00', slotDuration: 60 }, // Saturday
-      { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '17:00', slotDuration: 60 }, // Sunday (closed)
+      { dayOfWeek: 1, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Monday
+      { dayOfWeek: 2, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Tuesday
+      { dayOfWeek: 3, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Wednesday
+      { dayOfWeek: 4, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Thursday
+      { dayOfWeek: 5, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Friday
+      { dayOfWeek: 6, isOpen: true,  openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Saturday
+      { dayOfWeek: 0, isOpen: false, openTime: '09:00', closeTime: '18:00', slotDuration: 30 }, // Sunday (closed)
     ]
 
     for (const schedule of scheduleData) {
