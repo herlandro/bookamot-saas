@@ -168,53 +168,70 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
                   </p>
                 </div>
               ) : (
-                <div className="p-2 space-y-4">
+                <div>
                   {notificationCategories.map((category) => {
                     const categoryNotifications = groupedNotifications[category.type] || []
                     if (categoryNotifications.length === 0) return null
 
                     return (
-                      <div key={category.type} className="space-y-2">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2">
+                      <div key={category.type}>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-4 pt-4 pb-2">
                           {category.label}
                         </h4>
-                        {categoryNotifications.map((notification) => {
+                        <div className="divide-y divide-border">
+                          {categoryNotifications.map((notification) => {
                           const Icon = getNotificationIcon(notification.type)
 
                           return (
-                            <div
+                            <button
                               key={notification.id}
-                              className={cn(
-                                "cursor-pointer hover:bg-accent transition-colors p-3 rounded-lg border border-border",
-                                !notification.isRead && "bg-accent/30 border-l-4 border-l-primary"
-                              )}
                               onClick={() => handleNotificationClick(notification)}
+                              className={cn(
+                                "w-full text-left p-4 hover:bg-muted/50 transition-colors",
+                                !notification.isRead && "bg-blue-50/50 dark:bg-blue-950/20"
+                              )}
                             >
                               <div className="flex items-start gap-3">
-                                <Icon className={cn(
-                                  "h-4 w-4 flex-shrink-0 mt-0.5",
-                                  !notification.isRead ? "text-primary" : "text-muted-foreground"
-                                )} />
+                                <div className={cn(
+                                  "p-2 rounded-lg",
+                                  notification.type === 'BOOKING_PENDING'
+                                    ? "bg-blue-100 dark:bg-blue-900/30"
+                                    : notification.type === 'BOOKING_CONFIRMED'
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : "bg-red-100 dark:bg-red-900/30"
+                                )}>
+                                  <Icon className={cn(
+                                    "h-4 w-4",
+                                    notification.type === 'BOOKING_PENDING'
+                                      ? "text-blue-600 dark:text-blue-400"
+                                      : notification.type === 'BOOKING_CONFIRMED'
+                                      ? "text-green-600 dark:text-green-400"
+                                      : "text-red-600 dark:text-red-400"
+                                  )} />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2 mb-1">
-                                    <p className={cn(
-                                      "text-sm",
-                                      !notification.isRead ? "font-semibold text-foreground" : "text-muted-foreground"
-                                    )}>
-                                      {notification.message}
-                                    </p>
-                                    {!notification.isRead && (
-                                      <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                                    )}
-                                  </div>
+                                  {notification.status && (
+                                    <div className="flex items-center justify-between mb-1">
+                                      <p className="text-sm font-semibold text-foreground">
+                                        {notification.status}
+                                      </p>
+                                      {!notification.isRead && (
+                                        <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 ml-2" />
+                                      )}
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-muted-foreground mb-1">
+                                    {notification.message}
+                                  </p>
                                   <p className="text-xs text-muted-foreground">
                                     {formatTime(notification.createdAt)}
                                   </p>
                                 </div>
                               </div>
-                            </div>
+                            </button>
                           )
-                        })}
+                          })}
+                        </div>
                       </div>
                     )
                   })}

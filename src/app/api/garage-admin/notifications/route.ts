@@ -58,32 +58,46 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform bookings into notifications
-    const notifications = pendingBookings.map((booking) => ({
-      id: `booking-${booking.id}`,
-      type: 'BOOKING_PENDING' as const,
-      title: 'New Booking Pending Approval',
-      message: `${booking.customer.name || 'Customer'} requested a booking for ${booking.vehicle.make} ${booking.vehicle.model}`,
-      bookingId: booking.id,
-      isRead: false, // In a real app, you'd have a notifications table
-      createdAt: booking.createdAt.toISOString(),
-      metadata: {
-        booking: {
-          id: booking.id,
-          reference: booking.bookingRef,
-          date: booking.date.toISOString().split('T')[0],
-          timeSlot: booking.timeSlot,
-          vehicle: {
-            make: booking.vehicle.make,
-            model: booking.vehicle.model,
-            registration: booking.vehicle.registration,
-          },
-          user: {
-            name: booking.customer.name || 'Unknown',
-            email: booking.customer.email,
+    const notifications = pendingBookings.map((booking) => {
+      // Format date in British format: 25 Jan 2026 at 14:30
+      const bookingDate = booking.date instanceof Date ? booking.date : new Date(booking.date);
+      const day = bookingDate.getDate();
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[bookingDate.getMonth()];
+      const year = bookingDate.getFullYear();
+      const timeSlot = booking.timeSlot || '00:00';
+      const [hours, minutes] = timeSlot.split(':');
+      
+      const formattedDate = `${day} ${month} ${year} at ${hours}:${minutes}`;
+      
+      return {
+        id: `booking-${booking.id}`,
+        type: 'BOOKING_PENDING' as const,
+        title: 'New Booking Pending Approval',
+        status: 'MOT Booking Pending',
+        message: `${booking.customer.name || 'Customer'} requested a booking for ${booking.vehicle.make} ${booking.vehicle.model} at ${formattedDate}`,
+        bookingId: booking.id,
+        isRead: false, // In a real app, you'd have a notifications table
+        createdAt: booking.createdAt.toISOString(),
+        metadata: {
+          booking: {
+            id: booking.id,
+            reference: booking.bookingRef,
+            date: booking.date.toISOString().split('T')[0],
+            timeSlot: booking.timeSlot,
+            vehicle: {
+              make: booking.vehicle.make,
+              model: booking.vehicle.model,
+              registration: booking.vehicle.registration,
+            },
+            user: {
+              name: booking.customer.name || 'Unknown',
+              email: booking.customer.email,
+            },
           },
         },
-      },
-    }));
+      };
+    });
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 

@@ -8,6 +8,7 @@ export interface Notification {
   type: 'BOOKING_PENDING' | 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'MESSAGE' | 'SYSTEM'
   title: string
   message: string
+  status?: string
   bookingId?: string
   isRead: boolean
   createdAt: string
