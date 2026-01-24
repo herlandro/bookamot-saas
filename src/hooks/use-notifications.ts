@@ -22,6 +22,7 @@ export interface Notification {
         make: string
         model: string
         registration: string
+        year: number
       }
       user: {
         name: string

@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
             registration: true,
             make: true,
             model: true,
+            year: true,
           },
         },
       },
@@ -89,6 +90,7 @@ export async function GET(request: NextRequest) {
               make: booking.vehicle.make,
               model: booking.vehicle.model,
               registration: booking.vehicle.registration,
+              year: booking.vehicle.year,
             },
             user: {
               name: booking.customer.name || 'Unknown',
