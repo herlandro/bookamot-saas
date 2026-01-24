@@ -188,25 +188,25 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
                               onClick={() => handleNotificationClick(notification)}
                               className={cn(
                                 "w-full text-left p-4 hover:bg-muted/50 transition-colors",
-                                !notification.isRead && "bg-blue-50/50 dark:bg-blue-950/20"
+                                !notification.isRead && "bg-blue-50/30 dark:bg-blue-950/20"
                               )}
                             >
                               <div className="flex items-start gap-3">
                                 <div className={cn(
-                                  "p-2 rounded-lg",
+                                  "p-2 rounded-lg border",
                                   notification.type === 'BOOKING_PENDING'
-                                    ? "bg-blue-100 dark:bg-blue-900/30"
+                                    ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800"
                                     : notification.type === 'BOOKING_CONFIRMED'
-                                    ? "bg-green-100 dark:bg-green-900/30"
-                                    : "bg-red-100 dark:bg-red-900/30"
+                                    ? "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800"
+                                    : "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800"
                                 )}>
                                   <Icon className={cn(
                                     "h-4 w-4",
                                     notification.type === 'BOOKING_PENDING'
-                                      ? "text-blue-600 dark:text-blue-400"
+                                      ? "text-blue-700 dark:text-blue-400"
                                       : notification.type === 'BOOKING_CONFIRMED'
-                                      ? "text-green-600 dark:text-green-400"
-                                      : "text-red-600 dark:text-red-400"
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-red-700 dark:text-red-400"
                                   )} />
                                 </div>
                                 <div className="flex-1 min-w-0">
