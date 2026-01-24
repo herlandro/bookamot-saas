@@ -61,7 +61,7 @@ export default function GaragesPage() {
       const response = await fetch(`/api/admin/garages?${params}`);
       if (response.ok) {
         const data = await response.json();
-        // Garantir que approvalStatus está presente em todas as garagens
+        // Ensure approvalStatus is present in all garages
         const garagesWithStatus = data.garages.map((garage: any) => ({
           ...garage,
           approvalStatus: garage.approvalStatus || 'PENDING'

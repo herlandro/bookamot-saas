@@ -246,7 +246,7 @@ function createBookingDetailsSection(booking: BookingWithRelations): string {
   `
 }
 
-// 1. Confirmação de booking para o cliente
+// 1. Booking confirmation for customer
 export function getBookingConfirmationCustomerTemplate(
   booking: BookingWithRelations
 ): EmailTemplate {
@@ -305,7 +305,7 @@ If you have any questions, please contact us: support@bookamot.co.uk
   }
 }
 
-// 2. Notificação para a garagem
+// 2. Notification for garage
 export function getBookingNotificationGarageTemplate(
   booking: BookingWithRelations
 ): EmailTemplate {
@@ -522,7 +522,7 @@ If you believe there was an error, please contact us: support@bookamot.co.uk
   }
 }
 
-// 5. Lembrete pré-serviço (1 mês, 1 semana, 1 dia)
+// 5. Pre-service reminder (1 month, 1 week, 1 day)
 export function getBookingReminderTemplate(
   booking: BookingWithRelations,
   reminderType: '1_MONTH' | '1_WEEK' | '1_DAY'
@@ -622,7 +622,7 @@ If you need to cancel or reschedule, please contact the garage as soon as possib
   }
 }
 
-// 6. Follow-up pós-serviço
+// 6. Post-service follow-up
 export function getBookingCompletedFollowupTemplate(
   booking: BookingWithRelations,
   motResult?: {

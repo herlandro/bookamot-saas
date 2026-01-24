@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { getAppVersion, getBuildTimestamp } from '@/lib/version'
 
 /**
- * API endpoint para verificação de versão do sistema
- * Retorna a versão atual do build para comparação no cliente
+ * API endpoint for system version verification
+ * Returns the current build version for client comparison
  */
 export async function GET() {
   try {

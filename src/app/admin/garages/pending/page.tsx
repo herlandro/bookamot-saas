@@ -118,7 +118,7 @@ export default function PendingGaragesPage() {
       const response = await fetch(`/api/admin/garages/pending?${params}`);
       if (!response.ok) {
         const err = await response.json().catch(() => null);
-        setErrorMessage(err?.error || 'Falha ao buscar garagens pendentes');
+        setErrorMessage(err?.error || 'Failed to fetch pending garages');
         setGarages([]);
         setTotalPages(1);
         setTotal(0);
@@ -129,7 +129,7 @@ export default function PendingGaragesPage() {
       setTotalPages(data.pagination?.totalPages || 1);
       setTotal(data.pagination?.total || 0);
     } catch (error) {
-      setErrorMessage('Falha ao buscar garagens pendentes');
+      setErrorMessage('Failed to fetch pending garages');
       setGarages([]);
       setTotalPages(1);
       setTotal(0);
@@ -205,7 +205,7 @@ export default function PendingGaragesPage() {
           // Still proceed with the action
         }
         
-        // Se a ação foi rejeitar, redirecionar para a listagem principal
+        // If action was reject, redirect to main listing
         if (actionModal.action === 'reject') {
           router.push('/admin/garages');
         } else {
@@ -241,13 +241,13 @@ export default function PendingGaragesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pendente</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
       case 'INFO_REQUESTED':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Info solicitada</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Info Requested</Badge>;
       case 'APPROVED':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Aprovada</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
       case 'REJECTED':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejeitada</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -286,14 +286,14 @@ export default function PendingGaragesPage() {
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Pendentes</SelectItem>
-                      <SelectItem value="PENDING">Novas</SelectItem>
-                      <SelectItem value="INFO_REQUESTED">Info solicitada</SelectItem>
+                      <SelectItem value="all">Pending</SelectItem>
+                      <SelectItem value="PENDING">New</SelectItem>
+                      <SelectItem value="INFO_REQUESTED">Info Requested</SelectItem>
                     </SelectContent>
                   </Select>
 
                   <Input
-                    placeholder="Região (cidade/CEP)"
+                    placeholder="Region (city/postcode)"
                     value={region}
                     onChange={(e) => { setRegion(e.target.value); setPage(1); }}
                     className="w-full sm:w-52"
@@ -384,7 +384,7 @@ export default function PendingGaragesPage() {
                         className="inline-flex items-center gap-1"
                         onClick={() => toggleSort('city')}
                       >
-                        Endereço
+                        Address
                         {sortBy === 'city' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
                       </button>
                     </TableHead>
@@ -394,11 +394,11 @@ export default function PendingGaragesPage() {
                         className="inline-flex items-center gap-1"
                         onClick={() => toggleSort('createdAt')}
                       >
-                        Submetido em
+                        Submitted on
                         {sortBy === 'createdAt' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
                       </button>
                     </TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

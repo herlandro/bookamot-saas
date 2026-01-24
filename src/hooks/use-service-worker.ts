@@ -78,7 +78,7 @@ export function useServiceWorker() {
     // Envia mensagem para o Service Worker pular a espera
     state.registration.waiting.postMessage({ type: 'SKIP_WAITING' })
     
-    // Recarrega a página após um pequeno delay
+    // Reload page after a short delay
     setTimeout(() => {
       reloadOnce('skipWaiting')
     }, 100)
@@ -132,7 +132,7 @@ export function useServiceWorker() {
           registration,
         }))
 
-        // Verifica atualizações periodicamente (a cada 5 minutos)
+        // Check for updates periodically (every 5 minutes)
         const checkForUpdatesLocal = async () => {
           if (!registration) return
           try {
@@ -152,7 +152,7 @@ export function useServiceWorker() {
           checkForUpdatesLocal()
         }, 5 * 60 * 1000)
 
-        // Listener para quando um novo Service Worker está esperando
+        // Listener for when a new Service Worker is waiting
         registration.addEventListener('updatefound', () => {
           const newWorker = registration?.installing
           
@@ -171,7 +171,7 @@ export function useServiceWorker() {
                     typeof window !== 'undefined' && !navigator.serviceWorker.controller
                   if (isFirstInstall) return
 
-                  // Há um novo Service Worker esperando
+                  // There's a new Service Worker waiting
                   setState((prev) => ({
                     ...prev,
                     isInstalling: false,
@@ -191,7 +191,7 @@ export function useServiceWorker() {
 
         // Listener para quando o Service Worker assume controle
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          // Nova versão assumiu controle, recarrega a página
+          // New version took control, reload page
           reloadOnce('controllerchange')
         })
 
@@ -207,7 +207,7 @@ export function useServiceWorker() {
 
     // Cleanup
     return () => {
-      // Não fazemos unregister aqui para manter o SW ativo
+      // We don't unregister here to keep SW active
     }
   }, [debug, reloadOnce, state.isSupported])
 

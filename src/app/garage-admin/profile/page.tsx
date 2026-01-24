@@ -135,10 +135,10 @@ export default function GarageProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Informações Pessoais
+                  Personal Information
                 </CardTitle>
                 <CardDescription>
-                  Seus dados pessoais e informações de conta
+                  Your personal data and account information
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

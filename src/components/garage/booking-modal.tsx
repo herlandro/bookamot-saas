@@ -31,7 +31,7 @@ interface BookingModalProps {
   onStatusUpdate: (bookingId: string, newStatus: string) => void
 }
 
-// Usando cores consistentes do sistema
+// Using consistent system colours
 const statusColors = {
   CONFIRMED: 'bg-primary text-primary-foreground',
   COMPLETED: 'bg-success text-success-foreground',

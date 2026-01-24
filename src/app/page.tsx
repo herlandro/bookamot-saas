@@ -55,7 +55,7 @@ export default function HomePage() {
     router.push('/garage-admin/signup');
   };
 
-  // Conteúdo principal da página
+  // Main page content
   const pageContent = (
     <>
       {/* Welcome Section */}

@@ -12,11 +12,11 @@
   --border: #e5e7eb; /* border-gray-200 */
   --input: #ffffff; /* bg-white */
 
-  /* Cores primárias - azul */
+  /* Primary colours - blue */
   --primary: #2563eb; /* bg-blue-600 */
   --primary-foreground: #ffffff; /* text-white */
 
-  /* Cores secundárias */
+  /* Secondary colours */
   --secondary: #f1f5f9; /* bg-slate-100 */
   --secondary-foreground: #0f172a; /* text-slate-900 */
 
@@ -54,11 +54,11 @@
   --border: #374151; /* border-gray-700 */
   --input: #1f2937; /* bg-gray-800 */
 
-  /* Cores primárias - azul */
+  /* Primary colours - blue */
   --primary: #3b82f6; /* bg-blue-500 */
   --primary-foreground: #ffffff; /* text-white */
 
-  /* Cores secundárias */
+  /* Secondary colours */
   --secondary: #1f2937; /* bg-gray-800 */
   --secondary-foreground: #f9fafb; /* text-white */
 
@@ -95,7 +95,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   
-  /* Cores primárias e secundárias */
+  /* Primary and secondary colours */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -165,7 +165,7 @@ label {
   font-weight: 500;
 }
 
-/* Esconder scrollbar mas manter funcionalidade */
+/* Hide scrollbar but maintain functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */

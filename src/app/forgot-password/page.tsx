@@ -54,18 +54,18 @@ export default function ForgotPassword() {
             <div className="mt-6 text-center">
               <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
               <h2 className="mt-4 text-2xl font-bold text-foreground">
-                E-mail enviado!
+                Email sent!
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Enviamos um link de redefinição de senha para <strong>{email}</strong>
+                We've sent a password reset link to <strong>{email}</strong>
               </p>
             </div>
           </div>
           <div className="bg-card py-8 px-6 shadow-xl rounded-lg border border-border">
             <div className="text-center space-y-4">
               <p className="text-sm text-muted-foreground">
-                Verifique sua caixa de entrada e clique no link para redefinir sua senha.
-                O link expira em 1 hora.
+                Check your inbox and click the link to reset your password.
+                The link expires in 1 hour.
               </p>
               <p className="text-sm text-muted-foreground">
                 Didn't receive the email? Check your spam folder or{' '}
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
                   }}
                   className="text-primary hover:text-primary/90 font-medium"
                 >
-                  tente novamente
+                  try again
                 </button>
               </p>
               <div className="pt-4">

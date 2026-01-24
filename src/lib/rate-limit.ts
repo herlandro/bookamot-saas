@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 
-// Armazenamento em memória para rate limiting (em produção, use Redis)
+// In-memory storage for rate limiting (in production, use Redis)
 const attempts = new Map<string, { count: number; resetTime: number }>()
 
 // Limpar tentativas expiradas a cada 5 minutos
@@ -61,7 +61,7 @@ export function rateLimit(config: RateLimitConfig) {
   }
 }
 
-// Rate limiter específico para forgot password (3 tentativas por hora)
+// Rate limiter specific for forgot password (3 attempts per hour)
 export const forgotPasswordRateLimit = rateLimit({
   maxAttempts: 3,
   windowMs: 60 * 60 * 1000 // 1 hora

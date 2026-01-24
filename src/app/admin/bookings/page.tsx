@@ -148,7 +148,7 @@ export default function AdminBookingsPage() {
     }
   }
 
-  // Verificação de autenticação
+  // Authentication check
   useEffect(() => {
     if (status === 'loading') return
     if (!isAdmin) {
@@ -162,7 +162,7 @@ export default function AdminBookingsPage() {
   useEffect(() => {
     if (status === 'loading') return
     if (!isAdmin) return
-    if (isFetching.current) return // Evitar múltiplas execuções simultâneas
+    if (isFetching.current) return // Avoid multiple simultaneous executions
     
     let cancelled = false
     isFetching.current = true
@@ -361,7 +361,7 @@ export default function AdminBookingsPage() {
 
   const applyFilters = useCallback(() => {
     addRecentSearch(searchQuery)
-    setPage(1) // Resetar página vai triggerar o useEffect que faz o fetch
+    setPage(1) // Resetting page will trigger useEffect that fetches data
   }, [searchQuery, addRecentSearch])
 
   if (status === 'loading' || initialLoading) {

@@ -467,7 +467,7 @@ function SearchPageContent() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold">Find MOT Test Centres</h1>
               <p className="text-muted-foreground mb-4">
-                Enter your vehicle registration, postcode or city, and select a date to find nearby MOT test centers.
+                Enter your vehicle registration, postcode or city, and select a date to find nearby MOT test centres.
               </p>
               
               {/* Search Form */}
@@ -648,7 +648,7 @@ function SearchPageContent() {
           {garages.length > 0 && registrationValid && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold">
-                Found {garages.length} MOT Test Centers
+                Found {garages.length} MOT Test Centres
               </h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

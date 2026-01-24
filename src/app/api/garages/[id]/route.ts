@@ -41,7 +41,7 @@ export async function GET(
       }
     })
     
-    // Calcular média de avaliações reais
+    // Calculate average of real reviews
     const reviewCount = reviews.length
     const rating = reviewCount > 0
       ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviewCount

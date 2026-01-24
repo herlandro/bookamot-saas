@@ -30,9 +30,9 @@ export async function GET(
           advisory: 2
         },
         details: [
-          'Pneu dianteiro direito com desgaste irregular',
-          'Óleo do motor próximo ao limite mínimo',
-          'Limpador de para-brisa com pequeno desgaste'
+          'Front right tyre with irregular wear',
+          'Engine oil near minimum limit',
+          'Windscreen wiper with minor wear'
         ]
       },
       {
@@ -49,7 +49,7 @@ export async function GET(
           advisory: 1
         },
         details: [
-          'Pastilhas de freio com desgaste moderado'
+          'Brake pads with moderate wear'
         ]
       },
       {
@@ -66,9 +66,9 @@ export async function GET(
           advisory: 1
         },
         details: [
-          'Pneu traseiro direito com desgaste moderado',
-          'Filtro de ar necessita substituição',
-          'Amortecedor dianteiro com pequeno vazamento'
+          'Rear right tyre with moderate wear',
+          'Air filter needs replacement',
+          'Front shock absorber with minor leak'
         ]
       },
       {
@@ -139,10 +139,10 @@ export async function GET(
           advisory: 4
         },
         details: [
-          'Pastilhas de freio com 30% de desgaste',
-          'Pneus traseiros próximos ao limite legal',
-          'Filtro de combustível necessita substituição',
-          'Lâmpada da placa traseira com baixa luminosidade'
+          'Brake pads with 30% wear',
+          'Rear tyres near legal limit',
+          'Fuel filter needs replacement',
+          'Rear number plate lamp with low brightness'
         ]
       },
       {
@@ -159,8 +159,8 @@ export async function GET(
           advisory: 1
         },
         details: [
-          'Óleo do motor próximo ao limite mínimo',
-          'Limpador traseiro com pequeno desgaste'
+          'Engine oil near minimum limit',
+          'Rear wiper with minor wear'
         ]
       },
       {
@@ -177,10 +177,10 @@ export async function GET(
           advisory: 1
         },
         details: [
-          'Sistema de escape com vazamento significativo',
-          'Pneu dianteiro esquerdo com corte lateral',
-          'Amortecedor traseiro direito com vazamento',
-          'Filtro de ar muito sujo'
+          'Exhaust system with significant leak',
+          'Front left tyre with sidewall cut',
+          'Rear right shock absorber with leak',
+          'Air filter very dirty'
         ]
       },
       {
@@ -197,8 +197,8 @@ export async function GET(
           advisory: 2
         },
         details: [
-          'Correia da direção hidráulica com pequeno desgaste',
-          'Fluido de freio próximo ao limite mínimo'
+          'Power steering belt with minor wear',
+          'Brake fluid near minimum limit'
         ]
       },
       {
@@ -215,7 +215,7 @@ export async function GET(
           advisory: 1
         },
         details: [
-          'Pneus com desgaste mínimo mas uniforme'
+          'Tyres with minimal but even wear'
         ]
       },
       {

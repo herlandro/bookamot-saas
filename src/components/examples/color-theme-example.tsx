@@ -14,7 +14,7 @@ export function ColorThemeExample() {
           <CardDescription>Exemplos de componentes com as cores padronizadas</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Botões */}
+          {/* Buttons */}
           <div className="space-y-2">
             <h3 className="text-lg font-medium">Botões</h3>
             <div className="flex flex-wrap gap-2">

@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Calcular receita mensal com base nos preços reais dos serviços
+    // Calculate monthly revenue based on real service prices
     const completedBookings = await prisma.booking.findMany({
       where: {
         garageId: garage.id,
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Calcular receita total somando o preço de cada serviço
+    // Calculate total revenue by summing price of each service
     const monthlyRevenue = completedBookings.reduce((total: number, booking: { garage: { motPrice: number | null } }) => {
       return total + (booking.garage.motPrice || 0);
     }, 0);

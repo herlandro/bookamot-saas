@@ -3,7 +3,7 @@
  * Gera uma versão única baseada no timestamp e hash do build
  */
 
-// Versão do sistema (atualizada automaticamente no build)
+// System version (automatically updated on build)
 export const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0'
 
 // Build timestamp (gerado no build)
@@ -60,7 +60,7 @@ export function checkForNewVersion(): boolean {
   if (!storedVersion || storedVersion !== currentVersion) {
     localStorage.setItem('app_version', currentVersion)
     localStorage.setItem('app_version_timestamp', BUILD_TIMESTAMP)
-    return storedVersion !== null // Retorna true apenas se já havia uma versão anterior
+    return storedVersion !== null // Returns true only if there was a previous version
   }
   
   return false

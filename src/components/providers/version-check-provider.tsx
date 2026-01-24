@@ -53,21 +53,21 @@ export function VersionCheckProvider({ children }: { children: React.ReactNode }
           debug('[VersionCheck] versions', { version, currentVersion })
 
           if (version !== currentVersion) {
-            // Nova versão disponível - força reload após 1 segundo
-            // Delay permite que a página carregue antes de recarregar
+            // New version available - force reload after 1 second
+            // Delay allows page to load before reloading
             setTimeout(() => {
               reloadOnce('version-mismatch')
             }, 1000)
           }
         }
       } catch (error) {
-        // Silently fail - não bloqueia o app se a verificação falhar
-        // O Service Worker continuará verificando periodicamente
+        // Silently fail - doesn't block app if verification fails
+        // Service Worker will continue checking periodically
         console.warn('[VersionCheck] Failed to check version on load:', error)
       }
     }
 
-    // Verifica versão após um pequeno delay para não bloquear o carregamento inicial
+    // Check version after a short delay to not block initial loading
     const timeoutId = setTimeout(checkVersionOnLoad, 500)
 
     return () => {

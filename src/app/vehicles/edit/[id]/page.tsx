@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type VehicleFormData = z.infer<typeof updateVehicleSchema>
 
-// Definição dos rótulos para tipos de combustível
+// Definition of labels for fuel types
 const fuelTypeLabels = {
   'PETROL': 'Petrol',
   'DIESEL': 'Diesel',

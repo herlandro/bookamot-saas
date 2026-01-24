@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Expires', '0')
   }
 
-  // Headers de cache para recursos estáticos
+  // Cache headers for static resources
   if (
     !isServiceWorker &&
     (
@@ -25,16 +25,16 @@ export function middleware(request: NextRequest) {
       pathname.match(/\.(js|css|woff|woff2|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)$/)
     )
   ) {
-    // Cache por 1 ano para recursos estáticos (com validação)
+    // Cache for 1 year for static resources (with validation)
     response.headers.set(
       'Cache-Control',
       'public, max-age=31536000, immutable, stale-while-revalidate=86400'
     )
   }
   
-  // Headers para páginas HTML
+  // Headers for HTML pages
   else if (pathname.endsWith('.html') || !pathname.includes('.')) {
-    // Sem cache para páginas HTML (sempre buscar versão mais recente)
+    // No cache for HTML pages (always fetch latest version)
     response.headers.set(
       'Cache-Control',
       'no-cache, no-store, must-revalidate, max-age=0'
@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
     )
   }
 
-  // Adiciona header de versão do sistema
+  // Add system version header
   const buildVersion = process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0'
   const buildHash = process.env.NEXT_PUBLIC_BUILD_HASH || 'dev'
   response.headers.set('X-App-Version', `${buildVersion}-${buildHash.substring(0, 8)}`)
