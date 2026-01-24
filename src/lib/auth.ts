@@ -63,7 +63,7 @@ export const authOptions: NextAuthOptions = {
     error: '/error',
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user: any }) {
+    async jwt({ token, user, account, profile }: { token: any; user: any; account?: any; profile?: any }) {
       if (user) {
         token.role = user.role
       }

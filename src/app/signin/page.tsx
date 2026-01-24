@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -10,9 +10,27 @@ export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+
+  // Loads the saved credentials when the component mounts.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('remembered-email')
+      const savedPassword = localStorage.getItem('remembered-password')
+      
+      if (savedEmail) {
+        setEmail(savedEmail)
+        setRememberMe(true)
+      }
+      
+      if (savedPassword) {
+        setPassword(savedPassword)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,6 +38,15 @@ export default function SignIn() {
     setError('')
 
     try {
+      // Save or remove credentials based on "remember me"
+      if (rememberMe) {
+        localStorage.setItem('remembered-email', email)
+        localStorage.setItem('remembered-password', password)
+      } else {
+        localStorage.removeItem('remembered-email')
+        localStorage.removeItem('remembered-password')
+      }
+
       const result = await signIn('credentials', {
         email,
         password,
@@ -127,6 +154,8 @@ export default function SignIn() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
