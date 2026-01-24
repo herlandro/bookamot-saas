@@ -12,7 +12,7 @@ import { AdvancedFilterPanel, FilterConfig } from '@/components/ui/advanced-filt
 import { exportVehiclesToCSV } from '@/lib/export/csv-export';
 import { Search, Filter, Download, Car, User, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 interface Vehicle {
   id: string;
@@ -139,7 +139,7 @@ export default function VehiclesPage() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
+    return format(date, 'dd/MM/yyyy', { locale: enGB });
   };
 
   const getMotStatusBadge = (status: string) => {

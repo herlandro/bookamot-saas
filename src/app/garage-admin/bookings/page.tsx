@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Search, Filter, Download, Clock, User, Car, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 interface Booking {
   id: string;
@@ -95,7 +95,7 @@ export default function BookingsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
+    return format(date, 'dd/MM/yyyy', { locale: enGB });
   };
 
   const getStatusBadge = (status: string) => {

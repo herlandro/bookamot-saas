@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Mail, Phone, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 interface VehicleDetail {
   id: string;
@@ -122,7 +122,7 @@ export default function VehicleDetailPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
+    return format(date, 'dd/MM/yyyy', { locale: enGB });
   };
 
   const formatCurrency = (value: number) => {

@@ -12,7 +12,7 @@ import { ReviewSubmissionModal } from '@/components/reviews/review-submission-mo
 import { BookingReviewsSection } from '@/components/reviews/booking-reviews-section';
 import { ArrowLeft, Calendar, Clock, User, Car, Phone, Mail, MapPin, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 interface Booking {
   id: string;
@@ -128,12 +128,12 @@ export default function BookingDetailsPage({ params }: { params: Promise<{ id: s
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return format(date, 'dd/MM/yyyy', { locale: enUS });
+    return format(date, 'dd/MM/yyyy', { locale: enGB });
   };
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return format(date, 'dd/MM/yyyy HH:mm', { locale: enUS });
+    return format(date, 'dd/MM/yyyy HH:mm', { locale: enGB });
   };
 
   const getStatusBadge = (status: string) => {

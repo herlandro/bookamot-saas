@@ -14,7 +14,7 @@ import { FilterConfig } from '@/components/ui/advanced-filter-panel';
 import { exportCustomersToCSV } from '@/lib/export/csv-export';
 import { Search, Filter, Download, User, Eye, Edit, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -151,7 +151,7 @@ export default function CustomersPage() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
+    return format(date, 'dd/MM/yyyy', { locale: enGB });
   };
 
   const getStatusBadge = (status: string) => {

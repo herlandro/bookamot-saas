@@ -11,7 +11,7 @@ import { StarRatingDisplay } from '@/components/ui/star-rating';
 import { ReviewList } from '@/components/reviews/review-list';
 import { ArrowLeft, Mail, Phone, Calendar, DollarSign, CheckCircle, Car, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 interface CustomerDetail {
   id: string;
@@ -113,7 +113,7 @@ export default function CustomerDetailPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return format(date, 'MMM d, yyyy', { locale: enUS });
+    return format(date, 'MMM d, yyyy', { locale: enGB });
   };
 
   const formatCurrency = (value: number) => {

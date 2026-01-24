@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Star, MessageSquare, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 interface Review {
   id: string;
@@ -297,13 +297,13 @@ export default function ReviewsPage() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  <span>{format(new Date(review.booking.date), 'dd MMM yyyy', { locale: ptBR })}</span>
+                                  <span>{format(new Date(review.booking.date), 'dd MMM yyyy', { locale: enGB })}</span>
                                 </div>
                               </>
                             )}
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              <span>{format(new Date(review.createdAt), 'dd MMM yyyy HH:mm', { locale: ptBR })}</span>
+                              <span>{format(new Date(review.createdAt), 'dd MMM yyyy HH:mm', { locale: enGB })}</span>
                             </div>
                           </div>
                         </div>
