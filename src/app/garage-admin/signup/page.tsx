@@ -557,7 +557,7 @@ export default function GarageSignUp() {
                   <div>
                     <h4 className="font-medium text-amber-800">Pending Approval</h4>
                     <p className="text-sm text-amber-700 mt-1">
-                      Your garage registration is now under review. Our team will analyze your request within <strong>1-2 business days</strong>.
+                      Your garage registration is now under review. Our team will analyse your request within <strong>1-2 business days</strong>.
                     </p>
                     <p className="text-sm text-amber-700 mt-2">
                       You will receive an email when your garage is approved.

@@ -581,10 +581,10 @@ export default function AddVehiclePage() {
               </div>
               </div>
 
-              {/* Color and Engine Size */}
+              {/* Colour and Engine Size */}
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showAllFields || lookupSuccess ? '' : 'hidden'}`}>
                 <div className="space-y-2">
-                  <Label htmlFor="color">Color</Label>
+                  <Label htmlFor="color">Colour</Label>
                   <Input
                     id="color"
                     placeholder="e.g., Red, Blue, Silver"

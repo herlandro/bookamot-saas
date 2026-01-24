@@ -270,7 +270,7 @@ export default function VehicleDetailsPage({ params }: { params: Promise<{ id: s
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <Palette className="h-4 w-4" />
-                        Color
+                        Colour
                       </h3>
                       <p className="mt-1 font-medium">{vehicle.color}</p>
                     </div>

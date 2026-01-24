@@ -359,7 +359,7 @@ export default function VehiclesPage() {
                             <strong>Fuel:</strong> {vehicle.fuelType}
                           </span>
                           <span className="text-muted-foreground">
-                            <strong>Color:</strong> {vehicle.color}
+                            <strong>Colour:</strong> {vehicle.color}
                           </span>
                           {vehicle.engineSize && (
                             <span className="text-muted-foreground">

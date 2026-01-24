@@ -54,7 +54,7 @@ export const createVehicleSchema = z.object({
   year: z.number()
     .min(1900, 'Year must be after 1900')
     .max(new Date().getFullYear() + 1, 'Year cannot be in the future'),
-  color: z.string().max(30, 'Color must be less than 30 characters').optional(),
+  color: z.string().max(30, 'Colour must be less than 30 characters').optional(),
   fuelType: z.nativeEnum(FuelType),
   engineSize: z.string().max(10, 'Engine size must be less than 10 characters').optional(),
   mileage: z.number().min(0, 'Mileage cannot be negative').max(999999, 'Mileage seems too high').optional(),

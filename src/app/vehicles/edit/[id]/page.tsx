@@ -302,7 +302,7 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
+                <Label htmlFor="color">Colour</Label>
                 <Input
                   id="color"
                   value={formData.color}

@@ -230,7 +230,7 @@ export default function VehicleDetailPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Color:</span>
+                  <span className="text-muted-foreground">Colour:</span>
                   <span className="font-medium">{vehicle.color}</span>
                 </div>
                 <div className="flex justify-between">
