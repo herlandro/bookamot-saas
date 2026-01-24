@@ -466,9 +466,6 @@ function SearchPageContent() {
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1">
               <h1 className="text-2xl font-bold">Find MOT Test Centres</h1>
-              <p className="text-muted-foreground mb-4">
-                Enter your vehicle registration, postcode or city, and select a date to find nearby MOT test centres.
-              </p>
               
               {/* Search Form */}
               <div className="flex flex-col sm:flex-row gap-3">
