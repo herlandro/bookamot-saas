@@ -17,6 +17,7 @@
     "db:reset": "tsx scripts/db.ts reset",
     "db:seed": "tsx prisma/seed.ts",
     "db:list": "tsx scripts/db.ts list",
+    "admin:add": "tsx scripts/add-admin.ts",
     "db:add-email-columns": "node scripts/add-email-verification-columns.js",
     "booking:complete": "tsx scripts/booking.ts complete",
     "query:users": "tsx scripts/query.ts users",
