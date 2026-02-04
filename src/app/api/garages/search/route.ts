@@ -134,6 +134,29 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Regra: só mostrar garagens com MOT quota disponível (têm comprado e ainda não usaram todos)
+    const withQuota = await prisma.garage.findMany({
+      where: { ...searchConditions, motQuota: { gt: 0 } },
+      select: { id: true, motQuota: true }
+    })
+    const confirmedByGarage = await prisma.booking.groupBy({
+      by: ['garageId'],
+      where: { status: 'CONFIRMED' },
+      _count: true
+    })
+    const confirmedCountByGarageId = Object.fromEntries(
+      confirmedByGarage.map((c) => [c.garageId, c._count])
+    )
+    const availableGarageIds = withQuota
+      .filter((g) => (confirmedCountByGarageId[g.id] ?? 0) < (g.motQuota ?? 0))
+      .map((g) => g.id)
+    if (availableGarageIds.length === 0) {
+      console.log('🔒 No garages with MOT quota available for customer search')
+    }
+    searchConditions.id = availableGarageIds.length > 0
+      ? { in: availableGarageIds }
+      : { in: ['__none__'] } // garante 0 resultados quando nenhuma garagem tem quota
+
     // Fetch garages with related data
     const garages = await prisma.garage.findMany({
       where: searchConditions,
