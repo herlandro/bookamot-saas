@@ -114,6 +114,9 @@ model Garage {
   averageRating Float @default(0)
   totalReviews  Int   @default(0)
 
+  // MOT booking quota (purchased packages of 10)
+  motQuota           Int                       @default(0)
+
   // Relations
   ownerId            String                    @unique
   owner              User                      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -123,6 +126,7 @@ model Garage {
   scheduleExceptions GarageScheduleException[]
   timeSlotBlocks     GarageTimeSlotBlock[]
   approvalLogs       GarageApprovalLog[]
+  purchaseRequests   PurchaseRequest[]
 }
 
 // GarageAvailability model removed - replaced by optimized system
@@ -449,6 +453,10 @@ enum EmailType {
   BOOKING_REMINDER_1_WEEK
   BOOKING_REMINDER_1_DAY
   BOOKING_COMPLETED_FOLLOWUP
+  PURCHASE_REQUEST_NOTIFICATION
+  GARAGE_VALIDATION_REQUEST
+  PURCHASE_APPROVED
+  PURCHASE_REJECTED
 }
 
 enum EmailStatus {
@@ -469,4 +477,68 @@ enum ScheduledStatus {
   SENT
   FAILED
   CANCELLED
+}
+
+// MOT booking purchase request (bank transfer flow)
+model PurchaseRequest {
+  id              String                @id @default(cuid())
+  garageId        String
+  bankReference   String                // garage ID + timestamp format
+  amountPence    Int                   // 1000 = £10
+  quantity        Int                   @default(10) // 10 MOT bookings per package
+  status          PurchaseRequestStatus @default(PENDING)
+  requestedAt     DateTime              @default(now())
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  approvedById    String?
+
+  garage   Garage                    @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  auditLogs PurchaseRequestAuditLog[]
+
+  @@index([garageId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+enum PurchaseRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Write-only audit log for purchase request actions
+model PurchaseRequestAuditLog {
+  id               String         @id @default(cuid())
+  purchaseRequestId String
+  action           String         // APPROVED | REJECTED
+  performedById   String
+  performedAt     DateTime       @default(now())
+  details         String?        // optional JSON or rejection reason
+
+  purchaseRequest PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseRequestId])
+  @@index([performedAt])
+}
+
+// In-app notifications for super-admins (purchase requests, garage validation)
+model AdminNotification {
+  id          String   @id @default(cuid())
+  type        AdminNotificationType
+  referenceId String   // purchaseRequestId or garageId
+  title       String
+  message     String
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([type])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
+enum AdminNotificationType {
+  GARAGE_PENDING
+  GARAGE_VALIDATION
+  MOT_PURCHASE_REQUEST
 }

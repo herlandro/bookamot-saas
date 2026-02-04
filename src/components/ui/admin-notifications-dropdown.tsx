@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Building2, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Bell, Building2, AlertCircle, CheckCircle2, Loader2, ShoppingBag, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
@@ -10,11 +10,12 @@ import { cn } from '@/lib/utils'
 
 interface AdminNotification {
   id: string
-  type: 'GARAGE_PENDING' | 'GARAGE_INFO_REQUESTED'
+  type: 'GARAGE_PENDING' | 'GARAGE_INFO_REQUESTED' | 'MOT_PURCHASE_REQUEST'
   title: string
   message: string
-  garageId: string
-  garageName: string
+  garageId?: string
+  garageName?: string
+  purchaseRequestId?: string
   createdAt: string
   isRead: boolean
 }
@@ -69,9 +70,30 @@ export function AdminNotificationsDropdown() {
     }
   }, [isOpen])
 
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
+
   const handleNotificationClick = (garageId: string) => {
     setIsOpen(false)
     router.push(`/admin/garages/pending`)
+  }
+
+  const handlePurchaseRequestAction = async (requestId: string, action: 'approve' | 'reject', notificationId: string) => {
+    setActionLoadingId(notificationId)
+    try {
+      const res = await fetch(`/api/admin/sales/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(action === 'reject' ? { action: 'reject', rejectionReason: '' } : { action: 'approve' }),
+      })
+      if (res.ok) {
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+        setUnreadCount((c) => Math.max(0, c - 1))
+      }
+    } catch (e) {
+      console.error('Purchase request action failed:', e)
+    } finally {
+      setActionLoadingId(null)
+    }
   }
 
   const formatTime = (dateString: string) => {
@@ -88,6 +110,8 @@ export function AdminNotificationsDropdown() {
         return Building2
       case 'GARAGE_INFO_REQUESTED':
         return AlertCircle
+      case 'MOT_PURCHASE_REQUEST':
+        return ShoppingBag
       default:
         return Bell
     }
@@ -131,7 +155,7 @@ export function AdminNotificationsDropdown() {
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-foreground" />
-                <h3 className="font-semibold text-foreground">Garage Approvals</h3>
+                <h3 className="font-semibold text-foreground">Notifications</h3>
                 {unreadCount > 0 && (
                   <Badge variant="destructive" className="ml-2">
                     {unreadCount}
@@ -160,40 +184,45 @@ export function AdminNotificationsDropdown() {
                   <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-sm font-medium text-foreground">All caught up!</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    No pending garage approvals
+                    No pending notifications
                   </p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
                   {notifications.map((notification) => {
                     const Icon = getNotificationIcon(notification.type)
+                    const isPurchaseRequest = notification.type === 'MOT_PURCHASE_REQUEST'
                     return (
-                      <button
+                      <div
                         key={notification.id}
-                        onClick={() => handleNotificationClick(notification.garageId)}
                         className={cn(
-                          "w-full p-4 text-left hover:bg-muted/50 transition-colors",
-                          !notification.isRead && "bg-blue-50/50 dark:bg-blue-950/20"
+                          "w-full p-4 text-left transition-colors",
+                          !notification.isRead && "bg-blue-50/50 dark:bg-blue-950/20",
+                          !isPurchaseRequest && "hover:bg-muted/50"
                         )}
                       >
                         <div className="flex items-start gap-3">
                           <div className={cn(
-                            "p-2 rounded-lg",
+                            "p-2 rounded-lg shrink-0",
                             notification.type === 'GARAGE_PENDING' 
                               ? "bg-blue-100 dark:bg-blue-900/30" 
-                              : "bg-yellow-100 dark:bg-yellow-900/30"
+                              : notification.type === 'MOT_PURCHASE_REQUEST'
+                                ? "bg-green-100 dark:bg-green-900/30"
+                                : "bg-yellow-100 dark:bg-yellow-900/30"
                           )}>
                             <Icon className={cn(
                               "h-4 w-4",
                               notification.type === 'GARAGE_PENDING'
                                 ? "text-blue-600 dark:text-blue-400"
-                                : "text-yellow-600 dark:text-yellow-400"
+                                : notification.type === 'MOT_PURCHASE_REQUEST'
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-yellow-600 dark:text-yellow-400"
                             )} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <p className="text-sm font-semibold text-foreground truncate">
-                                {notification.garageName}
+                                {notification.garageName ?? notification.title}
                               </p>
                               {!notification.isRead && (
                                 <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 ml-2" />
@@ -202,12 +231,49 @@ export function AdminNotificationsDropdown() {
                             <p className="text-xs text-muted-foreground mb-1">
                               {notification.message}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground mb-2">
                               {formatTime(notification.createdAt)}
                             </p>
+                            {isPurchaseRequest && notification.purchaseRequestId && (
+                              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="h-7 text-xs"
+                                  disabled={actionLoadingId === notification.id}
+                                  onClick={() => handlePurchaseRequestAction(notification.purchaseRequestId!, 'approve', notification.id)}
+                                >
+                                  {actionLoadingId === notification.id ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <Check className="h-3 w-3 mr-1" />
+                                  )}
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  disabled={actionLoadingId === notification.id}
+                                  onClick={() => handlePurchaseRequestAction(notification.purchaseRequestId!, 'reject', notification.id)}
+                                >
+                                  <X className="h-3 w-3 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+                            {!isPurchaseRequest && notification.garageId && (
+                              <button
+                                type="button"
+                                className="text-xs font-medium text-primary hover:underline"
+                                onClick={() => handleNotificationClick(notification.garageId!)}
+                              >
+                                View
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -216,7 +282,7 @@ export function AdminNotificationsDropdown() {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="border-t border-border p-3">
+              <div className="border-t border-border p-3 space-y-1">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -227,6 +293,17 @@ export function AdminNotificationsDropdown() {
                   }}
                 >
                   View All Pending Garages
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setIsOpen(false)
+                    router.push('/admin/sales')
+                  }}
+                >
+                  View All Pending Purchase
                 </Button>
               </div>
             )}

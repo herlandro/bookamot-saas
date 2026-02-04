@@ -133,30 +133,29 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
     }
   }
 
+  const getBookingId = (notification: Notification): string | null =>
+    notification.bookingId ?? notification.metadata?.booking?.id ?? null
+
   const handleConfirmBooking = async (e: React.MouseEvent, notification: Notification) => {
-    e.stopPropagation() // Prevent click on notification
-    
-    if (!notification.bookingId) return
-    
+    e.preventDefault()
+    e.stopPropagation()
+    const bookingId = getBookingId(notification)
+    if (!bookingId) return
+
     setProcessingBooking(notification.id)
     try {
-      const response = await fetch(`/api/garage-admin/bookings/${notification.bookingId}`, {
+      const response = await fetch(`/api/garage-admin/bookings/${bookingId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'CONFIRMED',
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CONFIRMED' }),
       })
 
       if (response.ok) {
-        // Update notifications by removing the confirmed one
         await refresh()
       } else {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         console.error('Error confirming booking:', error)
-        alert('Error confirming booking. Please try again.')
+        alert(error?.error ?? 'Error confirming booking. Please try again.')
       }
     } catch (error) {
       console.error('Error confirming booking:', error)
@@ -167,21 +166,17 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
   }
 
   const handleRejectBooking = async (e: React.MouseEvent, notification: Notification) => {
-    e.stopPropagation() // Prevent click on notification
-    
-    if (!notification.bookingId) return
-    
-    if (!confirm('Are you sure you want to reject this booking?')) {
-      return
-    }
-    
+    e.preventDefault()
+    e.stopPropagation()
+    const bookingId = getBookingId(notification)
+    if (!bookingId) return
+    if (!confirm('Are you sure you want to reject this booking?')) return
+
     setProcessingBooking(notification.id)
     try {
-      const response = await fetch(`/api/garage-admin/bookings/${notification.bookingId}`, {
+      const response = await fetch(`/api/garage-admin/bookings/${bookingId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'CANCELLED',
           notes: 'Booking rejected from notifications',
@@ -189,12 +184,11 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
       })
 
       if (response.ok) {
-        // Update notifications by removing the rejected one
         await refresh()
       } else {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         console.error('Error rejecting booking:', error)
-        alert('Error rejecting booking. Please try again.')
+        alert(error?.error ?? 'Error rejecting booking. Please try again.')
       }
     } catch (error) {
       console.error('Error rejecting booking:', error)
@@ -216,23 +210,12 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
     }
   }
 
-  // Group notifications by type
-  const groupedNotifications = notifications.reduce((acc, notification) => {
-    const type = notification.type
-    if (!acc[type]) {
-      acc[type] = []
-    }
-    acc[type].push(notification)
-    return acc
-  }, {} as Record<string, Notification[]>)
-
-  const notificationCategories = [
-    { type: 'BOOKING_PENDING' as const, label: 'Pending Bookings' },
-    { type: 'BOOKING_CONFIRMED' as const, label: 'Confirmed Bookings' },
-    { type: 'BOOKING_CANCELLED' as const, label: 'Cancelled Bookings' },
-    { type: 'MESSAGE' as const, label: 'Messages' },
-    { type: 'SYSTEM' as const, label: 'System' },
-  ]
+  // Exibir apenas notificações pendentes (reservas à espera de aprovação)
+  const pendingNotifications = notifications.filter((n) => n.type === 'BOOKING_PENDING')
+  const pendingUnreadCount = pendingNotifications.filter((n) => !n.isRead).length
+  const sortedNotifications = [...pendingNotifications].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -244,12 +227,12 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
         aria-label="Notifications"
       >
         <Bell className="h-5 w-5 text-foreground" />
-        {unreadCount > 0 && (
+        {pendingUnreadCount > 0 && (
           <Badge
             variant="destructive"
             className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center text-xs px-1.5 rounded-full animate-pulse"
           >
-            {unreadCount > 99 ? '99+' : unreadCount}
+            {pendingUnreadCount > 99 ? '99+' : pendingUnreadCount}
           </Badge>
         )}
       </Button>
@@ -273,9 +256,9 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-foreground" />
                 <h3 className="font-semibold text-foreground">Notifications</h3>
-                {unreadCount > 0 && (
+                {pendingUnreadCount > 0 && (
                   <Badge variant="destructive" className="ml-2">
-                    {unreadCount}
+                    {pendingUnreadCount}
                   </Badge>
                 )}
               </div>
@@ -290,9 +273,9 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
               </Button>
             </div>
 
-            {/* Content */}
+            {/* Content - unified list, newest first */}
             <div className="overflow-y-auto flex-1">
-              {notifications.length === 0 ? (
+              {sortedNotifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                   <p className="text-sm text-muted-foreground">
@@ -300,132 +283,113 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
                   </p>
                 </div>
               ) : (
-                <div>
-                  {notificationCategories.map((category) => {
-                    const categoryNotifications = groupedNotifications[category.type] || []
-                    if (categoryNotifications.length === 0) return null
+                <div className="divide-y divide-border">
+                  {sortedNotifications.map((notification) => {
+                    const Icon = getNotificationIcon(notification.type)
+                    const isBookingPending = notification.type === 'BOOKING_PENDING'
+                    const bookingMetadata = notification.metadata?.booking
+                    const customerName = bookingMetadata?.user?.name || 'Customer'
+                    const initials = getInitials(customerName)
+                    const avatarColor = getAvatarColor(customerName)
+                    const isProcessing = processingBooking === notification.id
+
+                    if (isBookingPending && bookingMetadata) {
+                      const { date, time } = formatBookingDateTime(
+                        bookingMetadata.date,
+                        bookingMetadata.timeSlot
+                      )
+                      const vehicle = bookingMetadata.vehicle
+                      const vehicleInfo = `${vehicle.make} ${vehicle.model} ${vehicle.year || ''}`.trim()
+
+                      return (
+                        <div
+                          key={notification.id}
+                          className={cn(
+                            "w-full text-left p-4 hover:bg-muted/50 transition-colors",
+                            "cursor-pointer"
+                          )}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                              style={{ backgroundColor: avatarColor }}
+                            >
+                              {initials}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-sm font-bold text-foreground dark:text-foreground">
+                                  {customerName}
+                                </p>
+                                <p className="text-xs text-muted-foreground ml-2 flex-shrink-0">
+                                  {formatTime(notification.createdAt)}
+                                </p>
+                              </div>
+                              <p className="text-sm text-foreground mb-2">
+                                Requested a MOT appointment for his{' '}
+                                <span className="font-bold">{vehicleInfo}</span>
+                                {' '}on {date} at {time}.
+                              </p>
+                              <div
+                                className="flex items-center gap-2 mt-2"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              >
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="default"
+                                  className="h-7 px-3 text-xs"
+                                  onClick={(e) => handleConfirmBooking(e, notification)}
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? 'Processing...' : 'Confirm'}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-3 text-xs"
+                                  onClick={(e) => handleRejectBooking(e, notification)}
+                                  disabled={isProcessing}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
 
                     return (
-                      <div key={category.type}>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-4 pt-4 pb-2">
-                          {category.label}
-                        </h4>
-                        <div className="divide-y divide-border">
-                          {categoryNotifications.map((notification) => {
-                            const Icon = getNotificationIcon(notification.type)
-                            const isBookingPending = notification.type === 'BOOKING_PENDING'
-                            const bookingMetadata = notification.metadata?.booking
-                            const customerName = bookingMetadata?.user?.name || 'Customer'
-                            const initials = getInitials(customerName)
-                            const avatarColor = getAvatarColor(customerName)
-                            const isProcessing = processingBooking === notification.id
-
-                            // For booking_pending, use the new format
-                            if (isBookingPending && bookingMetadata) {
-                              const { date, time } = formatBookingDateTime(
-                                bookingMetadata.date,
-                                bookingMetadata.timeSlot
-                              )
-                              const vehicle = bookingMetadata.vehicle
-                              const vehicleInfo = `${vehicle.make} ${vehicle.model} ${vehicle.year || ''}`.trim()
-
-                              return (
-                                <div
-                                  key={notification.id}
-                                  className={cn(
-                                    "w-full text-left p-4 hover:bg-muted/50 transition-colors",
-                                    "cursor-pointer"
-                                  )}
-                                  onClick={() => handleNotificationClick(notification)}
-                                >
-                                  <div className="flex items-start gap-3">
-                                    {/* Avatar with initials */}
-                                    <div
-                                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                                      style={{ backgroundColor: avatarColor }}
-                                    >
-                                      {initials}
-                                    </div>
-                                    
-                                    <div className="flex-1 min-w-0">
-                                      {/* First line: Name in bold + timestamp */}
-                                      <div className="flex items-center justify-between mb-1">
-                                        <p className="text-sm font-bold text-foreground dark:text-foreground">
-                                          {customerName}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground ml-2 flex-shrink-0">
-                                          {formatTime(notification.createdAt)}
-                                        </p>
-                                      </div>
-                                      
-                                      {/* Second line: Formatted text */}
-                                      <p className="text-sm text-foreground mb-2">
-                                        Requested a MOT appointment for his{' '}
-                                        <span className="font-bold">{vehicleInfo}</span>
-                                        {' '}on {date} at {time}.
-                                      </p>
-                                      
-                                      {/* Third line: Confirm and Reject buttons */}
-                                      <div className="flex items-center gap-2 mt-2">
-                                        <Button
-                                          size="sm"
-                                          variant="default"
-                                          className="h-7 px-3 text-xs"
-                                          onClick={(e) => handleConfirmBooking(e, notification)}
-                                          disabled={isProcessing}
-                                        >
-                                          {isProcessing ? 'Processing...' : 'Confirm'}
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="h-7 px-3 text-xs"
-                                          onClick={(e) => handleRejectBooking(e, notification)}
-                                          disabled={isProcessing}
-                                        >
-                                          Reject
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            }
-
-                            // For other notification types, keep original format (but without coloured backgrounds)
-                            return (
-                              <button
-                                key={notification.id}
-                                onClick={() => handleNotificationClick(notification)}
-                                className={cn(
-                                  "w-full text-left p-4 hover:bg-muted/50 transition-colors"
-                                )}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="p-2 rounded-lg">
-                                    <Icon className="h-4 w-4 text-foreground/70" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    {notification.status && (
-                                      <div className="flex items-center justify-between mb-1">
-                                        <p className="text-sm font-semibold text-foreground">
-                                          {notification.status}
-                                        </p>
-                                      </div>
-                                    )}
-                                    <p className="text-xs text-muted-foreground mb-1">
-                                      {notification.message}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {formatTime(notification.createdAt)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </button>
-                            )
-                          })}
+                      <button
+                        key={notification.id}
+                        type="button"
+                        onClick={() => handleNotificationClick(notification)}
+                        className="w-full text-left p-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg">
+                            <Icon className="h-4 w-4 text-foreground/70" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {notification.status && (
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-sm font-semibold text-foreground">
+                                  {notification.status}
+                                </p>
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatTime(notification.createdAt)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -433,7 +397,7 @@ export function NotificationsDropdown({ onBookingClick }: NotificationsDropdownP
             </div>
 
             {/* Footer */}
-            {notifications.length > 0 && unreadCount > 0 && (
+            {sortedNotifications.length > 0 && pendingUnreadCount > 0 && (
               <div className="p-3 border-t border-border">
                 <Button
                   variant="ghost"

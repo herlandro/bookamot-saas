@@ -68,7 +68,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Book MOT Button */}
+      {/* Book MOT (primary) + Register Garage (secondary, below) */}
       <div className="w-full max-w-md space-y-3">
         <Button
           onClick={handleBookMOT}
@@ -80,10 +80,10 @@ export default function HomePage() {
         <Button
           onClick={handleRegisterGarage}
           variant="outline"
-          className="w-full border-border text-foreground hover:bg-muted rounded-full px-8 py-4 text-lg font-medium"
+          className="w-full border-border text-muted-foreground hover:text-foreground hover:bg-muted rounded-full px-8 py-3 text-sm font-normal"
           size="lg"
         >
-          I want to register my garage
+          I want to register my Garage
         </Button>
       </div>
 
@@ -97,10 +97,11 @@ export default function HomePage() {
   // Render pre-login page (status is 'unauthenticated')
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex justify-end p-6">
-        <Button 
-          variant="outline" 
+      {/* Header: only Sign in (no Business or other left-side button) */}
+      <header className="flex flex-row justify-end items-center p-6">
+        <div className="flex-1" />
+        <Button
+          variant="outline"
           className="border-border text-foreground hover:bg-muted"
           onClick={() => router.push('/signin')}
         >

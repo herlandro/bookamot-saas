@@ -29,14 +29,15 @@ export async function POST(request: NextRequest) {
 
     const { garageId, vehicleId, date, timeSlot, notes } = validationResult.data
 
-    // Verify garage exists and is approved
+    // Verify garage exists, is approved and active (MOT quota not exhausted)
     const garage = await prisma.garage.findUnique({
       where: { id: garageId },
       select: {
         id: true,
         name: true,
         dvlaApproved: true,
-        motPrice: true
+        motPrice: true,
+        isActive: true
       }
     })
 
@@ -50,6 +51,13 @@ export async function POST(request: NextRequest) {
     if (!garage.dvlaApproved) {
       return NextResponse.json(
         { error: 'Garage is not approved for MOT tests' },
+        { status: 400 }
+      )
+    }
+
+    if (!garage.isActive) {
+      return NextResponse.json(
+        { error: 'MOT quota exhausted. This garage cannot accept new bookings at the moment.' },
         { status: 400 }
       )
     }

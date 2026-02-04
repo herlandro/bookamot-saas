@@ -40,7 +40,6 @@ async function addAdmin() {
   let email = process.argv.find(arg => arg.startsWith('--email='))?.split('=')[1]
   let password = process.argv.find(arg => arg.startsWith('--password='))?.split('=')[1]
   let name = process.argv.find(arg => arg.startsWith('--name='))?.split('=')[1]
-
   if (!email) {
     email = await askQuestion('Enter email address: ')
   }
@@ -57,8 +56,8 @@ async function addAdmin() {
 
   if (existingUser) {
     if (existingUser.role === UserRole.ADMIN) {
-      console.log(`⚠️  User ${email} already exists and is an admin.`)
-      const update = await askQuestion('Do you want to update the password? (yes/no): ')
+      console.log(`⚠️  User ${email} already exists as admin.`)
+      const update = await askQuestion('Do you want to update password? (yes/no): ')
       if (update.toLowerCase() !== 'yes' && update.toLowerCase() !== 'y') {
         console.log('❌ Cancelled')
         process.exit(0)

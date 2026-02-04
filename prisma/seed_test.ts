@@ -235,7 +235,7 @@ async function main() {
   console.log('👤 Creating admin user...')
   const adminPassword = await hashPassword('admin123!')
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@bookamot.co.uk' },
+    where: { email: 'bookanmot@gmail.com' },
     update: {
       name: 'Admin',
       password: adminPassword,
@@ -243,7 +243,7 @@ async function main() {
     },
     create: {
       name: 'Admin',
-      email: 'admin@bookamot.co.uk',
+      email: 'bookanmot@gmail.com',
       password: adminPassword,
       role: UserRole.ADMIN
     }
@@ -691,7 +691,7 @@ async function main() {
   console.log(`   - ${motHistoryCount} MOT history records`)
   console.log(`   - ${customerReviewCount + garageReviewCount} reviews (${customerReviewCount} from customers, ${garageReviewCount} from garages)`)
   console.log('\n🔑 Test Credentials:')
-  console.log('   Admin: admin@bookamot.co.uk / password: admin123!')
+  console.log('   Admin: bookanmot@gmail.com / password: admin123!')
   console.log('   Customer: any email from SEED_DATA_CREDENTIALS.md / password: password123')
   console.log('   Garage: any garage email from SEED_DATA_CREDENTIALS.md / password: garage123')
 }

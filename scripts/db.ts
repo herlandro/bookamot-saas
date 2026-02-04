@@ -149,8 +149,8 @@ async function listUsers() {
 async function setupDemoData() {
   const now = new Date()
 
-  const adminEmail = 'admin@bookamot.co.uk'
-  const adminPasswordHash = await bcrypt.hash('admin123!', 12)
+  const adminEmail = 'bookanmot@gmail.com'
+  const adminPasswordHash = await bcrypt.hash('Frog3566!', 12)
 
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },

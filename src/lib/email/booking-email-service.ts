@@ -167,6 +167,75 @@ export async function sendBookingEmail(
 }
 
 /**
+ * Send system/back-office email (no booking). Used for purchase requests, garage validation, etc.
+ * Logs to EmailLog with bookingId null. Same retry logic as sendBookingEmail.
+ */
+export async function sendSystemEmail(
+  recipientEmail: string,
+  emailType: EmailType,
+  subject: string,
+  html: string,
+  text: string
+): Promise<{ success: boolean; emailLogId: string; error?: string }> {
+  const transporter = getTransporter()
+  if (!transporter) {
+    const errorMsg = 'SMTP transporter not configured.'
+    const emailLog = await prisma.emailLog.create({
+      data: {
+        bookingId: null,
+        recipientEmail,
+        recipientName: null,
+        emailType,
+        subject,
+        status: EmailStatus.FAILED,
+        errorMessage: errorMsg,
+        retryCount: 0,
+      },
+    })
+    return { success: false, emailLogId: emailLog.id, error: errorMsg }
+  }
+
+  const emailLog = await prisma.emailLog.create({
+    data: {
+      bookingId: null,
+      recipientEmail,
+      recipientName: null,
+      emailType,
+      subject,
+      status: EmailStatus.PENDING,
+    },
+  })
+
+  let lastError: string | undefined
+  for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+    try {
+      await transporter.sendMail({
+        from: `"BookaMOT" <${process.env.SMTP_FROM}>`,
+        to: recipientEmail,
+        subject,
+        html,
+        text,
+      })
+      await prisma.emailLog.update({
+        where: { id: emailLog.id },
+        data: { status: EmailStatus.SENT, sentAt: new Date(), retryCount: attempt },
+      })
+      return { success: true, emailLogId: emailLog.id }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Unknown error'
+      if (attempt < MAX_RETRY_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)))
+      }
+    }
+  }
+  await prisma.emailLog.update({
+    where: { id: emailLog.id },
+    data: { status: EmailStatus.FAILED, errorMessage: lastError, retryCount: MAX_RETRY_ATTEMPTS },
+  })
+  return { success: false, emailLogId: emailLog.id, error: lastError }
+}
+
+/**
  * Send booking confirmation to customer
  */
 export async function sendBookingConfirmationToCustomer(

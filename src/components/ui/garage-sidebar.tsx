@@ -10,7 +10,8 @@ import {
   CalendarCheck,
   Users,
   Star,
-  CalendarClock
+  CalendarClock,
+  ShoppingCart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
@@ -28,6 +29,7 @@ export function GarageSidebar({ isOpen, onToggle }: GarageSidebarProps) {
     { id: 'calendar', label: 'Calendar', icon: Calendar, href: '/garage-admin/calendar' },
     { id: 'availability', label: 'Availability', icon: CalendarClock, href: '/garage-admin/availability' },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, href: '/garage-admin/bookings' },
+    { id: 'sales', label: 'Sales', icon: ShoppingCart, href: '/garage-admin/shopping' },
     { id: 'customers', label: 'Customers', icon: Users, href: '/garage-admin/customers' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/garage-admin/vehicles' },
     { id: 'reviews', label: 'Reviews', icon: Star, href: '/garage-admin/reviews' },

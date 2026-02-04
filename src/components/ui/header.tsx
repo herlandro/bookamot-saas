@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { Sun, Moon, Menu } from 'lucide-react'
 import { NavigationMenu } from './navigation-menu'
 import { AvatarDropdown } from './avatar-dropdown'
 import { NotificationsDropdown } from './notifications-dropdown'
 import { AdminNotificationsDropdown } from './admin-notifications-dropdown'
+import { MotBookingsWidget } from '@/components/garage/mot-bookings-widget'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -17,8 +19,10 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = true, onBookingClick }: HeaderProps) {
   const { data: session } = useSession()
+  const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const isGarageAdmin = pathname?.startsWith('/garage-admin') ?? false
 
   React.useEffect(() => {
     setMounted(true)
@@ -61,6 +65,10 @@ export function Header({ onMenuClick, showMenuButton = true, onBookingClick }: H
 
         {/* Right Side */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* MOT Bookings widget - garage-admin only */}
+          {session.user.role === 'GARAGE_OWNER' && isGarageAdmin && (
+            <MotBookingsWidget />
+          )}
           {/* Notifications - For garage owners and admins */}
           {session.user.role === 'GARAGE_OWNER' && (
             <NotificationsDropdown onBookingClick={onBookingClick} />

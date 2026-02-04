@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { BookingStatus } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+
+// Evitar cache: resposta sempre atualizada (só reservas PENDING)
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,11 +32,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get pending bookings to create notifications
+    // Apenas reservas com status PENDING (aguardam Confirmar/Rejeitar)
     const pendingBookings = await prisma.booking.findMany({
       where: {
         garageId: garage.id,
-        status: 'PENDING',
+        status: BookingStatus.PENDING,
       },
       include: {
         customer: {

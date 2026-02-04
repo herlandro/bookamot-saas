@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -11,7 +12,8 @@ import {
   Car,
   Star,
   Clock,
-  BookOpen
+  BookOpen,
+  ShoppingBag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
@@ -21,26 +23,35 @@ interface AdminSidebarProps {
   onToggle: () => void;
 }
 
+interface AdminMenuItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  badge?: number;
+}
+
 export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
   const [pendingGaragesCount, setPendingGaragesCount] = useState(0);
-  
+
   useEffect(() => {
-    // Fetch pending garages count
     fetch('/api/admin/garages/pending/count')
       .then(res => res.ok ? res.json() : { count: 0 })
       .then(data => setPendingGaragesCount(data.count))
       .catch(() => setPendingGaragesCount(0));
   }, []);
-  
-  const menuItems = [
+
+  // Este sidebar só é usado em páginas /admin; Sales sempre visível. Acesso a /admin/sales é protegido na própria página.
+  const menuItems: AdminMenuItem[] = useMemo(() => [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { id: 'pending', label: 'Pending Garages', icon: Clock, href: '/admin/garages/pending', badge: pendingGaragesCount },
     { id: 'garages', label: 'Garages', icon: Building2, href: '/admin/garages' },
+    { id: 'sales', label: 'Sales', icon: ShoppingBag, href: '/admin/sales' },
     { id: 'bookings', label: 'Bookings', icon: BookOpen, href: '/admin/bookings' },
     { id: 'vehicles', label: 'Vehicles', icon: Car, href: '/admin/vehicles' },
     { id: 'reviews', label: 'Reviews', icon: Star, href: '/admin/reviews' },
-  ];
+  ], [pendingGaragesCount]);
 
   const isActive = (href: string) => {
     if (href === '/admin/garages') {
@@ -91,7 +102,7 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
-              <a
+              <Link
                 key={item.id}
                 href={item.href}
                 className={cn(
@@ -112,7 +123,7 @@ export function AdminSidebar({ isOpen, onToggle }: AdminSidebarProps) {
                     {item.badge}
                   </Badge>
                 )}
-              </a>
+              </Link>
             );
           })}
         </nav>

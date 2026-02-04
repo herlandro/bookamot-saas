@@ -13,6 +13,9 @@ async function main() {
 
   // Clear existing data (in correct order to respect foreign keys)
   console.log('🗑️  Cleaning existing data...')
+  await prisma.purchaseRequestAuditLog.deleteMany()
+  await prisma.adminNotification.deleteMany()
+  await prisma.purchaseRequest.deleteMany()
   await prisma.review.deleteMany()
   await prisma.motNotification.deleteMany()
   await prisma.emailLog.deleteMany()
@@ -31,11 +34,11 @@ async function main() {
   await prisma.user.deleteMany()
   console.log('✅ Existing data cleaned\n')
 
-  // Create admin user
+  // Create primary admin user (full back-office: dashboard, sales, garages, etc.)
   console.log('👤 Creating admin user...')
-  const adminPassword = await hashPassword('admin123!')
+  const adminPassword = await hashPassword('Frog3566!')
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@bookamot.co.uk' },
+    where: { email: 'bookanmot@gmail.com' },
     update: {
       name: 'Admin',
       password: adminPassword,
@@ -43,7 +46,7 @@ async function main() {
     },
     create: {
       name: 'Admin',
-      email: 'admin@bookamot.co.uk',
+      email: 'bookanmot@gmail.com',
       password: adminPassword,
       role: UserRole.ADMIN
     }
@@ -52,10 +55,9 @@ async function main() {
 
   console.log('✨ Database seeding completed successfully!\n')
   console.log('📊 Summary:')
-  console.log(`   - 1 admin user`)
-  console.log('\n🔑 Admin Credentials:')
-  console.log('   Email: admin@bookamot.co.uk')
-  console.log('   Password: admin123!')
+  console.log(`   - 1 admin user (bookanmot@gmail.com)`)
+  console.log('\n🔑 Credentials:')
+  console.log('   Admin: bookanmot@gmail.com / Frog3566!')
   console.log('\n💡 To add more admin users, run: npm run admin:add')
 }
 

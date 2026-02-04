@@ -143,6 +143,14 @@ export async function POST(request: NextRequest) {
       
       console.log('✅ Garage created:', garage.id)
 
+      // Email back office: garage validation required (British English)
+      try {
+        const { sendGarageValidationEmail } = await import('@/lib/email/purchase-email')
+        await sendGarageValidationEmail(garageName)
+      } catch (e) {
+        console.error('Failed to send garage validation email:', e)
+      }
+
       // Create default schedules for the garage (Monday-Friday 09:00-17:30, Saturday 09:00-13:00, Sunday closed)
       const defaultSchedules = [
         { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '17:30', slotDuration: 60 }, // Monday

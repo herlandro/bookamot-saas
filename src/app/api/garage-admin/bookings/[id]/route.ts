@@ -171,6 +171,23 @@ export async function PATCH(
       );
     }
 
+    // Exhaustion rule: do not allow confirming if MOT quota would be exceeded
+    if (status === 'CONFIRMED') {
+      const motQuota = (garage as { motQuota?: number }).motQuota ?? 0
+      const currentConfirmed = await prisma.booking.count({
+        where: {
+          garageId: garage.id,
+          status: 'CONFIRMED',
+        },
+      })
+      if (motQuota > 0 && currentConfirmed >= motQuota) {
+        return NextResponse.json(
+          { error: 'MOT quota exhausted. No further bookings can be confirmed until new quota is purchased.' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Get previous status to detect changes
     const previousStatus = existingBooking.status
 
@@ -213,6 +230,23 @@ export async function PATCH(
         },
       },
     });
+
+    // Exhaustion rule: after confirming, if confirmed count equals purchased quota, set garage inactive
+    if (status === 'CONFIRMED' && previousStatus !== 'CONFIRMED') {
+      const motQuota = (garage as { motQuota?: number }).motQuota ?? 0
+      const newConfirmedCount = await prisma.booking.count({
+        where: {
+          garageId: garage.id,
+          status: 'CONFIRMED',
+        },
+      })
+      if (motQuota > 0 && newConfirmedCount >= motQuota) {
+        await prisma.garage.update({
+          where: { id: garage.id },
+          data: { isActive: false },
+        })
+      }
+    }
 
     // Send status update emails if status changed
     if (status && status !== previousStatus) {

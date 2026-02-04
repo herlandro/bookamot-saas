@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ShieldAlert, Eye, EyeOff, Mail, Lock } from 'lucide-react'
 
@@ -31,13 +31,13 @@ export default function AdminLogin() {
         return
       }
 
-      // Check if user is admin by fetching session
+      // Check if user is admin or super admin by fetching session
       const sessionRes = await fetch('/api/auth/session')
       const session = await sessionRes.json()
-      
-      if (session?.user?.role !== 'ADMIN') {
+      const isAdminRole = session?.user?.role === 'ADMIN'
+      if (!isAdminRole) {
         setError('Access denied. Admin privileges required.')
-        await signIn('credentials', { redirect: false }) // Sign out
+        await signOut({ redirect: false })
         setIsLoading(false)
         return
       }
