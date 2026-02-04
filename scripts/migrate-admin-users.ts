@@ -23,11 +23,12 @@ async function main() {
   const backupDir = process.argv.find((a) => a.startsWith('--backup-dir='))?.split('=')[1]
 
   await prisma.$transaction(async (tx) => {
-    // 1) Ensure primary admin exists with ADMIN role
-    const defaultPasswordHash = await bcrypt.hash('ChangeMeUponFirstLogin!', 12)
+    // 1) Ensure primary admin exists with ADMIN role e password conhecida (tanto em create como em update)
+    const defaultPassword = 'ChangeMeUponFirstLogin!'
+    const defaultPasswordHash = await bcrypt.hash(defaultPassword, 12)
     const primaryAdmin = await tx.user.upsert({
       where: { email: PRIMARY_ADMIN_EMAIL },
-      update: { role: UserRole.ADMIN },
+      update: { role: UserRole.ADMIN, password: defaultPasswordHash },
       create: {
         email: PRIMARY_ADMIN_EMAIL,
         name: 'Admin',
@@ -36,6 +37,7 @@ async function main() {
       },
     })
     console.log(`✅ Primary admin ensured: ${primaryAdmin.email} (${primaryAdmin.role})`)
+    console.log(`   Password: ${defaultPassword} (troque no primeiro login)`)
 
     const oldAdmin = await tx.user.findUnique({
       where: { email: REMOVE_ADMIN_EMAIL },
