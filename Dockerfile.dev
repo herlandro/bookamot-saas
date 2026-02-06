@@ -1,0 +1,24 @@
+FROM node:20-alpine
+
+# Install dependencies
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy Prisma schema (needed for prisma generate)
+COPY prisma ./prisma
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# The source code will be mounted via volume in docker-compose
+# The command will be overwritten in docker-compose.dev.yml to use 'npm run dev'
