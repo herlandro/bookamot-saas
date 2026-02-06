@@ -171,22 +171,7 @@ export async function PATCH(
       );
     }
 
-    // Exhaustion rule: do not allow confirming if MOT quota would be exceeded
-    if (status === 'CONFIRMED') {
-      const motQuota = (garage as { motQuota?: number }).motQuota ?? 0
-      const currentConfirmed = await prisma.booking.count({
-        where: {
-          garageId: garage.id,
-          status: 'CONFIRMED',
-        },
-      })
-      if (motQuota > 0 && currentConfirmed >= motQuota) {
-        return NextResponse.json(
-          { error: 'MOT quota exhausted. No further bookings can be confirmed until new quota is purchased.' },
-          { status: 400 }
-        )
-      }
-    }
+    // Allow confirming/rejecting existing bookings regardless of quota (confirming does not add a consumed slot; only new bookings do).
 
     // Get previous status to detect changes
     const previousStatus = existingBooking.status
@@ -231,19 +216,36 @@ export async function PATCH(
       },
     });
 
-    // Exhaustion rule: after confirming, if confirmed count equals purchased quota, set garage inactive
+    // Exhaustion rule: after confirming, if consumed count equals purchased quota, set garage inactive
     if (status === 'CONFIRMED' && previousStatus !== 'CONFIRMED') {
       const motQuota = (garage as { motQuota?: number }).motQuota ?? 0
-      const newConfirmedCount = await prisma.booking.count({
+      const newConsumedCount = await prisma.booking.count({
         where: {
           garageId: garage.id,
-          status: 'CONFIRMED',
+          status: { not: 'CANCELLED' },
         },
       })
-      if (motQuota > 0 && newConfirmedCount >= motQuota) {
+      if (motQuota > 0 && newConsumedCount >= motQuota) {
         await prisma.garage.update({
           where: { id: garage.id },
           data: { isActive: false },
+        })
+      }
+    }
+
+    // When a booking is cancelled, garage may have quota again – make it visible in search
+    if (status === 'CANCELLED') {
+      const motQuota = (garage as { motQuota?: number }).motQuota ?? 0
+      const newConsumedCount = await prisma.booking.count({
+        where: {
+          garageId: garage.id,
+          status: { not: 'CANCELLED' },
+        },
+      })
+      if (motQuota > 0 && newConsumedCount < motQuota) {
+        await prisma.garage.update({
+          where: { id: garage.id },
+          data: { isActive: true },
         })
       }
     }

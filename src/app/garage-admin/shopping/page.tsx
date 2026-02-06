@@ -6,14 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { GarageLayout } from '@/components/layout/garage-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -38,19 +31,14 @@ type PurchaseRow = {
 }
 
 function ShoppingPageContent() {
+  void Dialog // keep Dialog in bundle for shared layout/chunk (avoids Turbopack ReferenceError)
   const { data: session, status } = useSession()
   const router = useRouter()
   const _searchParams = useSearchParams() // required for Suspense; garageId query from MOT widget link
   const [purchases, setPurchases] = useState<PurchaseRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [bankDetails, setBankDetails] = useState<{
-    sortCode: string
-    accountNumber: string
-  } | null>(null)
-  const [garageId, setGarageId] = useState<string | null>(null)
-  const [bankReference, setBankReference] = useState('')
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -68,11 +56,7 @@ function ShoppingPageContent() {
         const data = await res.json()
         setPurchases(data.purchaseRequests ?? [])
       }
-      const quotaRes = await fetch('/api/garage-admin/mot-quota')
-      if (quotaRes.ok) {
-        const q = await quotaRes.json()
-        setGarageId(q.garageId ?? null)
-      }
+      await fetch('/api/garage-admin/mot-quota')
     } catch {
       setPurchases([])
     } finally {
@@ -80,51 +64,29 @@ function ShoppingPageContent() {
     }
   }
 
-  const openModal = async () => {
-    setModalOpen(true)
-    if (!bankDetails) {
-      try {
-        const res = await fetch('/api/garage-admin/bank-details')
-        if (res.ok) {
-          const d = await res.json()
-          setBankDetails({ sortCode: d.sortCode, accountNumber: d.accountNumber })
-        }
-      } catch {
-        setBankDetails({ sortCode: '00-00-00', accountNumber: '00000000' })
-      }
-    }
-    let gid = garageId
-    if (!gid) {
-      try {
-        const qRes = await fetch('/api/garage-admin/mot-quota')
-        if (qRes.ok) {
-          const q = await qRes.json()
-          gid = q.garageId
-          setGarageId(gid)
-        }
-      } catch {
-        // ignore
-      }
-    }
-    if (gid) {
-      setBankReference(`${String(gid).slice(-6)}-${Date.now()}`)
-    }
-  }
-
-  const submitPurchase = async () => {
-    setSubmitting(true)
+  const goToCheckout = async () => {
+    setCheckoutError(null)
+    setCheckoutLoading(true)
     try {
-      const res = await fetch('/api/garage-admin/purchase-requests', {
+      const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bankReference: bankReference || undefined }),
+        body: JSON.stringify({}),
       })
-      if (res.ok) {
-        setModalOpen(false)
-        await fetchPurchases()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setCheckoutError(data?.error ?? enGB['shopping.paymentError'])
+        return
       }
+      if (data?.url) {
+        window.location.href = data.url
+        return
+      }
+      setCheckoutError(enGB['shopping.paymentError'])
+    } catch {
+      setCheckoutError(enGB['shopping.paymentError'])
     } finally {
-      setSubmitting(false)
+      setCheckoutLoading(false)
     }
   }
 
@@ -140,16 +102,19 @@ function ShoppingPageContent() {
 
   return (
     <GarageLayout>
-      <div className="min-h-screen bg-background p-4 md:p-6">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{enGB['shopping.title']}</h1>
-            <p className="text-muted-foreground">
-              Purchase MOT booking quota for your garage.
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground">
+              <ShoppingCart className="h-6 w-6" />
+              {enGB['shopping.title']}
+            </h1>
+            <p className="mt-1 text-muted-foreground">
+              {enGB['shopping.subtitle']}
             </p>
           </div>
 
-          <Card>
+          <Card className="rounded-lg border border-border bg-card shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle>{enGB['shopping.product.motb10']}</CardTitle>
@@ -160,18 +125,38 @@ function ShoppingPageContent() {
                 <p className="text-sm text-muted-foreground">{enGB['shopping.product.quantity']}</p>
               </div>
             </CardHeader>
-            <CardContent>
-              <Button onClick={openModal} className="w-full sm:w-auto">
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                {enGB['shopping.buyNow']}
+            <CardContent className="space-y-2">
+              <Button
+                type="button"
+                onClick={goToCheckout}
+                disabled={checkoutLoading}
+                className="w-full sm:w-auto"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {enGB['shopping.paymentRedirect']}
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    {enGB['shopping.comprar']}
+                  </>
+                )}
               </Button>
+              {checkoutError && (
+                <p className="text-sm text-destructive">{checkoutError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {enGB['shopping.paymentNote']}
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="mt-6 rounded-lg border border-border bg-card shadow-xl">
             <CardHeader>
               <CardTitle>{enGB['shopping.previousPurchases']}</CardTitle>
-              <CardDescription>History of your MOT booking purchases</CardDescription>
+              <CardDescription>{enGB['shopping.previousPurchasesDescription']}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -181,15 +166,13 @@ function ShoppingPageContent() {
                     <TableHead>{enGB['shopping.table.dateApprovedRejected']}</TableHead>
                     <TableHead>{enGB['shopping.table.bankReference']}</TableHead>
                     <TableHead>{enGB['shopping.table.quotaAdded']}</TableHead>
-                    <TableHead>{enGB['shopping.table.consumed']}</TableHead>
-                    <TableHead>{enGB['shopping.table.remaining']}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {purchases.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        No purchases yet.
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        {enGB['shopping.noPurchasesYet']}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -203,8 +186,6 @@ function ShoppingPageContent() {
                         </TableCell>
                         <TableCell className="font-mono text-sm">{row.bankReference}</TableCell>
                         <TableCell>{row.quotaAdded}</TableCell>
-                        <TableCell>{row.consumed ?? '–'}</TableCell>
-                        <TableCell>{row.remaining ?? '–'}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -214,40 +195,6 @@ function ShoppingPageContent() {
           </Card>
         </div>
       </div>
-
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{enGB['shopping.purchaseIntent.title']}</DialogTitle>
-            <DialogDescription>
-              Pay £10 via UK bank transfer using the details below. Use the reference shown when you pay, then click Submit to record your request.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-3 items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">{enGB['shopping.bank.sortCode']}</span>
-              <span className="col-span-2 font-mono">{bankDetails?.sortCode ?? '–'}</span>
-            </div>
-            <div className="grid grid-cols-3 items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">{enGB['shopping.bank.accountNumber']}</span>
-              <span className="col-span-2 font-mono">{bankDetails?.accountNumber ?? '–'}</span>
-            </div>
-            <div className="grid grid-cols-3 items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">{enGB['shopping.bank.reference']}</span>
-              <span className="col-span-2 break-all font-mono text-sm">{bankReference || '–'}</span>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)} disabled={submitting}>
-              {enGB['shopping.cancel']}
-            </Button>
-            <Button onClick={submitPurchase} disabled={submitting}>
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {enGB['shopping.submit']}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </GarageLayout>
   )
 }

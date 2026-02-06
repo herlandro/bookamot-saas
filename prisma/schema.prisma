@@ -479,11 +479,11 @@ enum ScheduledStatus {
   CANCELLED
 }
 
-// MOT booking purchase request (bank transfer flow)
+// MOT booking purchase request (bank transfer flow or Stripe)
 model PurchaseRequest {
   id              String                @id @default(cuid())
   garageId        String
-  bankReference   String                // garage ID + timestamp format
+  bankReference   String                // garage ID + timestamp format (or Stripe session id for Stripe payments)
   amountPence    Int                   // 1000 = £10
   quantity        Int                   @default(10) // 10 MOT bookings per package
   status          PurchaseRequestStatus @default(PENDING)
@@ -492,6 +492,7 @@ model PurchaseRequest {
   rejectedAt      DateTime?
   rejectionReason String?
   approvedById    String?
+  stripeSessionId String?               // Stripe Checkout Session ID for audit and idempotency
 
   garage   Garage                    @relation(fields: [garageId], references: [id], onDelete: Cascade)
   auditLogs PurchaseRequestAuditLog[]
@@ -499,6 +500,7 @@ model PurchaseRequest {
   @@index([garageId])
   @@index([status])
   @@index([requestedAt])
+  @@index([stripeSessionId])
 }
 
 enum PurchaseRequestStatus {

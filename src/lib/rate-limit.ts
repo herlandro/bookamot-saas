@@ -72,3 +72,9 @@ export const resetPasswordRateLimit = rateLimit({
   maxAttempts: 5,
   windowMs: 15 * 60 * 1000 // 15 minutos
 })
+
+// Rate limiter para checkout Stripe (10 tentativas por minuto por IP)
+export const checkoutRateLimit = rateLimit({
+  maxAttempts: 10,
+  windowMs: 60 * 1000 // 1 minuto
+})

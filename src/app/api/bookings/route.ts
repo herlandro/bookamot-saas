@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
         name: true,
         dvlaApproved: true,
         motPrice: true,
-        isActive: true
+        isActive: true,
+        motQuota: true
       }
     })
 
@@ -55,7 +56,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!garage.isActive) {
+    // Consumed = all non-cancelled bookings; do not allow new booking if quota full. Visibility in search is quota-based, so allow booking when garage has remaining quota (even if isActive was false).
+    const motQuota = garage.motQuota ?? 0
+    if (motQuota > 0) {
+      const consumedCount = await prisma.booking.count({
+        where: {
+          garageId: garage.id,
+          status: { not: 'CANCELLED' }
+        }
+      })
+      if (consumedCount >= motQuota) {
+        return NextResponse.json(
+          { error: 'MOT quota exhausted. This garage cannot accept new bookings at the moment.' },
+          { status: 400 }
+        )
+      }
+    } else if (!garage.isActive) {
       return NextResponse.json(
         { error: 'MOT quota exhausted. This garage cannot accept new bookings at the moment.' },
         { status: 400 }

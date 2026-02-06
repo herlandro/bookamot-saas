@@ -117,10 +117,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build search conditions
+    // Build search conditions (visibility for MOT search is driven by available quota below, not isActive)
     const searchConditions: any = {
-      dvlaApproved: true, // Only show approved garages
-      isActive: true // Only show active garages (not pending or deactivated)
+      dvlaApproved: true // Only show approved garages
     }
 
     // If location is provided but couldn't be geocoded, search by text (name, city, postcode)
@@ -134,21 +133,21 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Regra: só mostrar garagens com MOT quota disponível (têm comprado e ainda não usaram todos)
+    // Regra: só mostrar garagens com MOT quota disponível (consumido = bookings não cancelados)
     const withQuota = await prisma.garage.findMany({
       where: { ...searchConditions, motQuota: { gt: 0 } },
       select: { id: true, motQuota: true }
     })
-    const confirmedByGarage = await prisma.booking.groupBy({
+    const consumedByGarage = await prisma.booking.groupBy({
       by: ['garageId'],
-      where: { status: 'CONFIRMED' },
+      where: { status: { not: 'CANCELLED' } },
       _count: true
     })
-    const confirmedCountByGarageId = Object.fromEntries(
-      confirmedByGarage.map((c) => [c.garageId, c._count])
+    const consumedCountByGarageId = Object.fromEntries(
+      consumedByGarage.map((c) => [c.garageId, c._count])
     )
     const availableGarageIds = withQuota
-      .filter((g) => (confirmedCountByGarageId[g.id] ?? 0) < (g.motQuota ?? 0))
+      .filter((g) => (consumedCountByGarageId[g.id] ?? 0) < (g.motQuota ?? 0))
       .map((g) => g.id)
     if (availableGarageIds.length === 0) {
       console.log('🔒 No garages with MOT quota available for customer search')
