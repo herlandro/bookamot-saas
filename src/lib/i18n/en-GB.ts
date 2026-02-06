@@ -18,7 +18,7 @@ export const enGB = {
   'shopping.comprar': 'Purchase',
   'shopping.paymentRedirect': 'Redirecting to secure payment…',
   'shopping.paymentError': 'Unable to start payment. Please try again.',
-  'shopping.paymentNote': 'Secure payment by card or bank transfer (Stripe).',
+  'shopping.paymentNote': 'Secure payment by card (Stripe).',
   'shopping.subtitle': 'Purchase MOT booking quota for your garage.',
   'shopping.previousPurchasesDescription': 'History of your MOT booking purchases',
   'shopping.noPurchasesYet': 'No purchases yet.',

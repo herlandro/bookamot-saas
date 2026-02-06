@@ -4,7 +4,10 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { AdminNotificationType } from '@prisma/client'
 
-const MOTB10_AMOUNT_PENCE = 1000 // £10
+// const MOTB10_AMOUNT_PENCE = 1000 // £10
+const MOTB10_AMOUNT_PENCE = 30 // £0.30
+
+/** Number of MOT bookings to credit per package (used in the webhook and the purchase request) */
 const MOTB10_QUANTITY = 10
 
 /**
